@@ -299,11 +299,6 @@ function TemplateForm({
             />
           </Field>
         </div>
-        {editing && template?.is_default && (
-          <p className="text-sm text-muted-foreground">
-            {t("subscriptionTemplates.defaultLocked")}
-          </p>
-        )}
         <Field>
           <FieldLabel htmlFor="template-content">
             {t("subscriptionTemplates.content")}
