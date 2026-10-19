@@ -87,7 +87,7 @@ export const toUserPayload = (values: UserFormValues): UserCreate => {
 };
 
 const baseSchema = {
-  username: z.string().min(1, { message: "Required" }),
+  username: z.string().min(1),
   note: z.string().nullable(),
   proxies: z
     .record(z.string(), z.record(z.string(), z.any()))
@@ -134,7 +134,7 @@ export const userFormSchema = z.discriminatedUnion("status", [
     status: z.literal("on_hold"),
     on_hold_expire_duration: z.coerce
       .number()
-      .min(0.1, "Required")
+      .min(0.1)
       .transform((days) => days * 24 * 60 * 60),
     ...baseSchema,
   }),

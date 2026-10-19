@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import i18n from "@/locales/i18n";
 
 import { MonacoJsonEditor } from "@/components/MonacoJsonEditor";
 import { Button } from "@/components/ui/button";
@@ -51,7 +52,7 @@ const formSchema = z.object({
         });
       }
     } catch {
-      context.addIssue({ code: "custom", message: "Invalid JSON" });
+      context.addIssue({ code: "custom", message: i18n.t("validation.json") });
     }
   }),
 });

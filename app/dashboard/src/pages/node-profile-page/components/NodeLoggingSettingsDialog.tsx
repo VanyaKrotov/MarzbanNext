@@ -169,7 +169,7 @@ function NodeLoggingSettingsDialogContent({
         </div>
 
         <Button className="w-full" type="submit" disabled={update.isPending}>
-          {t("save")}
+          {t("settingsPage.save")}
         </Button>
       </form>
     </>

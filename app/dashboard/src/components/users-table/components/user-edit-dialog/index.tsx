@@ -199,7 +199,7 @@ function UserEditDialogContent({
             {saveMutation.isPending && (
               <LoaderCircle className="animate-spin" />
             )}
-            {isEditing ? t("userDialog.editUser") : t("createUser")}
+            {t(isEditing ? "core.save" : "create")}
           </Button>
         </DialogFooter>
       </form>

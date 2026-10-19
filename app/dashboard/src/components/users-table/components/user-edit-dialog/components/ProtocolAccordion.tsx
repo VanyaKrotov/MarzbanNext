@@ -350,7 +350,7 @@ function ProtocolFields({ protocol, disabled }: ProtocolFieldsProps) {
                         key={flow.value || "none"}
                         value={flow.value || "none"}
                       >
-                        {flow.title}
+                        {flow.value ? flow.title : t("common.none")}
                       </SelectItem>
                     ))}
                   </SelectGroup>

@@ -1,5 +1,6 @@
 import { UseFormReturn } from "react-hook-form";
 import { toast } from "sonner";
+import i18n from "@/locales/i18n";
 
 export const generateErrorMessage = (e: any, form?: UseFormReturn<any>) => {
   if (e.response?.data) {
@@ -19,7 +20,7 @@ export const generateErrorMessage = (e: any, form?: UseFormReturn<any>) => {
         return;
       }
   }
-  return toast.error("Something went wrong!", {
+  return toast.error(i18n.t("core.generalErrorMessage"), {
     closeButton: true,
     duration: 3000,
   });

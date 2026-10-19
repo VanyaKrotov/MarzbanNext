@@ -71,7 +71,7 @@ export function UsersToolbar({
         {search && (
           <InputGroupAddon align="inline-end">
             <InputGroupButton
-              aria-label="Clear search"
+              aria-label={t("usersTable.clearSearch")}
               size="icon-xs"
               onClick={clearSearch}
             >
@@ -89,7 +89,7 @@ export function UsersToolbar({
           </Button>
         )}
         <Button
-          aria-label="Refresh users"
+          aria-label={t("usersTable.refresh")}
           variant="outline"
           size="icon"
           disabled={isFetching}
@@ -99,7 +99,7 @@ export function UsersToolbar({
         </Button>
         <Button onClick={onCreate}>
           <Plus />
-          {t("createUser")}
+          {t("create")}
         </Button>
       </div>
     </div>

@@ -65,7 +65,7 @@ export function HostGroupsManagerDialog({
             trigger={
               <Button type="button" size="sm">
                 <Plus />
-                {t("hostsPage.addGroup")}
+                {t("create")}
               </Button>
             }
           />

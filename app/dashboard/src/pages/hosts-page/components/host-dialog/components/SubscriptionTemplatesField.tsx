@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import {
-  formatLabels,
+  formatLabelKeys,
   subscriptionFormats,
   type SubscriptionTemplate,
 } from "@/pages/subscription-templates-page/lib/query";
@@ -65,7 +65,7 @@ export function SubscriptionTemplatesField({
                     }
                   />
                   <label htmlFor={`format-${format}`} className="text-sm">
-                    {formatLabels[format]}
+                    {t(formatLabelKeys[format])}
                   </label>
                   <Select
                     value={selected?.toString() ?? ""}
@@ -73,7 +73,7 @@ export function SubscriptionTemplatesField({
                     disabled={pending || selected === undefined}
                   >
                     <SelectTrigger
-                      aria-label={formatLabels[format]}
+                      aria-label={t(formatLabelKeys[format])}
                       className="col-span-2 w-full sm:col-span-1"
                     >
                       <SelectValue

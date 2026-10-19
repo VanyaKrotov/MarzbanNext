@@ -138,7 +138,7 @@ export function GeoResourceFormDialog({ nodeId }: { nodeId: number }) {
         <DialogTrigger asChild>
           <Button size="sm">
             <Plus />
-            {t("geoResources.add")}
+            {t("actions.add")}
           </Button>
         </DialogTrigger>
         <DialogContent>
@@ -319,7 +319,7 @@ function UploadGeoResourceForm({
       <DialogFooter>
         <Button type="submit" disabled={!form.formState.isValid || pending}>
           {pending && <LoaderCircle className="animate-spin" />}
-          {t("geoResources.upload")}
+          {t("actions.upload")}
         </Button>
       </DialogFooter>
     </form>
@@ -400,7 +400,7 @@ function RemoteGeoResourceForm({
       <DialogFooter>
         <Button type="submit" disabled={!form.formState.isValid || pending}>
           {pending && <LoaderCircle className="animate-spin" />}
-          {t("geoResources.add")}
+          {t("actions.add")}
         </Button>
       </DialogFooter>
     </form>

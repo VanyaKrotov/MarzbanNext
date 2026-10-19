@@ -232,7 +232,7 @@ function WebhookAddressInputs({
         <FieldLabel>{t("settingsPage.fields.webhookAddresses")}</FieldLabel>
         <Button type="button" variant="outline" size="sm" onClick={onAdd}>
           <Plus />
-          {t("settingsPage.webhookAddresses.add")}
+          {t("actions.add")}
         </Button>
       </div>
       <div className="space-y-2">

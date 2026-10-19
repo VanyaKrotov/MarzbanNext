@@ -38,7 +38,7 @@ export function IssueCertificateDialog(props: Props) {
       <DialogTrigger asChild>
         <Button type="button" size="sm">
           <Plus />
-          {t("nodes.certificates.new")}
+          {t("actions.issue")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -123,7 +123,7 @@ function FormContent({
           disabled={!domain.trim() || issue.isPending}
         >
           {issue.isPending && <LoaderCircle className="animate-spin" />}
-          {t("nodes.certificates.issue")}
+          {t("actions.issue")}
         </Button>
       </form>
     </>

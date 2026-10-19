@@ -135,7 +135,7 @@ function HostGroupsFilter({
               <span className="truncate">
                 {groups.length
                   ? t("hostsPage.allGroups")
-                  : t("hostsPage.noGroups")}
+                : t("hostsPage.noGroupsShort")}
               </span>
             )}
           </span>

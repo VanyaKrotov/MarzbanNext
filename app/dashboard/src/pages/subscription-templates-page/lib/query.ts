@@ -12,12 +12,12 @@ export const subscriptionFormats = [
 export type SubscriptionFormat = (typeof subscriptionFormats)[number];
 export type TemplateBindings = Partial<Record<SubscriptionFormat, number>>;
 
-export const formatLabels: Record<SubscriptionFormat, string> = {
-  v2ray: "V2Ray links",
-  "v2ray-json": "Xray JSON",
-  clash: "Clash / Mihomo",
-  "sing-box": "sing-box",
-  outline: "Outline",
+export const formatLabelKeys: Record<SubscriptionFormat, string> = {
+  v2ray: "subscriptionTemplates.formats.v2ray",
+  "v2ray-json": "subscriptionTemplates.formats.v2ray-json",
+  clash: "subscriptionTemplates.formats.clash",
+  "sing-box": "subscriptionTemplates.formats.sing-box",
+  outline: "subscriptionTemplates.formats.outline",
 };
 
 export type SubscriptionTemplate = {

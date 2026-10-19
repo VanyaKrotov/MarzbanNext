@@ -214,7 +214,7 @@ function SubscriptionBalancersContent() {
   const createAction = (
     <Button type="button" size="sm" onClick={() => openEditor()}>
       <Plus />
-      {t("settingsPage.balancers.create")}
+      {t("create")}
     </Button>
   );
 
@@ -773,7 +773,7 @@ function BalancerEditorContent({
           </Button>
           <Button type="submit" disabled={pending || !form.formState.isValid}>
             {pending && <LoaderCircle className="animate-spin" />}
-            {t("settingsPage.save")}
+            {t(balancer ? "core.save" : "create")}
           </Button>
         </DialogFooter>
       </div>

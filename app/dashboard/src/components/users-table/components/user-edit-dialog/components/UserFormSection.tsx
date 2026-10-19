@@ -84,7 +84,7 @@ export function UserFormSection({
                   onClick={() => field.onChange(generateUsername())}
                 >
                   <Dices />
-                  {t("userDialog.generateUsername")}
+                  {t("actions.generate")}
                 </Button>
               )}
             </div>
@@ -289,7 +289,7 @@ export function UserFormSection({
                             setCalendarOpen(false);
                           }}
                         >
-                          {t("userDialog.clearExpiry")}
+                          {t("actions.clear")}
                         </Button>
                       </div>
                     )}

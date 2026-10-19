@@ -109,7 +109,7 @@ export function NodeProfilePage() {
             <Button asChild variant="outline">
               <Link to="/nodes">
                 <ArrowLeft />
-                {t("nodeProfile.back")}
+                {t("actions.back")}
               </Link>
             </Button>
           </EmptyContent>
@@ -132,7 +132,7 @@ export function NodeProfilePage() {
             <RefreshCw
               className={restart.isPending ? "animate-spin" : undefined}
             />
-            <span className="hidden sm:inline">{t("nodeProfile.restart")}</span>
+            <span className="hidden sm:inline">{t("actions.restart")}</span>
           </Button>
         </AlertDialogTrigger>
         <AlertDialogContent>
@@ -154,7 +154,7 @@ export function NodeProfilePage() {
               onClick={restartNode}
             >
               {restart.isPending && <LoaderCircle className="animate-spin" />}
-              {t("nodeProfile.restart")}
+              {t("actions.restart")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -257,7 +257,7 @@ export function NodeProfilePage() {
             <RefreshCw
               className={restart.isPending ? "animate-spin" : undefined}
             />
-            {t("nodeProfile.applyChanges")}
+            {t("apply")}
           </Button>
         </div>
       )}

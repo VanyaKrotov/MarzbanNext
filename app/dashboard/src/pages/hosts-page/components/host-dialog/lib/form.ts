@@ -29,7 +29,7 @@ export const hostFormSchema = z.object({
   uplink_http_method: z
     .string()
     .trim()
-    .regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]*$/, "Invalid HTTP method")
+    .regex(/^[!#$%&'*+.^_`|~0-9A-Za-z-]*$/)
     .transform((value) => value.toUpperCase())
     .nullable(),
   group_ids: z.array(z.string()),

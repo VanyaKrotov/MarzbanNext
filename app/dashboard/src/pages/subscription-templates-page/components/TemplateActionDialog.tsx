@@ -105,7 +105,7 @@ function TemplateActionContent({
             confirm();
           }}
         >
-          {t("subscriptionTemplates.confirm")}
+          {t(action.type === "delete" ? "delete" : "apply")}
         </AlertDialogAction>
       </AlertDialogFooter>
     </AlertDialogContent>

@@ -127,7 +127,7 @@ export function BasicFields({
         </div>
         <Input
           id="host-remark"
-          placeholder="Germany"
+          placeholder={t("hostsPage.namePlaceholder")}
           disabled={pending}
           {...form.register("remark")}
         />

@@ -10,6 +10,7 @@ import {
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
+import i18n from "@/locales/i18n";
 import set from "lodash/set";
 
 import { Button } from "@/components/ui/button";
@@ -58,7 +59,7 @@ const inboundFormSchema = z.object({
         });
       }
     } catch {
-      context.addIssue({ code: "custom", message: "Invalid JSON" });
+      context.addIssue({ code: "custom", message: i18n.t("validation.json") });
     }
   }),
 });

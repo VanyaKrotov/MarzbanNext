@@ -99,7 +99,7 @@ export function ErrorFallback({ error }: { error?: unknown }) {
           <div className="flex w-full flex-col gap-2 sm:flex-row sm:justify-center">
             <Button type="button" onClick={reload}>
               <RefreshCw />
-              {t("errorBoundary.retry")}
+              {t("actions.reload")}
             </Button>
             <Button type="button" variant="outline" onClick={goHome}>
               <Home />

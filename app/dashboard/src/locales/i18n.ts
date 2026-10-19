@@ -5,6 +5,7 @@ import i18n from "i18next";
 import LanguageDetector from "i18next-browser-languagedetector";
 import HttpApi from "i18next-http-backend";
 import { initReactI18next } from "react-i18next";
+import { configureValidationMessages } from "./validation";
 
 declare module "i18next" {
     interface CustomTypeOptions {
@@ -42,6 +43,8 @@ i18n
             dayjs.locale(i18n.language);
         }
     );
+
+configureValidationMessages((key, values) => i18n.t(key, values ?? {}));
 
 i18n.on("languageChanged", (lng) => {
     dayjs.locale(lng);

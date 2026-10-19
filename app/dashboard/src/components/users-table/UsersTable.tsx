@@ -269,7 +269,7 @@ const UsersTable = () => {
                 <Button
                   onClick={() => setCreatingUser(true)}
                 >
-                  {t("createUser")}
+                  {t("create")}
                 </Button>
               )}
             </div>

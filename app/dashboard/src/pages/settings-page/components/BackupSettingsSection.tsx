@@ -114,8 +114,8 @@ export function BackupSettingsSection() {
               icon={<ArchiveRestore />}
               title={t("settingsPage.backups.fullTitle")}
               description={t("settingsPage.backups.fullDescription")}
-              downloadLabel={t("settingsPage.backups.downloadArchive")}
-              restoreLabel={t("settingsPage.backups.restoreArchive")}
+              downloadLabel={t("actions.download")}
+              restoreLabel={t("settingsPage.backups.restore")}
               downloading={downloading === "full"}
               restoring={restoreFull.isPending}
               accept=".zip,application/zip"
@@ -127,8 +127,8 @@ export function BackupSettingsSection() {
               icon={<DatabaseBackup />}
               title={t("settingsPage.backups.databaseTitle")}
               description={t("settingsPage.backups.databaseDescription")}
-              downloadLabel={t("settingsPage.backups.downloadSql")}
-              restoreLabel={t("settingsPage.backups.restoreSql")}
+              downloadLabel={t("actions.download")}
+              restoreLabel={t("settingsPage.backups.restore")}
               downloading={downloading === "database"}
               restoring={restoreDatabase.isPending}
               accept=".sql,application/sql,text/sql,text/plain"

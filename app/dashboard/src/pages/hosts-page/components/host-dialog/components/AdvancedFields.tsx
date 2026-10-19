@@ -90,7 +90,15 @@ export function AdvancedFields({
           name="security"
           label={t("hostsDialog.security")}
           description={t("hostsDialog.security.info")}
-          options={proxyHostSecurity}
+          options={proxyHostSecurity.map((option) => ({
+            ...option,
+            title:
+              option.value === "inbound_default"
+                ? t("hostsDialog.inboundDefault")
+                : option.value === "none"
+                  ? t("hostsDialog.noSecurity")
+                  : option.title,
+          }))}
           control={form.control}
           disabled={pending}
         />
@@ -136,7 +144,7 @@ export function AdvancedFields({
               render={({ field }) => (
                 <Field>
                   <FieldLabel htmlFor="host-sc-max-buffered-posts">
-                    scMaxBufferedPosts
+                  {t("hostsDialog.scMaxBufferedPosts")}
                   </FieldLabel>
                   <Input
                     id="host-sc-max-buffered-posts"
@@ -160,7 +168,7 @@ export function AdvancedFields({
               render={({ field }) => (
                 <Field>
                   <FieldLabel htmlFor="host-uplink-http-method">
-                    uplinkHTTPMethod
+                    {t("hostsDialog.uplinkHttpMethod")}
                   </FieldLabel>
                   <Select
                     disabled={pending}
@@ -191,7 +199,7 @@ export function AdvancedFields({
             render={({ field }) => (
               <Field orientation="horizontal" className="justify-between">
                 <FieldLabel htmlFor="host-x-padding-obfs-mode">
-                  xPaddingObfsMode
+                  {t("hostsDialog.xPaddingObfsMode")}
                 </FieldLabel>
                 <Switch
                   id="host-x-padding-obfs-mode"

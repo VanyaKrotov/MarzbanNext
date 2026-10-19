@@ -228,11 +228,11 @@ const Layout: FC = () => {
               <div className="flex flex-col gap-y-0.5 ml-0.5">
                 <p className="text-md font-medium">{username}</p>
                 <p className="text-xs text-muted-foreground">
-                  {is_sudo ? "Super admin" : "Admin"}
+                  {t(is_sudo ? "admin.sudo" : "admin.regular")}
                 </p>
               </div>
               <Button size="icon" asChild className="ml-auto" variant="ghost">
-                <Link to="/login" replace>
+                <Link to="/login" replace aria-label={t("header.logout")}>
                   <LogOut />
                 </Link>
               </Button>

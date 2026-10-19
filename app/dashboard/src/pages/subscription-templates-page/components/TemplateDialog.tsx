@@ -41,7 +41,7 @@ import {
 } from "@/utils/toastHandler";
 
 import {
-  formatLabels,
+  formatLabelKeys,
   subscriptionFormats,
   useTemplateMutation,
   useTemplateQuery,
@@ -132,7 +132,7 @@ function DiscardDialog({
         <AlertDialogFooter>
           <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
           <AlertDialogAction onClick={onDiscard}>
-            {t("subscriptionTemplates.discard")}
+            {t("actions.discard")}
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>
@@ -290,7 +290,7 @@ function TemplateForm({
                   <SelectContent>
                     {subscriptionFormats.map((value) => (
                       <SelectItem key={value} value={value}>
-                        {formatLabels[value]}
+                        {t(formatLabelKeys[value])}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -348,7 +348,7 @@ function TemplateForm({
             {t("cancel")}
           </Button>
           <Button type="submit" disabled={mutation.isPending}>
-            {t("subscriptionTemplates.save")}
+            {t(editing ? "core.save" : "create")}
           </Button>
         </div>
       </form>

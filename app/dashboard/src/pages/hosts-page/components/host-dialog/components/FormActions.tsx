@@ -43,7 +43,7 @@ export function FormActions({
       />
       <Button type="submit" className="w-full sm:flex-1" disabled={pending}>
         {pending && <LoaderCircle className="animate-spin" />}
-        {isEditing ? t("hostsPage.save") : t("hostsPage.create")}
+        {isEditing ? t("core.save") : t("create")}
       </Button>
     </div>
   );

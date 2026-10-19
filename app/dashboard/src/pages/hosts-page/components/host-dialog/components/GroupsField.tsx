@@ -62,8 +62,8 @@ export function GroupsField({
                       ) : (
                         <span className="truncate text-muted-foreground">
                           {groups.length
-                            ? t("hostsPage.selectGroups")
-                            : t("hostsPage.noGroups")}
+                            ? t("actions.select")
+                            : t("hostsPage.noGroupsShort")}
                         </span>
                       )}
                     </span>

@@ -28,7 +28,7 @@ import {
   type TemplateAction,
 } from "./components/TemplateActionDialog";
 import {
-  formatLabels,
+  formatLabelKeys,
   subscriptionFormats,
   useTemplatesQuery,
   type SubscriptionTemplate,
@@ -62,7 +62,7 @@ export default function SubscriptionTemplatesPage() {
               onClick={() => setEditor({ template: null, duplicate: false })}
             >
               <Plus />
-              {t("subscriptionTemplates.create")}
+              {t("create")}
             </Button>
           </div>
         }
@@ -97,7 +97,7 @@ export default function SubscriptionTemplatesPage() {
               </SelectItem>
               {subscriptionFormats.map((value) => (
                 <SelectItem key={value} value={value}>
-                  {formatLabels[value]}
+                  {t(formatLabelKeys[value])}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -136,7 +136,7 @@ export default function SubscriptionTemplatesPage() {
                         </Badge>
                       )}
                     </TableCell>
-                    <TableCell>{formatLabels[template.format]}</TableCell>
+                    <TableCell>{t(formatLabelKeys[template.format])}</TableCell>
                     <TableCell onClick={(event) => event.stopPropagation()}>
                       <div className="flex justify-end gap-1">
                         <Button

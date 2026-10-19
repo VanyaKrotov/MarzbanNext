@@ -203,7 +203,7 @@ export function HostGroupFormDialog({
             {t("cancel")}
           </Button>
           <Button type="button" disabled={submitting} onClick={submit}>
-            {isEditing ? t("hostsPage.saveGroup") : t("hostsPage.addGroup")}
+            {isEditing ? t("core.save") : t("create")}
           </Button>
         </DialogFooter>
       </DialogContent>

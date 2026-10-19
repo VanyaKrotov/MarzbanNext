@@ -90,8 +90,10 @@ const LoginPage: FC = () => {
               if (error instanceof AxiosError) {
                 setError("root", {
                   message:
-                    error.response?.data?.detail ||
-                    t("core.generalErrorMessage"),
+                    error.response?.status === 401
+                      ? t("login.invalidCredentials")
+                      : error.response?.data?.detail ||
+                        t("core.generalErrorMessage"),
                 });
               } else {
                 setError("root", { message: t("core.generalErrorMessage") });

@@ -38,7 +38,7 @@ export function ImportCertificateDialog(props: Props) {
       <DialogTrigger asChild>
         <Button type="button" size="sm" variant="outline">
           <FileKey2 />
-          {t("nodes.certificates.import")}
+          {t("actions.import")}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-lg">
@@ -151,7 +151,7 @@ function FormContent({
           {importCertificate.isPending && (
             <LoaderCircle className="animate-spin" />
           )}
-          {t("nodes.certificates.import")}
+          {t("actions.import")}
         </Button>
       </form>
     </>
