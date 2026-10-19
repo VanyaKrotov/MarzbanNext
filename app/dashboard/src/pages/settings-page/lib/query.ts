@@ -34,6 +34,12 @@ export type RuntimeSettings = {
   recurrent_notifications_timeout: number;
   number_of_recurrent_notifications: number;
   default_node_config: Record<string, unknown>;
+  clash_settings: string;
+  singbox_settings: string;
+  v2ray_settings: string;
+  mux: string;
+  user_agent: string;
+  grpc_user_agent: string;
 };
 
 export type RuntimeSettingsUpdate = Partial<
@@ -43,14 +49,7 @@ export type RuntimeSettingsUpdate = Partial<
   clear_webhook_secret?: boolean;
 };
 
-export type SubscriptionTemplate = {
-  key: string;
-  format: "json" | "yaml" | "text";
-  content: string;
-};
-
 export const runtimeSettingsQueryKey = ["runtime-settings"] as const;
-export const subscriptionTemplatesQueryKey = ["subscription-templates"] as const;
 
 export function useRuntimeSettingsQuery() {
   return useQuery({
@@ -68,30 +67,6 @@ export function useUpdateRuntimeSettingsMutation() {
     onSuccess: (settings) => {
       queryClient.setQueryData(runtimeSettingsQueryKey, settings);
     },
-  });
-}
-
-export function useSubscriptionTemplatesQuery() {
-  return useQuery({
-    queryKey: subscriptionTemplatesQueryKey,
-    queryFn: () =>
-      api.get<SubscriptionTemplate[]>("/settings/subscription-templates"),
-  });
-}
-
-export function useUpdateSubscriptionTemplateMutation() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: ({ key, content }: { key: string; content: string }) =>
-      api.patch<SubscriptionTemplate>(
-        `/settings/subscription-templates/${key}`,
-        { content },
-      ),
-    onSuccess: () =>
-      queryClient.invalidateQueries({
-        queryKey: subscriptionTemplatesQueryKey,
-      }),
   });
 }
 

@@ -15,6 +15,7 @@ import {
   ExternalLink,
   ChevronsUpDown,
   Settings,
+  FileCode,
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
@@ -77,6 +78,12 @@ const NAVIGATION = [
         labelKey: "navigation.hosts",
         sudoOnly: true,
         to: "/hosts",
+      },
+      {
+        icon: FileCode,
+        labelKey: "navigation.subscriptionTemplates",
+        sudoOnly: true,
+        to: "/subscription-templates",
       },
       {
         icon: Settings,

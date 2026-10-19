@@ -15,7 +15,6 @@ from app.models.settings import (
     SubscriptionBalancerCreate,
     SubscriptionBalancerModify,
     SubscriptionBalancerReorder,
-    SubscriptionTemplateModify,
 )
 from app.utils.backups import (
     create_full_backup_archive,
@@ -27,13 +26,13 @@ from app.utils.backups import (
 )
 from app.utils.runtime_settings import (
     get_runtime_settings,
-    get_subscription_templates,
     runtime_settings_response,
     update_runtime_settings,
-    update_subscription_template,
 )
 from app.utils.xray_config_template import normalize_xray_config_template
 from app.utils.xray_config_registry import XRAY_VALIDATION_API_PORT
+from app.utils.subscription_template_defaults import GENERATOR_TEMPLATE_SOURCES
+from app.utils.subscription_templates import validate_generator_settings
 
 
 def _remove_file(path: str) -> None:
@@ -50,6 +49,14 @@ def modify_settings(
     db: Session = Depends(get_db),
     admin: Admin = Depends(Admin.check_sudo_admin),
 ):
+    for key in GENERATOR_TEMPLATE_SOURCES.keys() & modified_settings.model_fields_set:
+        content = getattr(modified_settings, key)
+        if content is None:
+            raise HTTPException(status_code=422, detail=f"{key} settings cannot be null")
+        try:
+            validate_generator_settings(key, content)
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from exc
     if modified_settings.default_node_config is not None:
         modified_settings.default_node_config = normalize_xray_config_template(
             modified_settings.default_node_config,
@@ -57,22 +64,6 @@ def modify_settings(
         )
     settings = update_runtime_settings(db, modified_settings)
     return runtime_settings_response(settings)
-
-
-def get_settings_subscription_templates(admin: Admin = Depends(Admin.check_sudo_admin)):
-    return list(get_subscription_templates())
-
-
-def modify_settings_subscription_template(
-    template_key: str,
-    modified_template: SubscriptionTemplateModify,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    try:
-        return update_subscription_template(db, template_key, modified_template.content)
-    except KeyError:
-        raise HTTPException(status_code=404, detail="Template not found")
 
 
 def get_subscription_balancers(

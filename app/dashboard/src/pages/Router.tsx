@@ -14,6 +14,7 @@ import StatsPage from "@/pages/stats-page";
 import UsersPage from "@/pages/users-page";
 import LoginPage from "@/pages/login-page";
 import SettingsPage from "@/pages/settings-page";
+import SubscriptionTemplatesPage from "@/pages/subscription-templates-page/SubscriptionTemplatesPage";
 
 import { queryClient } from "@/utils/query-client";
 import { accountQuery } from "@/hooks/use-admin";
@@ -70,6 +71,11 @@ export const router = createHashRouter([
       {
         path: "stats",
         element: <StatsPage />,
+      },
+      {
+        path: "subscription-templates",
+        element: <SubscriptionTemplatesPage />,
+        loader: requireSudo,
       },
       {
         path: "settings",

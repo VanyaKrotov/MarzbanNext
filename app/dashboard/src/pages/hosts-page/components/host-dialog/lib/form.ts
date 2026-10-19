@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  subscriptionFormats,
+  type TemplateBindings,
+} from "@/pages/subscription-templates-page/lib/query";
 
 import type { HostType } from "../../../types";
 
@@ -29,6 +33,10 @@ export const hostFormSchema = z.object({
     .transform((value) => value.toUpperCase())
     .nullable(),
   group_ids: z.array(z.string()),
+  subscription_template_ids: z.record(
+    z.enum(subscriptionFormats),
+    z.number().int().positive(),
+  ),
 });
 
 export type HostFormValues = z.infer<typeof hostFormSchema>;
@@ -36,6 +44,7 @@ export type HostFormValues = z.infer<typeof hostFormSchema>;
 export function getHostFormValues(
   inboundTag: string,
   host?: HostType | null,
+  templateBindings: TemplateBindings = {},
 ): HostFormValues {
   return {
     inboundTag,
@@ -66,6 +75,7 @@ export function getHostFormValues(
           x_padding_obfs_mode: null,
           uplink_http_method: null,
           group_ids: [],
+          subscription_template_ids: templateBindings,
         }),
   };
 }

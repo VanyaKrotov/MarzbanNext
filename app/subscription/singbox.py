@@ -11,15 +11,21 @@ from app.templates import render_template_content
 
 class SingBoxConfiguration(str):
 
-    def __init__(self):
-        from app.utils.runtime_settings import get_subscription_template
+    def __new__(cls, template: str | None = None):
+        return super().__new__(cls, "")
+
+    def __init__(self, template: str | None = None):
+        from app.utils.runtime_settings import get_generator_template
+
+        from app.utils.subscription_template_defaults import default_subscription_content
 
         self.proxy_remarks = []
         self.default_proxy_remarks = []
         self.managed_balancer_tags = set()
-        self.config = json.loads(render_template_content(get_subscription_template("singbox_subscription")))
-        self.mux_template = render_template_content(get_subscription_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_subscription_template("user_agent")))
+        self.config = json.loads(render_template_content(
+            template if template is not None else default_subscription_content("sing-box")))
+        self.mux_template = render_template_content(get_generator_template("mux"))
+        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -27,7 +33,7 @@ class SingBoxConfiguration(str):
             self.user_agent_list = []
 
         try:
-            self.settings = json.loads(render_template_content(get_subscription_template("singbox_settings")))
+            self.settings = json.loads(render_template_content(get_generator_template("singbox_settings")))
         except TemplateNotFound:
             self.settings = {}
 
@@ -69,7 +75,7 @@ class SingBoxConfiguration(str):
 
         if reverse:
             self.config["outbounds"].reverse()
-        return json.dumps(self.config, indent=4,cls=UUIDEncoder)
+        return json.dumps(self.config, indent=4, cls=UUIDEncoder)
 
     @staticmethod
     def tls_config(sni=None, fp=None, tls=None, pbk=None,

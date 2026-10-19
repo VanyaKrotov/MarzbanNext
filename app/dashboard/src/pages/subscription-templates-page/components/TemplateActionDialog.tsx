@@ -1,0 +1,113 @@
+import { useTranslation } from "react-i18next";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { api } from "@/service/http";
+import {
+  generateErrorMessage,
+  generateSuccessMessage,
+} from "@/utils/toastHandler";
+
+import { useTemplateMutation, type SubscriptionTemplate } from "../lib/query";
+
+export type TemplateAction = {
+  template: SubscriptionTemplate;
+  type: "delete" | "default";
+};
+
+export function TemplateActionDialog({
+  action,
+  onClose,
+}: {
+  action: TemplateAction | null;
+  onClose: () => void;
+}) {
+  return (
+    <AlertDialog
+      open={action !== null}
+      onOpenChange={(open) => {
+        if (!open) onClose();
+      }}
+    >
+      {action && <TemplateActionContent action={action} onClose={onClose} />}
+    </AlertDialog>
+  );
+}
+
+function TemplateActionContent({
+  action,
+  onClose,
+}: {
+  action: TemplateAction;
+  onClose: () => void;
+}) {
+  const { t } = useTranslation();
+  const mutation = useTemplateMutation((_: void) =>
+    action.type === "delete"
+      ? api.delete(`/subscription-templates/${action.template.id}`)
+      : api.post(`/subscription-templates/${action.template.id}/set-default`),
+  );
+  const confirm = () =>
+    mutation.mutate(undefined, {
+      onSuccess: () => {
+        generateSuccessMessage(
+          t(
+            action.type === "delete"
+              ? "subscriptionTemplates.deleted"
+              : "subscriptionTemplates.defaultChanged",
+          ),
+        );
+        onClose();
+      },
+      onError: (error) => {
+        generateErrorMessage(error);
+      },
+    });
+  return (
+    <AlertDialogContent
+      onEscapeKeyDown={(event) => {
+        if (mutation.isPending) event.preventDefault();
+      }}
+    >
+      <AlertDialogHeader>
+        <AlertDialogTitle>
+          {t(
+            action.type === "delete"
+              ? "subscriptionTemplates.deleteTitle"
+              : "subscriptionTemplates.defaultTitle",
+            { name: action.template.name },
+          )}
+        </AlertDialogTitle>
+        <AlertDialogDescription>
+          {t(
+            action.type === "delete"
+              ? "subscriptionTemplates.deleteDescription"
+              : "subscriptionTemplates.defaultDescription",
+          )}
+        </AlertDialogDescription>
+      </AlertDialogHeader>
+      <AlertDialogFooter>
+        <AlertDialogCancel disabled={mutation.isPending}>
+          {t("cancel")}
+        </AlertDialogCancel>
+        <AlertDialogAction
+          disabled={mutation.isPending}
+          onClick={(event) => {
+            event.preventDefault();
+            confirm();
+          }}
+        >
+          {t("subscriptionTemplates.confirm")}
+        </AlertDialogAction>
+      </AlertDialogFooter>
+    </AlertDialogContent>
+  );
+}

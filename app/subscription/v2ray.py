@@ -542,21 +542,27 @@ class V2rayShareLink(str):
 
 class V2rayJsonConfig(str):
 
-    def __init__(self):
-        from app.utils.runtime_settings import get_subscription_template
+    def __new__(cls, template: str | None = None):
+        return super().__new__(cls, "")
+
+    def __init__(self, template: str | None = None):
+        from app.utils.runtime_settings import get_generator_template
+
+        from app.utils.subscription_template_defaults import default_subscription_content
 
         self.config = []
         self.balancer_configs = []
-        self.template = render_template_content(get_subscription_template("v2ray_subscription"))
-        self.mux_template = render_template_content(get_subscription_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_subscription_template("user_agent")))
+        self.template = render_template_content(
+            template if template is not None else default_subscription_content("v2ray-json"))
+        self.mux_template = render_template_content(get_generator_template("mux"))
+        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
         else:
             self.user_agent_list = []
 
-        grpc_user_agent_data = json.loads(render_template_content(get_subscription_template("grpc_user_agent")))
+        grpc_user_agent_data = json.loads(render_template_content(get_generator_template("grpc_user_agent")))
 
         if 'list' in grpc_user_agent_data and isinstance(grpc_user_agent_data['list'], list):
             self.grpc_user_agent_data = grpc_user_agent_data['list']
@@ -564,7 +570,7 @@ class V2rayJsonConfig(str):
             self.grpc_user_agent_data = []
 
         try:
-            self.settings = json.loads(render_template_content(get_subscription_template("v2ray_settings")))
+            self.settings = json.loads(render_template_content(get_generator_template("v2ray_settings")))
         except TemplateNotFound:
             self.settings = {}
 

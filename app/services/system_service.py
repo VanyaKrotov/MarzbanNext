@@ -40,6 +40,7 @@ from app.utils.xray_config_registry import (
     get_enabled_inbound_registry,
 )
 from app.xray.config import XRayConfig
+from app.db.crud.subscription_templates import TemplateBindingError
 from app.db.crud import admins as admin_crud
 from app.db.crud import node_certificates as certificate_crud
 from app.db.crud import proxy_hosts as host_crud
@@ -568,6 +569,8 @@ def create_host_v2(
     _validate_host_xhttp_settings(host, inbound)
     try:
         dbhost = host_crud.create_host_v2(db, host)
+    except TemplateBindingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return dbhost
@@ -604,6 +607,8 @@ def update_host_v2(
         raise HTTPException(status_code=404, detail="Host not found")
     try:
         dbhost = host_crud.update_host_v2(db, dbhost, host)
+    except TemplateBindingError as exc:
+        raise HTTPException(status_code=422, detail=str(exc)) from exc
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
     return dbhost

@@ -16,6 +16,7 @@ from app.models.proxy import (
 
 from app.db.crud import proxy_inbounds as inbound_crud
 
+
 def _normalize_host_group_filter(
     group_id: Optional[str] = None,
     group_ids: Optional[Sequence[str]] = None,
@@ -79,7 +80,7 @@ def get_hosts(
         return []
     query = (
         db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups))
+        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
         .filter(ProxyHost.inbound_id == inbound.id)
     )
     query = _filter_hosts_by_groups(query, group_id=group_id, group_ids=group_ids)
@@ -95,7 +96,7 @@ def get_hosts_v2(
 ) -> List[ProxyHost]:
     query = (
         db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups))
+        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
     )
     query = _filter_hosts_by_groups(query, group_id=group_id, group_ids=group_ids)
     query = _filter_hosts_by_search(query, search=search)
@@ -105,7 +106,7 @@ def get_hosts_v2(
 def get_host_v2(db: Session, host_id: int) -> Optional[ProxyHost]:
     host = (
         db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups))
+        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
         .filter(ProxyHost.id == host_id)
         .first()
     )
@@ -219,25 +220,41 @@ def _apply_host_fields(dbhost: ProxyHost, host: ProxyHostModify) -> None:
     dbhost.alpn = host.alpn
     dbhost.fingerprint = host.fingerprint
     dbhost.allowinsecure = host.allowinsecure
-    dbhost.is_disabled = host.is_disabled
-    dbhost.mux_enable = host.mux_enable
+    if host.is_disabled is not None:
+        dbhost.is_disabled = host.is_disabled
+    if host.mux_enable is not None:
+        dbhost.mux_enable = host.mux_enable
     dbhost.fragment_setting = host.fragment_setting
     dbhost.noise_setting = host.noise_setting
-    dbhost.random_user_agent = host.random_user_agent
-    dbhost.use_sni_as_host = host.use_sni_as_host
+    if host.random_user_agent is not None:
+        dbhost.random_user_agent = host.random_user_agent
+    if host.use_sni_as_host is not None:
+        dbhost.use_sni_as_host = host.use_sni_as_host
     dbhost.sc_max_buffered_posts = host.sc_max_buffered_posts
     dbhost.x_padding_obfs_mode = host.x_padding_obfs_mode
     dbhost.uplink_http_method = host.uplink_http_method
 
 
+def _prepare_template_bindings(db: Session, host: ProxyHostModify, creating: bool = False):
+    from app.db.crud import subscription_templates as template_crud
+
+    if "subscription_template_ids" in host.model_fields_set:
+        return template_crud.build_host_bindings(db, host.subscription_template_ids)
+    if not creating:
+        return None
+    return template_crud.build_default_host_bindings(db)
+
+
 def create_host_v2(db: Session, host: ProxyHostCreate) -> ProxyHost:
+    bindings = _prepare_template_bindings(db, host, creating=True)
     inbound = inbound_crud.get_inbound_or_raise(db, host.inbound_tag)
     position = host.position
     if position is None:
         position = inbound_crud.get_next_host_position(db)
-    dbhost = ProxyHost(inbound=inbound, position=position)
+    groups = _get_existing_host_groups(db, host.group_ids)
+    dbhost = ProxyHost(inbound=inbound, position=position, subscription_templates=bindings)
     _apply_host_fields(dbhost, host)
-    dbhost.groups = _get_existing_host_groups(db, host.group_ids)
+    dbhost.groups = groups
     db.add(dbhost)
     db.commit()
     db.refresh(dbhost)
@@ -247,12 +264,16 @@ def create_host_v2(db: Session, host: ProxyHostCreate) -> ProxyHost:
 def update_host_v2(
     db: Session, dbhost: ProxyHost, host: ProxyHostV2Modify
 ) -> ProxyHost:
+    bindings = _prepare_template_bindings(db, host)
     inbound = inbound_crud.get_inbound_or_raise(db, host.inbound_tag)
+    groups = _get_existing_host_groups(db, host.group_ids)
     dbhost.inbound = inbound
+    if bindings is not None:
+        dbhost.subscription_templates = bindings
     if host.position is not None:
         dbhost.position = host.position
     _apply_host_fields(dbhost, host)
-    dbhost.groups = _get_existing_host_groups(db, host.group_ids)
+    dbhost.groups = groups
     db.commit()
     db.refresh(dbhost)
     return get_host_v2(db, dbhost.id)
@@ -278,87 +299,26 @@ def reorder_hosts_v2(db: Session, host_ids: List[int]) -> List[ProxyHost]:
 
 
 def add_host(db: Session, inbound_tag: str, host: ProxyHostModify) -> List[ProxyHost]:
-    """
-    Adds a new host to a proxy inbound.
-
-    Args:
-        db (Session): Database session.
-        inbound_tag (str): The tag of the inbound.
-        host (ProxyHostModify): Host details to be added.
-
-    Returns:
-        List[ProxyHost]: Updated list of hosts for the inbound.
-    """
-    inbound = inbound_crud.get_inbound_or_raise(db, inbound_tag)
-    inbound.hosts.append(
-        ProxyHost(
-            remark=host.remark,
-            address=host.address,
-            port=host.port,
-            path=host.path,
-            sni=host.sni,
-            host=host.host,
-            inbound=inbound,
-            position=inbound_crud.get_next_host_position(db),
-            security=host.security,
-            alpn=host.alpn,
-            fingerprint=host.fingerprint,
-            allowinsecure=host.allowinsecure,
-            is_disabled=host.is_disabled,
-            mux_enable=host.mux_enable,
-            fragment_setting=host.fragment_setting,
-            noise_setting=host.noise_setting,
-            random_user_agent=host.random_user_agent,
-            use_sni_as_host=host.use_sni_as_host,
-            sc_max_buffered_posts=host.sc_max_buffered_posts,
-            x_padding_obfs_mode=host.x_padding_obfs_mode,
-            uplink_http_method=host.uplink_http_method,
-        )
-    )
-    db.commit()
-    db.refresh(inbound)
+    create_host_v2(db, ProxyHostCreate(inbound_tag=inbound_tag, **host.model_dump(exclude_unset=True)))
     return get_hosts(db, inbound_tag)
 
 
 def update_hosts(db: Session, inbound_tag: str, modified_hosts: List[ProxyHostModify]) -> List[ProxyHost]:
-    """
-    Updates hosts for a given inbound tag.
-
-    Args:
-        db (Session): Database session.
-        inbound_tag (str): The tag of the inbound.
-        modified_hosts (List[ProxyHostModify]): List of modified hosts.
-
-    Returns:
-        List[ProxyHost]: Updated list of hosts for the inbound.
-    """
     inbound = inbound_crud.get_inbound_or_raise(db, inbound_tag)
-    position = inbound_crud.get_next_host_position(db)
-    inbound.hosts = [
-        ProxyHost(
-            remark=host.remark,
-            address=host.address,
-            port=host.port,
-            path=host.path,
-            sni=host.sni,
-            host=host.host,
-            inbound=inbound,
-            position=position + index,
-            security=host.security,
-            alpn=host.alpn,
-            fingerprint=host.fingerprint,
-            allowinsecure=host.allowinsecure,
-            is_disabled=host.is_disabled,
-            mux_enable=host.mux_enable,
-            fragment_setting=host.fragment_setting,
-            noise_setting=host.noise_setting,
-            random_user_agent=host.random_user_agent,
-            use_sni_as_host=host.use_sni_as_host,
-            sc_max_buffered_posts=host.sc_max_buffered_posts,
-            x_padding_obfs_mode=host.x_padding_obfs_mode,
-            uplink_http_method=host.uplink_http_method,
-        ) for index, host in enumerate(modified_hosts)
+    existing = get_hosts(db, inbound_tag)
+    # Legacy payloads have no IDs. Preserve their positional bindings instead of recreating every host.
+    prepared = [
+        _prepare_template_bindings(db, host, creating=index >= len(existing))
+        for index, host in enumerate(modified_hosts)
     ]
+    position = inbound_crud.get_next_host_position(db)
+    for index, host in enumerate(modified_hosts):
+        dbhost = existing[index] if index < len(existing) else ProxyHost(inbound=inbound, position=position + index)
+        _apply_host_fields(dbhost, host)
+        if prepared[index] is not None:
+            dbhost.subscription_templates = prepared[index]
+        db.add(dbhost)
+    for dbhost in existing[len(modified_hosts):]:
+        db.delete(dbhost)
     db.commit()
-    db.refresh(inbound)
     return get_hosts(db, inbound_tag)

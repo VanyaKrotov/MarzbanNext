@@ -9,12 +9,17 @@ from jinja2.exceptions import TemplateNotFound
 from app.subscription.funcs import get_grpc_gun
 from app.templates import render_template_content
 from app.utils.helpers import yml_uuid_representer
+from app.models.subscription_template import SubscriptionFormat
+from app.utils.subscription_templates import parse_subscription_document, render_subscription_template
 
 
 class ClashConfiguration(object):
-    def __init__(self):
-        from app.utils.runtime_settings import get_subscription_template
+    def __init__(self, template: str | None = None):
+        from app.utils.runtime_settings import get_generator_template
 
+        from app.utils.subscription_template_defaults import default_subscription_content
+
+        self.template = template if template is not None else default_subscription_content("clash")
         self.data = {
             'proxies': [],
             'proxy-groups': [],
@@ -23,8 +28,8 @@ class ClashConfiguration(object):
         }
         self.proxy_remarks = []
         self.default_proxy_remarks = []
-        self.mux_template = render_template_content(get_subscription_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_subscription_template("user_agent")))
+        self.mux_template = render_template_content(get_generator_template("mux"))
+        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -33,7 +38,7 @@ class ClashConfiguration(object):
 
         try:
             self.settings = yaml.load(
-                render_template_content(get_subscription_template("clash_settings")),
+                render_template_content(get_generator_template("clash_settings")),
                 Loader=yaml.SafeLoader,
             )
         except TemplateNotFound:
@@ -42,20 +47,17 @@ class ClashConfiguration(object):
         del user_agent_data
 
     def render(self, reverse=False):
-        from app.utils.runtime_settings import get_subscription_template
-
         if reverse:
             self.data['proxies'].reverse()
 
         yaml.add_representer(UUID, yml_uuid_representer)
         return yaml.dump(
-            yaml.load(
-                render_template_content(
-                    get_subscription_template("clash_subscription"),
+            parse_subscription_document(
+                SubscriptionFormat.clash,
+                render_subscription_template(
+                    self.template,
                     {"conf": self.data, "proxy_remarks": self.default_proxy_remarks}
                 ),
-                Loader=yaml.SafeLoader
-
             ),
             sort_keys=False,
             allow_unicode=True,

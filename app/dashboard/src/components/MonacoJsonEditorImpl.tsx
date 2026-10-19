@@ -1,14 +1,12 @@
 import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
+import "monaco-editor/esm/vs/basic-languages/yaml/yaml.contribution.js";
 import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
 import { jsonDefaults } from "monaco-editor/esm/vs/language/json/monaco.contribution.js";
 import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import { useEffect, useState } from "react";
 
-import type {
-  MonacoJsonMarker,
-  MonacoJsonSchema,
-} from "./MonacoJsonEditor";
+import type { MonacoJsonMarker, MonacoJsonSchema } from "./MonacoJsonEditor";
 
 loader.config({ monaco });
 
@@ -55,7 +53,8 @@ const useSystemEditorTheme = () => {
 
   useEffect(() => {
     const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-    const updateTheme = () => setTheme(mediaQuery.matches ? "vs-dark" : "light");
+    const updateTheme = () =>
+      setTheme(mediaQuery.matches ? "vs-dark" : "light");
 
     mediaQuery.addEventListener("change", updateTheme);
     return () => mediaQuery.removeEventListener("change", updateTheme);

@@ -1,4 +1,5 @@
 import base64
+import json
 import random
 import secrets
 from collections import defaultdict
@@ -6,7 +7,12 @@ from datetime import datetime as dt
 from datetime import timedelta
 from typing import TYPE_CHECKING, List, Literal, Optional, Sequence, Union
 
+import yaml
+from fastapi import HTTPException
 from jdatetime import date as jd
+
+from app.models.subscription_template import SubscriptionFormat, normalize_subscription_client_type
+from app.utils.subscription_templates import parse_subscription_document, parse_subscription_links, render_subscription_template
 
 from app.models.proxy import ProxyHostSecurity
 from app.utils.system import get_public_ip, get_public_ipv6, readable_size
@@ -27,6 +33,7 @@ STATUS_EMOJIS = {
     "on_hold": "🔌",
 }
 
+
 def get_status_texts() -> dict:
     from app.utils.runtime_settings import get_runtime_settings
 
@@ -46,11 +53,12 @@ def generate_v2ray_links(
         extra_data: dict,
         reverse: bool,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> list:
     format_variables = setup_format_variables(extra_data)
     conf = V2rayShareLink()
     return process_inbounds_and_tags(
-        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound
+        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound, template_id=template_id
     )
 
 
@@ -61,15 +69,16 @@ def generate_clash_subscription(
         reverse: bool,
         is_meta: bool = False,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> str:
     if is_meta is True:
-        conf = ClashMetaConfiguration()
+        conf = ClashMetaConfiguration(template="")
     else:
-        conf = ClashConfiguration()
+        conf = ClashConfiguration(template="")
 
     format_variables = setup_format_variables(extra_data)
     return process_inbounds_and_tags(
-        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound
+        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound, template_id=template_id
     )
 
 
@@ -79,12 +88,13 @@ def generate_singbox_subscription(
         extra_data: dict,
         reverse: bool,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> str:
-    conf = SingBoxConfiguration()
+    conf = SingBoxConfiguration(template='{"outbounds": []}')
 
     format_variables = setup_format_variables(extra_data)
     return process_inbounds_and_tags(
-        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound
+        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound, template_id=template_id
     )
 
 
@@ -94,12 +104,13 @@ def generate_outline_subscription(
         extra_data: dict,
         reverse: bool,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> str:
     conf = OutlineConfiguration()
 
     format_variables = setup_format_variables(extra_data)
     return process_inbounds_and_tags(
-        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound
+        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound, template_id=template_id
     )
 
 
@@ -109,12 +120,13 @@ def generate_v2ray_json_subscription(
         extra_data: dict,
         reverse: bool,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> str:
-    conf = V2rayJsonConfig()
+    conf = V2rayJsonConfig(template='{"outbounds": []}')
 
     format_variables = setup_format_variables(extra_data)
     return process_inbounds_and_tags(
-        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound
+        inbounds, proxies, format_variables, conf=conf, reverse=reverse, hosts_by_inbound=hosts_by_inbound, template_id=template_id
     )
 
 
@@ -123,6 +135,7 @@ def generate_subscription(
         config_format: Literal["v2ray", "clash-meta", "clash", "sing-box", "outline", "v2ray-json"],
         as_base64: bool,
         reverse: bool,
+        template_id: Optional[int] = None,
 ) -> str:
     return generate_subscription_config(
         proxies=user.proxies,
@@ -131,6 +144,7 @@ def generate_subscription(
         config_format=config_format,
         as_base64=as_base64,
         reverse=reverse,
+        template_id=template_id,
     )
 
 
@@ -140,6 +154,7 @@ def generate_subscription_from_hosts(
         config_format: Literal["v2ray", "clash-meta", "clash", "sing-box", "outline", "v2ray-json"],
         as_base64: bool,
         reverse: bool,
+        template_id: Optional[int] = None,
 ) -> str:
     hosts_by_inbound = build_subscription_hosts_by_inbound(hosts)
     inbounds = filter_subscription_inbounds_by_hosts(user.inbounds, hosts_by_inbound)
@@ -151,6 +166,7 @@ def generate_subscription_from_hosts(
         as_base64=as_base64,
         reverse=reverse,
         hosts_by_inbound=hosts_by_inbound,
+        template_id=template_id,
     )
 
 
@@ -162,13 +178,16 @@ def generate_subscription_config(
         as_base64: bool,
         reverse: bool,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> str:
+    config_format = normalize_subscription_client_type(config_format)
     kwargs = {
         "proxies": proxies,
         "inbounds": inbounds,
         "extra_data": extra_data,
         "reverse": reverse,
         "hosts_by_inbound": hosts_by_inbound,
+        "template_id": template_id,
     }
 
     if config_format == "v2ray":
@@ -205,6 +224,7 @@ def build_subscription_hosts_by_inbound(hosts: Sequence) -> dict:
             {
                 "id": host.id,
                 "position": host.position,
+                "subscription_template_ids": dict(host.subscription_template_ids),
                 "remark": host.remark,
                 "address": [item.strip() for item in host.address.split(",")] if host.address else [],
                 "port": host.port,
@@ -388,11 +408,47 @@ def process_inbounds_and_tags(
         ],
         reverse=False,
         hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
+) -> Union[List, str]:
+    try:
+        return _process_inbounds_and_tags(
+            inbounds, proxies, format_variables, conf, reverse, hosts_by_inbound, template_id,
+        )
+    except (ValueError, yaml.YAMLError) as exc:
+        raise HTTPException(status_code=422, detail=f"Invalid subscription template: {exc}") from exc
+
+
+def _process_inbounds_and_tags(
+        inbounds: dict,
+        proxies: dict,
+        format_variables: dict,
+        conf: Union[
+            V2rayShareLink,
+            V2rayJsonConfig,
+            SingBoxConfiguration,
+            ClashConfiguration,
+            ClashMetaConfiguration,
+            OutlineConfiguration
+        ],
+        reverse=False,
+        hosts_by_inbound: Optional[dict] = None,
+        template_id: Optional[int] = None,
 ) -> Union[List, str]:
     from app.db import GetDB
     from app.db.crud import proxy_hosts as host_crud
     from app.utils.xray_config_registry import get_enabled_inbound_registry
 
+    if isinstance(conf, V2rayShareLink):
+        format = SubscriptionFormat.v2ray
+    elif isinstance(conf, V2rayJsonConfig):
+        format = SubscriptionFormat.v2ray_json
+    elif isinstance(conf, SingBoxConfiguration):
+        format = SubscriptionFormat.sing_box
+    elif isinstance(conf, ClashConfiguration):
+        format = SubscriptionFormat.clash
+    else:
+        format = SubscriptionFormat.outline
+    request_template_id = template_id
     with GetDB() as db:
         registry = get_enabled_inbound_registry(db)
         from app.db.crud import subscription_balancers as balancer_crud
@@ -406,6 +462,48 @@ def process_inbounds_and_tags(
             host_source = build_subscription_hosts_by_inbound(host_crud.get_hosts_v2(db))
         else:
             host_source = hosts_by_inbound
+        from app.db.models.subscription_templates import SubscriptionTemplate
+
+        allowed_tags = {
+            tag for protocol, tags in inbounds.items() if proxies.get(protocol)
+            for tag in tags if tag in registry.inbounds_by_tag
+        }
+        if isinstance(conf, OutlineConfiguration):
+            allowed_tags = {tag for tag in allowed_tags if registry.inbounds_by_tag[tag]["protocol"] == "shadowsocks"}
+        balanced_host_ids = {
+            host_id for balancer in active_balancers for host_id in balancer.host_ids
+        } if isinstance(conf, (V2rayShareLink, OutlineConfiguration)) else set()
+        host_source = {
+            tag: [host for host in hosts if format in host["subscription_template_ids"]
+                  and host["id"] not in balanced_host_ids]
+            for tag, hosts in host_source.items() if tag in allowed_tags
+        }
+        selected_ids = {
+            host["subscription_template_ids"][format]
+            for hosts in host_source.values() for host in hosts
+        }
+        if not selected_ids:
+            return [] if isinstance(conf, V2rayShareLink) else ""
+        if request_template_id is not None:
+            selected_ids.add(request_template_id)
+        templates = {
+            item.id: {"id": item.id, "format": item.format, "content": item.content}
+            for item in db.query(SubscriptionTemplate).filter(SubscriptionTemplate.id.in_(selected_ids)).all()
+        }
+        if any(item not in templates or templates[item]["format"] != format for item in selected_ids):
+            raise HTTPException(status_code=422, detail="Subscription template does not match the requested format")
+    effective_ids = {request_template_id} if request_template_id is not None else selected_ids
+    if format not in ("v2ray", "v2ray-json") and len(effective_ids) > 1:
+        raise HTTPException(
+            status_code=409,
+            detail="Hosts use different subscription templates. Select template_id or a group with one template.",
+        )
+    common_template = templates[next(iter(effective_ids))]["content"]
+    if isinstance(conf, ClashConfiguration):
+        conf.template = common_template
+    elif isinstance(conf, SingBoxConfiguration):
+        conf.config = parse_subscription_document(
+            SubscriptionFormat.sing_box, render_subscription_template(common_template))
     inbound_order = {
         tag: index for index, tag in enumerate(registry.inbounds_by_tag.keys())
     }
@@ -422,6 +520,8 @@ def process_inbounds_and_tags(
                 continue
 
             for host_index, host in enumerate(host_source.get(tag, [])):
+                if format not in host["subscription_template_ids"]:
+                    continue
                 targets.append(
                     (
                         _host_order_value(host.get("position")),
@@ -495,6 +595,10 @@ def process_inbounds_and_tags(
         endpoint_records.append(
             {
                 "host_id": host["id"],
+                "id": host["id"],
+                "port": host_inbound["port"],
+                "context": dict(format_variables),
+                "template": templates[request_template_id or host["subscription_template_ids"][format]],
                 "remark": host["remark"].format_map(format_variables),
                 "address": address.format_map(format_variables),
                 "inbound": host_inbound,
@@ -520,18 +624,38 @@ def process_inbounds_and_tags(
             if records:
                 profile_records.append((balancer, records))
 
+    def apply_profile_template(records):
+        ids = {record["template"]["id"] for record in records}
+        if len(ids) > 1:
+            raise HTTPException(status_code=409, detail="Balancer hosts must use the same Xray JSON template")
+        rendered = render_subscription_template(records[0]["template"]["content"], {
+            **records[0]["context"], "host": records[0], "remarks": records[0]["remark"],
+        })
+        parse_subscription_document(SubscriptionFormat.v2ray_json, rendered)
+        conf.template = rendered
+
     def add_endpoint(configuration, record, **kwargs):
-        return configuration.add(
+        if isinstance(configuration, V2rayJsonConfig):
+            apply_profile_template([record])
+        start = len(configuration.links) if isinstance(configuration, V2rayShareLink) else 0
+        result = configuration.add(
             remark=record["remark"],
             address=record["address"],
             inbound=record["inbound"],
             settings=record["settings"],
             **kwargs,
         )
+        if isinstance(configuration, V2rayShareLink):
+            rendered = render_subscription_template(record["template"]["content"], {
+                **record["context"], "links": configuration.links[start:], "host": record,
+            })
+            configuration.links[start:] = parse_subscription_links(rendered)
+        return result
 
     if isinstance(conf, V2rayJsonConfig):
         assigned_host_ids = set()
         for balancer, records in profile_records:
+            apply_profile_template(records)
             added = conf.add_balancer_config(
                 balancer_id=balancer.id,
                 name=balancer.name,
@@ -591,7 +715,13 @@ def process_inbounds_and_tags(
         for record in endpoint_records:
             add_endpoint(conf, record)
 
-    return conf.render(reverse=reverse)
+    if isinstance(conf, (V2rayJsonConfig, OutlineConfiguration)) and not conf.config and not getattr(conf, "balancer_configs", []):
+        return ""
+    rendered = conf.render(reverse=reverse)
+    if isinstance(conf, OutlineConfiguration):
+        rendered = render_subscription_template(common_template, {"config": json.loads(rendered)})
+        parse_subscription_document(SubscriptionFormat.outline, rendered)
+    return rendered
 
 
 def encode_title(text: str) -> str:

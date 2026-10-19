@@ -33,6 +33,7 @@ class TLS(Base):
     key = Column(String(4096), nullable=False)
     certificate = Column(String(2048), nullable=False)
 
+
 class RuntimeSettings(Base):
     __tablename__ = "runtime_settings"
 
@@ -73,15 +74,13 @@ class RuntimeSettings(Base):
     number_of_recurrent_notifications = Column(Integer, nullable=False, default=3, server_default="3")
     default_node_config = Column(JSON, nullable=False, default=default_node_config)
 
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    clash_settings = Column(Text, nullable=False, default="")
+    singbox_settings = Column(Text, nullable=False, default="")
+    v2ray_settings = Column(Text, nullable=False, default="")
+    mux = Column(Text, nullable=False, default="")
+    user_agent = Column(Text, nullable=False, default="")
+    grpc_user_agent = Column(Text, nullable=False, default="")
 
-
-class SubscriptionTemplate(Base):
-    __tablename__ = "subscription_templates"
-
-    key = Column(String(64), primary_key=True)
-    format = Column(String(16), nullable=False)
-    content = Column(Text, nullable=False)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
 
 

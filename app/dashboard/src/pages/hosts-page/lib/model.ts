@@ -29,11 +29,14 @@ export const getDefaultHost = (): Omit<HostPayload, "inbound_tag"> => ({
   x_padding_obfs_mode: null,
   uplink_http_method: null,
   group_ids: [],
+  subscription_template_ids: {},
 });
 
-export function toHostPayload(values: {
-  inboundTag: string;
-} & Omit<HostPayload, "inbound_tag">): HostPayload {
+export function toHostPayload(
+  values: {
+    inboundTag: string;
+  } & Omit<HostPayload, "inbound_tag">,
+): HostPayload {
   return {
     inbound_tag: values.inboundTag,
     remark: values.remark,
@@ -56,6 +59,7 @@ export function toHostPayload(values: {
     x_padding_obfs_mode: values.x_padding_obfs_mode ? true : null,
     uplink_http_method: values.uplink_http_method || null,
     group_ids: values.group_ids,
+    subscription_template_ids: { ...values.subscription_template_ids },
   };
 }
 
@@ -110,5 +114,6 @@ export function cloneHosts(hosts: HostsSchema): HostsSchema {
   return hosts.map((host) => ({
     ...host,
     groups: host.groups.map((group) => ({ ...group })),
+    subscription_template_ids: { ...host.subscription_template_ids },
   }));
 }

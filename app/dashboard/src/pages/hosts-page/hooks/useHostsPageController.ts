@@ -194,13 +194,16 @@ export function useHostsPageController() {
   const submitHost = (values: HostFormValues) => {
     const payload = toHostPayload(values);
     if (editingRow) {
-      persistUpdate(
-        editingRow.id,
-        updateHost(hosts, editingRow.id, payload, hostGroups),
-        values,
-        t("hostsDialog.savedSuccess"),
+      updateHostMutation.mutate(
+        { id: editingRow.id, host: payload },
+        {
+          onSuccess: () => {
+            generateSuccessMessage(t("hostsDialog.savedSuccess"));
+            setDialogOpen(false);
+          },
+          onError: (error) => generateErrorMessage(error),
+        },
       );
-      setDialogOpen(false);
       return;
     }
 
@@ -265,10 +268,7 @@ export function useHostsPageController() {
     setDropTarget(null);
   };
 
-  const dragOver = (
-    row: HostRow,
-    event: DragEvent<HTMLTableRowElement>,
-  ) => {
+  const dragOver = (row: HostRow, event: DragEvent<HTMLTableRowElement>) => {
     event.preventDefault();
     if (reorderDisabled || !draggedRow) {
       return;

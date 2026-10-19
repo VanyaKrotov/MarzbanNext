@@ -1,3 +1,5 @@
+import type { TemplateBindings } from "@/pages/subscription-templates-page/lib/query";
+
 export type HostGroupRef = {
   id: string;
   name: string;
@@ -43,6 +45,7 @@ export type HostType = {
   x_padding_obfs_mode: boolean | null;
   uplink_http_method: string | null;
   groups: HostGroupRef[];
+  subscription_template_ids: TemplateBindings;
 };
 
 export type HostPayload = Omit<

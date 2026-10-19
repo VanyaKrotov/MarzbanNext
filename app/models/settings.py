@@ -1,11 +1,9 @@
-import json
 from copy import deepcopy
 from datetime import datetime
 from typing import Any, Dict, Literal, Optional
 from urllib.parse import urlparse
 
-import yaml
-from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 
 DEFAULT_NODE_CONFIG: Dict[str, Any] = {
@@ -87,6 +85,12 @@ class RuntimeSettingsBase(BaseModel):
     recurrent_notifications_timeout: int = Field(ge=1)
     number_of_recurrent_notifications: int = Field(ge=0)
     default_node_config: Dict[str, Any] = Field(default_factory=default_node_config)
+    clash_settings: str = ""
+    singbox_settings: str = ""
+    v2ray_settings: str = ""
+    mux: str = ""
+    user_agent: str = ""
+    grpc_user_agent: str = ""
 
     @field_validator("sub_support_url")
     @classmethod
@@ -192,6 +196,12 @@ class RuntimeSettingsModify(BaseModel):
     recurrent_notifications_timeout: Optional[int] = Field(default=None, ge=1)
     number_of_recurrent_notifications: Optional[int] = Field(default=None, ge=0)
     default_node_config: Optional[Dict[str, Any]] = None
+    clash_settings: Optional[str] = None
+    singbox_settings: Optional[str] = None
+    v2ray_settings: Optional[str] = None
+    mux: Optional[str] = None
+    user_agent: Optional[str] = None
+    grpc_user_agent: Optional[str] = None
 
     _validate_optional_url = field_validator("sub_support_url")(RuntimeSettingsBase.validate_optional_url.__func__)
     _validate_update_interval = field_validator(
@@ -204,30 +214,6 @@ class RuntimeSettingsModify(BaseModel):
     _validate_webhook_addresses = field_validator(
         "webhook_addresses"
     )(RuntimeSettingsBase.validate_webhook_addresses.__func__)
-
-
-class SubscriptionTemplateBase(BaseModel):
-    key: str
-    format: Literal["json", "yaml", "text"]
-    content: str
-
-    @model_validator(mode="after")
-    def validate_content(self):
-        if "{{" in self.content or "{%" in self.content:
-            return self
-        if self.format == "json":
-            json.loads(self.content)
-        elif self.format == "yaml":
-            yaml.safe_load(self.content)
-        return self
-
-
-class SubscriptionTemplate(SubscriptionTemplateBase):
-    model_config = ConfigDict(from_attributes=True)
-
-
-class SubscriptionTemplateModify(BaseModel):
-    content: str
 
 
 SubscriptionBalancerStrategy = Literal[

@@ -235,6 +235,17 @@ class FormatVariables(dict):
 
 
 class ProxyHost(BaseModel):
+    subscription_template_ids: dict[str, int] = Field(default_factory=dict)
+
+    @field_validator("subscription_template_ids", mode="before")
+    @classmethod
+    def validate_template_bindings(cls, value):
+        from app.models.subscription_template import normalize_template_bindings
+
+        if not isinstance(value, dict):
+            raise ValueError("Template assignments must be an object")
+        return normalize_template_bindings(value)
+
     remark: str
     address: str
     port: Optional[int] = Field(None, nullable=True)

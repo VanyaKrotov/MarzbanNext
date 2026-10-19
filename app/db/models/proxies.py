@@ -60,6 +60,7 @@ class ProxyOutbound(Base):
         "Node", secondary=node_outbounds_association, back_populates="outbounds"
     )
 
+
 class ProxyHost(Base):
     __tablename__ = "hosts"
     # __table_args__ = (
@@ -112,6 +113,14 @@ class ProxyHost(Base):
     sc_max_buffered_posts = Column(Integer, nullable=True)
     x_padding_obfs_mode = Column(Boolean, nullable=True)
     uplink_http_method = Column(String(32), nullable=True)
+
+    subscription_templates = relationship(
+        "HostSubscriptionTemplate", back_populates="host", cascade="all, delete-orphan"
+    )
+
+    @property
+    def subscription_template_ids(self) -> dict[str, int]:
+        return {binding.format: binding.template_id for binding in self.subscription_templates}
 
     @property
     def inbound_tag(self):

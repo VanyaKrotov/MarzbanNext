@@ -12,6 +12,7 @@ from app.db.models.users import User
 from app.models.proxy import InboundCreate, InboundModify, ProxyTypes
 from config import XRAY_EXCLUDE_INBOUND_TAGS
 
+
 def add_default_host(db: Session, inbound: ProxyInbound):
     """
     Adds a default host to a proxy inbound.
@@ -26,6 +27,9 @@ def add_default_host(db: Session, inbound: ProxyInbound):
         inbound=inbound,
         position=get_next_host_position(db),
     )
+    from app.db.crud.subscription_templates import build_default_host_bindings
+
+    host.subscription_templates = build_default_host_bindings(db)
     db.add(host)
     db.commit()
 

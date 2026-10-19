@@ -1,32 +1,23 @@
 from functools import lru_cache
-from typing import Iterable
 
-from jinja2.exceptions import TemplateNotFound
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from app.db import GetDB
 from app.db.models.settings import RuntimeSettings as DBRuntimeSettings
-from app.db.models.settings import SubscriptionTemplate as DBSubscriptionTemplate
 from app.models.settings import (
     RuntimeSettings,
     RuntimeSettingsModify,
     RuntimeSettingsResponse,
-    SubscriptionTemplate,
     default_node_config,
 )
-from app.templates import env
 from config import (
     ACTIVE_STATUS_TEXT,
-    CLASH_SETTINGS_TEMPLATE,
-    CLASH_SUBSCRIPTION_TEMPLATE,
     DISABLED_STATUS_TEXT,
     EXPIRED_STATUS_TEXT,
     EXTERNAL_CONFIG,
-    GRPC_USER_AGENT_TEMPLATE,
     LIMITED_STATUS_TEXT,
     LOGIN_NOTIFY_WHITE_LIST,
-    MUX_TEMPLATE,
     NOTIFY_DAYS_LEFT,
     NOTIFY_IF_DATA_USAGE_PERCENT_REACHED,
     NOTIFY_IF_DAYS_LEFT_REACHED,
@@ -41,41 +32,21 @@ from config import (
     NUMBER_OF_RECURRENT_NOTIFICATIONS,
     ONHOLD_STATUS_TEXT,
     RECURRENT_NOTIFICATIONS_TIMEOUT,
-    SINGBOX_SETTINGS_TEMPLATE,
-    SINGBOX_SUBSCRIPTION_TEMPLATE,
     SUB_PROFILE_TITLE,
     SUB_SUPPORT_URL,
     SUB_UPDATE_INTERVAL,
-    USER_AGENT_TEMPLATE,
     USE_CUSTOM_JSON_DEFAULT,
     USE_CUSTOM_JSON_FOR_HAPP,
     USE_CUSTOM_JSON_FOR_STREISAND,
     USE_CUSTOM_JSON_FOR_V2RAYN,
     USE_CUSTOM_JSON_FOR_V2RAYNG,
-    V2RAY_SETTINGS_TEMPLATE,
-    V2RAY_SUBSCRIPTION_TEMPLATE,
     WEBHOOK_ADDRESS,
     WEBHOOK_SECRET,
 )
 
 
-SUBSCRIPTION_TEMPLATE_DEFAULTS = {
-    "clash_subscription": ("yaml", CLASH_SUBSCRIPTION_TEMPLATE),
-    "clash_settings": ("yaml", CLASH_SETTINGS_TEMPLATE),
-    "singbox_subscription": ("json", SINGBOX_SUBSCRIPTION_TEMPLATE),
-    "singbox_settings": ("json", SINGBOX_SETTINGS_TEMPLATE),
-    "v2ray_subscription": ("json", V2RAY_SUBSCRIPTION_TEMPLATE),
-    "v2ray_settings": ("json", V2RAY_SETTINGS_TEMPLATE),
-    "mux": ("json", MUX_TEMPLATE),
-    "user_agent": ("json", USER_AGENT_TEMPLATE),
-    "grpc_user_agent": ("json", GRPC_USER_AGENT_TEMPLATE),
-}
-
-
 def clear_runtime_settings_cache() -> None:
     get_runtime_settings.cache_clear()
-    get_subscription_templates.cache_clear()
-    get_subscription_template.cache_clear()
 
 
 def build_default_runtime_settings() -> RuntimeSettings:
@@ -111,6 +82,7 @@ def build_default_runtime_settings() -> RuntimeSettings:
         recurrent_notifications_timeout=RECURRENT_NOTIFICATIONS_TIMEOUT,
         number_of_recurrent_notifications=NUMBER_OF_RECURRENT_NOTIFICATIONS,
         default_node_config=default_node_config(),
+        **build_default_generator_templates(),
     )
 
 
@@ -165,72 +137,15 @@ def update_runtime_settings(db: Session, payload: RuntimeSettingsModify) -> Runt
     return RuntimeSettings.model_validate(db_settings)
 
 
-def default_subscription_template_content(template_name: str) -> str:
-    source, _, _ = env.loader.get_source(env, template_name)
-    return source
+def build_default_generator_templates() -> dict[str, str]:
+    from app.utils.subscription_template_defaults import GENERATOR_TEMPLATE_SOURCES, read_template_source
+
+    return {key: read_template_source(name) for key, name in GENERATOR_TEMPLATE_SOURCES.items()}
 
 
-def build_default_subscription_templates() -> list[SubscriptionTemplate]:
-    templates = []
-    for key, (template_format, template_name) in SUBSCRIPTION_TEMPLATE_DEFAULTS.items():
-        try:
-            content = default_subscription_template_content(template_name)
-        except TemplateNotFound:
-            content = "{}" if template_format == "json" else ""
-        templates.append(SubscriptionTemplate(key=key, format=template_format, content=content))
-    return templates
+def get_generator_template(key: str) -> str:
+    from app.utils.subscription_template_defaults import GENERATOR_TEMPLATE_SOURCES
 
-
-def ensure_subscription_templates(db: Session) -> None:
-    existing = {item.key for item in db.query(DBSubscriptionTemplate.key).all()}
-    for template in build_default_subscription_templates():
-        if template.key in existing:
-            continue
-        db.add(DBSubscriptionTemplate(**template.model_dump()))
-    db.commit()
-
-
-@lru_cache(maxsize=1)
-def get_subscription_templates() -> tuple[SubscriptionTemplate, ...]:
-    try:
-        with GetDB() as db:
-            ensure_subscription_templates(db)
-            templates = db.query(DBSubscriptionTemplate).order_by(DBSubscriptionTemplate.key).all()
-            return tuple(SubscriptionTemplate.model_validate(template) for template in templates)
-    except SQLAlchemyError:
-        return tuple(build_default_subscription_templates())
-
-
-@lru_cache(maxsize=None)
-def get_subscription_template(key: str) -> str:
-    for template in get_subscription_templates():
-        if template.key == key:
-            return template.content
-    template_format, template_name = SUBSCRIPTION_TEMPLATE_DEFAULTS[key]
-    del template_format
-    return default_subscription_template_content(template_name)
-
-
-def update_subscription_template(db: Session, key: str, content: str) -> SubscriptionTemplate:
-    if key not in SUBSCRIPTION_TEMPLATE_DEFAULTS:
+    if key not in GENERATOR_TEMPLATE_SOURCES:
         raise KeyError(key)
-    template_format, _ = SUBSCRIPTION_TEMPLATE_DEFAULTS[key]
-    validated = SubscriptionTemplate(key=key, format=template_format, content=content)
-    db_template = db.get(DBSubscriptionTemplate, key)
-    if db_template:
-        db_template.content = validated.content
-        db_template.format = validated.format
-    else:
-        db_template = DBSubscriptionTemplate(**validated.model_dump())
-        db.add(db_template)
-    db.commit()
-    db.refresh(db_template)
-    clear_runtime_settings_cache()
-    return SubscriptionTemplate.model_validate(db_template)
-
-
-def get_subscription_template_map(keys: Iterable[str] | None = None) -> dict[str, SubscriptionTemplate]:
-    templates = {template.key: template for template in get_subscription_templates()}
-    if keys is None:
-        return templates
-    return {key: templates[key] for key in keys if key in templates}
+    return getattr(get_runtime_settings(), key)

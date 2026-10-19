@@ -1,7 +1,7 @@
 
 from fastapi import APIRouter
 
-from app.models.settings import RuntimeSettingsResponse, SubscriptionBalancerResponse, SubscriptionTemplate
+from app.models.settings import RuntimeSettingsResponse, SubscriptionBalancerResponse
 from app.utils import responses
 from app.services import settings_service as service
 
@@ -9,19 +9,8 @@ router = APIRouter(tags=["Settings"], prefix="/api", responses={401: responses._
 
 router.get("/settings", response_model=RuntimeSettingsResponse, responses={403: responses._403})(service.get_settings)
 
-router.patch("/settings", response_model=RuntimeSettingsResponse, responses={403: responses._403})(service.modify_settings)
-
-router.get(
-    "/settings/subscription-templates",
-    response_model=list[SubscriptionTemplate],
-    responses={403: responses._403},
-)(service.get_settings_subscription_templates)
-
-router.patch(
-    "/settings/subscription-templates/{template_key}",
-    response_model=SubscriptionTemplate,
-    responses={403: responses._403, 404: responses._404},
-)(service.modify_settings_subscription_template)
+router.patch("/settings", response_model=RuntimeSettingsResponse,
+             responses={403: responses._403})(service.modify_settings)
 
 router.get(
     "/settings/subscription-balancers",
