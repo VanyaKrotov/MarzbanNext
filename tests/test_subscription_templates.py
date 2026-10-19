@@ -151,6 +151,42 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(self.client.delete(f'/api/subscription-templates/{default_id}').status_code, 409)
         self.assertEqual(self.client.delete(f'/api/subscription-templates/{template_id}').status_code, 204)
 
+    def test_rename_defaults_preserves_bindings_and_generation(self):
+        host = self.create_host()
+        links = self.generate('v2ray')
+        for format, template_id in self.defaults.items():
+            with self.subTest(format=format):
+                content = self.db.get(SubscriptionTemplate, template_id).content
+                response = self.client.patch(f'/api/subscription-templates/{template_id}', json={
+                    'name': f'  Main {format}  ',
+                })
+                self.assertEqual(response.status_code, 200, response.text)
+                self.assertEqual(response.json()['id'], template_id)
+                self.assertEqual(response.json()['name'], f'Main {format}')
+                self.assertTrue(response.json()['is_default'])
+                self.assertEqual(response.json()['content'], content)
+                self.assertTrue(self.generate(format))
+        self.assertEqual(host.subscription_template_ids, self.defaults)
+        self.assertEqual(self.generate('v2ray'), links)
+        self.assertEqual(self.create_host('Second').subscription_template_ids, self.defaults)
+        template_crud.seed_defaults(self.db)
+        self.assertEqual(self.db.query(SubscriptionTemplate).count(), 5)
+        self.assertEqual(template_crud.get_default_bindings(self.db), self.defaults)
+
+    def test_default_rename_retains_validation_and_protection(self):
+        template_id = self.defaults['clash']
+        self.create_template('clash', name='Custom')
+        response = self.client.patch(f'/api/subscription-templates/{template_id}', json={'name': 'CUSTOM'})
+        self.assertEqual(response.status_code, 409)
+        for name in ('', '   ', None, 'x' * 129):
+            response = self.client.patch(f'/api/subscription-templates/{template_id}', json={'name': name})
+            self.assertEqual(response.status_code, 422, response.text)
+        self.assertEqual(self.client.patch(f'/api/subscription-templates/{template_id}', json={
+            'name': 'Renamed', 'format': 'outline',
+        }).status_code, 409)
+        self.assertEqual(self.client.delete(f'/api/subscription-templates/{template_id}').status_code, 409)
+        self.assertEqual(self.db.get(SubscriptionTemplate, template_id).name, 'default')
+
     def test_api_validation_and_authorization(self):
         for content in ('not json', '[]', '{"outbounds": {}}', '{"outbounds": [1]}', '{{ missing }}', '{{ now() | tojson }}', '{{ 1 / 0 }}'):
             response = self.client.post('/api/subscription-templates', json={

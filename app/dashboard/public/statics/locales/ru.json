@@ -774,7 +774,7 @@
   "navigation.subscriptionTemplates": "Шаблоны подписок",
   "subscriptionTemplates.deleted": "Шаблон удалён",
   "subscriptionTemplates.defaultChanged": "Шаблон по умолчанию изменён",
-  "subscriptionTemplates.defaultLocked": "У шаблона по умолчанию можно менять только конфигурацию.",
+  "subscriptionTemplates.defaultLocked": "Формат шаблона по умолчанию изменить нельзя.",
   "usersTable.clearSearch": "Очистить поиск",
   "usersTable.refresh": "Обновить",
   "common.close": "Закрыть",

@@ -83,8 +83,6 @@ def update_template(
     if format != template.format and (template.is_default or crud.is_used(db, template_id)):
         raise HTTPException(status_code=409, detail="Cannot change the format of a default or assigned template")
     name = updates.get("name", template.name)
-    if template.is_default and name != template.name:
-        raise HTTPException(status_code=409, detail="Default template names cannot be changed")
     if crud.name_exists(db, format, name, template_id):
         raise HTTPException(status_code=409, detail="Template name already exists for this format")
     _validate(SubscriptionFormat(format), updates.get("content", template.content))

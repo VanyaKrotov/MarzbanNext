@@ -772,7 +772,7 @@
   "navigation.subscriptionTemplates": "Subscription templates",
   "subscriptionTemplates.deleted": "Template deleted",
   "subscriptionTemplates.defaultChanged": "Default template updated",
-  "subscriptionTemplates.defaultLocked": "Only the configuration of a default template can be edited.",
+  "subscriptionTemplates.defaultLocked": "The format of a default template cannot be changed.",
   "usersTable.clearSearch": "Clear search",
   "usersTable.refresh": "Refresh",
   "common.close": "Close",

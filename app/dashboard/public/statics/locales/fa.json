@@ -773,7 +773,7 @@
   "navigation.subscriptionTemplates": "قالب‌های اشتراک",
   "subscriptionTemplates.deleted": "قالب حذف شد",
   "subscriptionTemplates.defaultChanged": "قالب پیش‌فرض تغییر کرد",
-  "subscriptionTemplates.defaultLocked": "در قالب پیش‌فرض فقط پیکربندی قابل ویرایش است.",
+  "subscriptionTemplates.defaultLocked": "فرمت قالب پیش‌فرض قابل تغییر نیست.",
   "usersTable.clearSearch": "پاک کردن جستجو",
   "usersTable.refresh": "بازخوانی",
   "common.close": "بستن",

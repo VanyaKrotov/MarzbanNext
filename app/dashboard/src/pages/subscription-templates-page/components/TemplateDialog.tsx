@@ -255,7 +255,6 @@ function TemplateForm({
             <Input
               id="template-name"
               {...form.register("name")}
-              readOnly={editing && template?.is_default}
             />
             <FieldError errors={[form.formState.errors.name]} />
           </Field>
