@@ -17,7 +17,6 @@ import { BasicFields } from "./components/BasicFields";
 import { HostDialogHeader } from "./components/DialogHeader";
 import { FormActions } from "./components/FormActions";
 import { GroupsField } from "./components/GroupsField";
-import { SubscriptionTemplatesField } from "./components/SubscriptionTemplatesField";
 import {
   getHostFormValues,
   hostFormSchema,
@@ -136,9 +135,8 @@ function HostForm({
   return (
     <form className="space-y-4" onSubmit={form.handleSubmit(onSubmit)}>
       <FormProvider {...form}>
-        <BasicFields inbounds={inbounds} pending={pending} />
+        <BasicFields inbounds={inbounds} pending={pending} templates={templates} />
         <GroupsField groups={hostGroups} pending={pending} />
-        <SubscriptionTemplatesField templates={templates} pending={pending} />
         <AdvancedFields pending={pending} inbounds={inbounds} />
         <FormActions isEditing={Boolean(host)} pending={pending} />
       </FormProvider>

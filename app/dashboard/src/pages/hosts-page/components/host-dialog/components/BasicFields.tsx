@@ -14,13 +14,14 @@ import {
 } from "@/components/ui/select";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useComboboxAnchor } from "@/components/ui/combobox";
+import type { SubscriptionTemplate } from "@/pages/subscription-templates-page/lib/query";
 import type { InboundType } from "types/Inbound";
 
 import type { HostFormValues } from "../lib/form";
 import { HostTextField } from "./FormFields";
 import { InfoTooltip } from "./InfoTooltip";
 import { VariablesPopover } from "./VariablesPopover";
+import { SubscriptionTemplatesPopover } from "./SubscriptionTemplatesPopover";
 
 type InboundGroup = {
   key: string;
@@ -65,13 +66,14 @@ function groupInboundsByNodes(
 export function BasicFields({
   inbounds,
   pending,
+  templates,
 }: {
   inbounds: InboundType[];
   pending: boolean;
+  templates: SubscriptionTemplate[];
 }) {
   const { t } = useTranslation();
   const form = useFormContext<HostFormValues>();
-  const inboundComboboxAnchor = useComboboxAnchor();
   const inboundGroups = groupInboundsByNodes(
     inbounds,
     t("hostsPage.unassignedNodes"),
@@ -86,38 +88,41 @@ export function BasicFields({
     <>
       <Field>
         <FieldLabel htmlFor="host-inbound">{t("hostsPage.inbound")}</FieldLabel>
-        <Controller
-          control={form.control}
-          name="inboundTag"
-          render={({ field }) => (
-            <Select
-              value={field.value}
-              disabled={pending}
-              onValueChange={(inbound) => {
-                field.onChange(inbound, {
-                  shouldDirty: true,
-                  shouldValidate: true,
-                });
-              }}
-            >
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {inboundGroups.map(({ inbounds, key, label }) => (
-                  <SelectGroup key={key}>
-                    <SelectLabel>{label}</SelectLabel>
-                    {inbounds.map((inbound) => (
-                      <SelectItem key={inbound.tag} value={inbound.tag}>
-                        {getInboundLabel(inbound)}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
-          )}
-        />
+        <div className="flex items-center gap-2">
+          <Controller
+            control={form.control}
+            name="inboundTag"
+            render={({ field }) => (
+              <Select
+                value={field.value}
+                disabled={pending}
+                onValueChange={(inbound) => {
+                  field.onChange(inbound, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              >
+                <SelectTrigger id="host-inbound" className="min-w-0 flex-1">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {inboundGroups.map(({ inbounds, key, label }) => (
+                    <SelectGroup key={key}>
+                      <SelectLabel>{label}</SelectLabel>
+                      {inbounds.map((inbound) => (
+                        <SelectItem key={inbound.tag} value={inbound.tag}>
+                          {getInboundLabel(inbound)}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          />
+          <SubscriptionTemplatesPopover templates={templates} pending={pending} />
+        </div>
       </Field>
 
       <Field data-invalid={Boolean(form.formState.errors.remark)}>

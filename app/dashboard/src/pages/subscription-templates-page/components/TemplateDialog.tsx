@@ -29,6 +29,7 @@ import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
   SelectTrigger,
   SelectValue,
@@ -40,6 +41,7 @@ import {
   generateSuccessMessage,
 } from "@/utils/toastHandler";
 
+import { initialTemplateContent } from "../lib/content";
 import {
   formatLabelKeys,
   subscriptionFormats,
@@ -47,6 +49,7 @@ import {
   useTemplateQuery,
   type SubscriptionTemplate,
   type TemplateDocument,
+  type SubscriptionFormat,
 } from "../lib/query";
 
 const schema = z.object({
@@ -58,12 +61,10 @@ type Values = z.infer<typeof schema>;
 
 export function TemplateDialog({
   template,
-  duplicate,
   open,
   onOpenChange,
 }: {
   template: SubscriptionTemplate | null;
-  duplicate: boolean;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
@@ -89,10 +90,12 @@ export function TemplateDialog({
         open={open}
         onOpenChange={(next) => (next ? onOpenChange(true) : requestClose())}
       >
-        <DialogContent className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-4xl">
+        <DialogContent
+          aria-describedby={undefined}
+          className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-4xl"
+        >
           <TemplateLoader
             template={template}
-            duplicate={duplicate}
             onSaved={() => onOpenChange(false)}
             onDiscard={requestClose}
             onStatus={onStatus}
@@ -142,13 +145,11 @@ function DiscardDialog({
 
 function TemplateLoader({
   template,
-  duplicate,
   onSaved,
   onDiscard,
   onStatus,
 }: {
   template: SubscriptionTemplate | null;
-  duplicate: boolean;
   onSaved: () => void;
   onDiscard: () => void;
   onStatus: (dirty: boolean, pending: boolean) => void;
@@ -161,9 +162,6 @@ function TemplateLoader({
         <DialogTitle className="sr-only">
           {t("subscriptionTemplates.editTitle")}
         </DialogTitle>
-        <DialogDescription className="sr-only">
-          {t("subscriptionTemplates.editorDescription")}
-        </DialogDescription>
         <Skeleton className="h-96" />
       </>
     );
@@ -178,9 +176,8 @@ function TemplateLoader({
     );
   return (
     <TemplateForm
-      key={`${template?.id ?? "new"}-${duplicate}`}
+      key={template?.id ?? "new"}
       template={query.data}
-      duplicate={duplicate}
       onSaved={onSaved}
       onDiscard={onDiscard}
       onStatus={onStatus}
@@ -190,29 +187,23 @@ function TemplateLoader({
 
 function TemplateForm({
   template,
-  duplicate,
   onSaved,
   onDiscard,
   onStatus,
 }: {
   template?: TemplateDocument;
-  duplicate: boolean;
   onSaved: () => void;
   onDiscard: () => void;
   onStatus: (dirty: boolean, pending: boolean) => void;
 }) {
   const { t } = useTranslation();
-  const editing = Boolean(template && !duplicate);
+  const editing = Boolean(template);
   const form = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: {
-      name: template
-        ? duplicate
-          ? `${template.name} ${t("subscriptionTemplates.copySuffix")}`
-          : template.name
-        : "",
+      name: template?.name ?? "",
       format: template?.format ?? "v2ray-json",
-      content: template?.content ?? '{\n  "outbounds": []\n}',
+      content: template?.content ?? initialTemplateContent["v2ray-json"],
     },
   });
   const mutation = useTemplateMutation((values: Values) =>
@@ -254,12 +245,9 @@ function TemplateForm({
               : "subscriptionTemplates.createTitle",
           )}
         </DialogTitle>
-        <DialogDescription>
-          {t("subscriptionTemplates.editorDescription")}
-        </DialogDescription>
       </DialogHeader>
       <form className="space-y-4" onSubmit={submit}>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Field>
             <FieldLabel htmlFor="template-name">
               {t("subscriptionTemplates.name")}
@@ -281,18 +269,31 @@ function TemplateForm({
               render={({ field }) => (
                 <Select
                   value={field.value}
-                  onValueChange={field.onChange}
+                  onValueChange={(value) => {
+                    if (value === field.value) return;
+                    field.onChange(value);
+                    if (!editing) {
+                      form.setValue(
+                        "content",
+                        initialTemplateContent[value as SubscriptionFormat],
+                        { shouldDirty: true, shouldValidate: true },
+                      );
+                      form.clearErrors("root");
+                    }
+                  }}
                   disabled={editing && template?.is_default}
                 >
                   <SelectTrigger id="template-format" className="w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {subscriptionFormats.map((value) => (
-                      <SelectItem key={value} value={value}>
-                        {t(formatLabelKeys[value])}
-                      </SelectItem>
-                    ))}
+                    <SelectGroup>
+                      {subscriptionFormats.map((value) => (
+                        <SelectItem key={value} value={value}>
+                          {t(formatLabelKeys[value])}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
                   </SelectContent>
                 </Select>
               )}

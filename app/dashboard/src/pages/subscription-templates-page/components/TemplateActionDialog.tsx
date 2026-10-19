@@ -1,3 +1,4 @@
+import { Trash2 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -8,6 +9,7 @@ import {
   AlertDialogDescription,
   AlertDialogFooter,
   AlertDialogHeader,
+  AlertDialogMedia,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { api } from "@/service/http";
@@ -78,6 +80,11 @@ function TemplateActionContent({
       }}
     >
       <AlertDialogHeader>
+        {action.type === "delete" && (
+          <AlertDialogMedia className="bg-destructive/10 text-destructive">
+            <Trash2 />
+          </AlertDialogMedia>
+        )}
         <AlertDialogTitle>
           {t(
             action.type === "delete"
@@ -99,6 +106,7 @@ function TemplateActionContent({
           {t("cancel")}
         </AlertDialogCancel>
         <AlertDialogAction
+          variant={action.type === "delete" ? "destructive" : "default"}
           disabled={mutation.isPending}
           onClick={(event) => {
             event.preventDefault();

@@ -50,5 +50,6 @@ Before implementing a change, read the `SKILL.md` files relevant to the task. Us
 - Project-specific conventions take precedence over general skill recommendations. Preserve the existing React 18, TypeScript, Vite, Tailwind, shadcn, Zustand, TanStack Query, react-hook-form, Zod, i18next, and shared Axios architecture.
 - Apply React guidance that fits this application. Next.js, server component, and SSR examples do not justify changing the framework or introducing unsupported APIs.
 - Reuse existing components and design tokens. Add missing shadcn primitives through the project's `npm.cmd run ui:add -- <component...>` wrapper from `app/dashboard`.
+- Wrap every `SelectItem` in a `SelectGroup` inside `SelectContent`, including options rendered through arrays or conditional branches.
 - When using `web-design-guidelines` for a review, fetch the current guidelines from the source specified in that skill and review the files relevant to the task.
 - Keep design and performance changes within the requested scope. Use the verification steps in the applicable project skill.

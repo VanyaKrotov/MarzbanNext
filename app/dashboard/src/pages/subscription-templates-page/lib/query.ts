@@ -35,7 +35,7 @@ export const subscriptionTemplatesQueryKey = [
   "subscription-templates",
 ] as const;
 
-export function useTemplatesQuery(format = "", search = "", offset = 0) {
+export function useTemplatesQuery(format = "", search = "", offset = 0, limit = 50) {
   return useQuery({
     queryKey: [
       ...subscriptionTemplatesQueryKey,
@@ -43,6 +43,7 @@ export function useTemplatesQuery(format = "", search = "", offset = 0) {
       format,
       search,
       offset,
+      limit,
     ],
     queryFn: ({ signal }) =>
       api.get<TemplateList>("/subscription-templates", {
@@ -51,7 +52,7 @@ export function useTemplatesQuery(format = "", search = "", offset = 0) {
           format: format || undefined,
           search: search || undefined,
           offset,
-          limit: 50,
+          limit,
         },
       }),
   });
