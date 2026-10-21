@@ -862,8 +862,6 @@
   "hostEditor.moveUp": "Переместить выше",
   "hostEditor.moveDown": "Переместить ниже",
   "hostEditor.links": "Связи",
-  "hostEditor.memberOf": "Составных профилей: {{count}}",
-  "hostEditor.singleVisibility": "Отдельное подключение",
   "hostEditor.strategies.least_ping": "Минимальная задержка",
   "hostEditor.strategies.least_load": "Минимальная нагрузка",
   "hostEditor.strategies.random": "Случайный выбор",

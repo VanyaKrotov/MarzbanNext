@@ -861,8 +861,6 @@
   "hostEditor.moveUp": "انتقال به بالا",
   "hostEditor.moveDown": "انتقال به پایین",
   "hostEditor.links": "ارتباط‌ها",
-  "hostEditor.memberOf": "در {{count}} نمایه استفاده می‌شود",
-  "hostEditor.singleVisibility": "اتصال جداگانه",
   "hostEditor.strategies.least_ping": "کمترین تأخیر",
   "hostEditor.strategies.least_load": "کمترین بار",
   "hostEditor.strategies.random": "تصادفی",

@@ -15,8 +15,6 @@ import {
 } from "@/components/ui/table";
 
 import { DeleteHostButton } from "./DeleteHostButton";
-import { HostCompositionSummary } from "./HostCompositionSummary";
-import type { HostType } from "../types";
 import { HostGroupBadges } from "./HostGroupBadges";
 
 import type { HostRow } from "../lib/model";
@@ -28,7 +26,6 @@ type DropTarget = {
 
 type HostsTableProps = {
   rows: HostRow[];
-  hostsById: ReadonlyMap<number, HostType>;
   pending: boolean;
   reorderDisabled: boolean;
   dropTarget: DropTarget;
@@ -44,7 +41,6 @@ type HostsTableProps = {
 
 export function HostsTable({
   rows,
-  hostsById,
   pending,
   reorderDisabled,
   dropTarget,
@@ -70,7 +66,6 @@ export function HostsTable({
             <TableHead>{t("hostsPage.enabled")}</TableHead>
             <TableHead>{t("hostsPage.inbound")}</TableHead>
             <TableHead>{t("hostsPage.groups")}</TableHead>
-            <TableHead>{t("hostEditor.singleVisibility")}</TableHead>
             <TableHead className="w-28" />
           </TableRow>
         </TableHeader>
@@ -111,11 +106,6 @@ export function HostsTable({
                 >
                   {row.remark}
                 </Button>
-                <HostCompositionSummary
-                  host={row}
-                  hostsById={hostsById}
-                  onEdit={onEdit}
-                />
               </TableCell>
               <TableCell className="font-mono text-xs">
                 {row.address}:{row.port ?? row.inbound_port}
@@ -137,13 +127,6 @@ export function HostsTable({
               </TableCell>
               <TableCell>
                 <HostGroupBadges groups={row.groups} />
-              </TableCell>
-              <TableCell>
-                {t(
-                  row.show_when_composed
-                    ? "hostsDialog.enabled"
-                    : "hostsDialog.disabled",
-                )}
               </TableCell>
               <TableCell onClick={(event) => event.stopPropagation()}>
                 <div className="flex justify-end gap-1">

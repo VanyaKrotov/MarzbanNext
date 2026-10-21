@@ -71,7 +71,6 @@ export function HostsPage() {
         <>
           <HostsTable
             rows={controller.rows}
-            hostsById={controller.hostsById}
             pending={controller.pending}
             reorderDisabled={controller.reorderDisabled}
             dropTarget={controller.dropTarget}
@@ -86,7 +85,6 @@ export function HostsPage() {
           />
           <HostsCards
             rows={controller.rows}
-            hostsById={controller.hostsById}
             pending={controller.pending}
             onEdit={controller.openEdit}
             onDuplicate={controller.duplicate}

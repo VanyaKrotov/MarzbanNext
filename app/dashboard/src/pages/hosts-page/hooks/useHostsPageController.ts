@@ -1,6 +1,6 @@
 import { useHostsFilters } from "./useHostsFilters";
 import { useHostReordering } from "./useHostReordering";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 import {
@@ -43,11 +43,6 @@ export function useHostsPageController() {
   } = useHostsQuery(selectedGroupIds, filterSearch);
   const createHost = useCreateHostMutation();
   const cloneHost = useCloneHostMutation();
-  const { data: allHosts = [] } = useHostsQuery();
-  const hostsById = useMemo(
-    () => new Map(allHosts.map((host) => [host.id, host])),
-    [allHosts],
-  );
   const updateHostMutation = useUpdateHostMutation();
   const deleteHost = useDeleteHostMutation();
   const reorderHosts = useReorderHostsMutation();
@@ -160,7 +155,6 @@ export function useHostsPageController() {
     editingRow,
     hasLoadedHosts: Boolean(hostsData),
     hostGroups,
-    hostsById,
     isError,
     isFetching,
     isLoading,

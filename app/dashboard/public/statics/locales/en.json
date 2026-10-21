@@ -860,8 +860,6 @@
   "hostEditor.moveUp": "Move up",
   "hostEditor.moveDown": "Move down",
   "hostEditor.links": "Links",
-  "hostEditor.memberOf": "Used in {{count}} profiles",
-  "hostEditor.singleVisibility": "Separate connection",
   "hostEditor.strategies.least_ping": "Lowest latency",
   "hostEditor.strategies.least_load": "Least load",
   "hostEditor.strategies.random": "Random",

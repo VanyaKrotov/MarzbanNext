@@ -6,15 +6,12 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 import { DeleteHostButton } from "./DeleteHostButton";
-import { HostCompositionSummary } from "./HostCompositionSummary";
-import type { HostType } from "../types";
 import { HostGroupBadges } from "./HostGroupBadges";
 
 import type { HostRow } from "../lib/model";
 
 type HostsCardsProps = {
   rows: HostRow[];
-  hostsById: ReadonlyMap<number, HostType>;
   pending: boolean;
   onEdit: (row: HostRow) => void;
   onDuplicate: (row: HostRow) => void;
@@ -24,7 +21,6 @@ type HostsCardsProps = {
 
 export function HostsCards({
   rows,
-  hostsById,
   pending,
   onEdit,
   onDuplicate,
@@ -54,11 +50,6 @@ export function HostsCards({
               >
                 {row.remark}
               </Button>
-              <HostCompositionSummary
-                host={row}
-                hostsById={hostsById}
-                onEdit={onEdit}
-              />
               <p className="font-mono text-xs text-muted-foreground">
                 {row.address}:{row.port ?? row.inbound_port}
               </p>

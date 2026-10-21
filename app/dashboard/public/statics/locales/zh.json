@@ -860,8 +860,6 @@
   "hostEditor.moveUp": "上移",
   "hostEditor.moveDown": "下移",
   "hostEditor.links": "关联",
-  "hostEditor.memberOf": "用于 {{count}} 个配置",
-  "hostEditor.singleVisibility": "单独连接",
   "hostEditor.strategies.least_ping": "最低延迟",
   "hostEditor.strategies.least_load": "最低负载",
   "hostEditor.strategies.random": "随机",
