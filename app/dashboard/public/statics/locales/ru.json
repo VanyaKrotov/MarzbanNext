@@ -883,5 +883,6 @@
   "hostEditor.baselines_ms": "Базовые RTT (мс, JSON-массив)",
   "hostEditor.costs": "Стоимость подключений (JSON-массив)",
   "hostEditor.muxOptions": "Параметры MUX",
+  "hostEditor.noAlpnResults": "Протоколы не найдены",
   "hostEditor.defaultValue": "По умолчанию"
 }

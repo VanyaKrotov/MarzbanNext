@@ -881,5 +881,6 @@
   "hostEditor.baselines_ms": "RTT 基准（毫秒，JSON 数组）",
   "hostEditor.costs": "连接成本（JSON 数组）",
   "hostEditor.muxOptions": "MUX 设置",
+  "hostEditor.noAlpnResults": "未找到协议",
   "hostEditor.defaultValue": "默认"
 }

@@ -882,5 +882,6 @@
   "hostEditor.baselines_ms": "مقادیر پایه RTT (آرایه JSON)",
   "hostEditor.costs": "هزینه اتصال‌ها (آرایه JSON)",
   "hostEditor.muxOptions": "تنظیمات MUX",
+  "hostEditor.noAlpnResults": "پروتکلی پیدا نشد",
   "hostEditor.defaultValue": "پیش‌فرض"
 }

@@ -13,6 +13,10 @@ import {
 import { subscriptionFormats } from "../src/pages/subscription-templates-page/lib/formats";
 import { getAvailableParameterGroups } from "../src/pages/hosts-page/components/host-dialog/lib/parameters";
 import {
+  alpnOptions,
+  getAlpnSelection,
+} from "../src/pages/hosts-page/components/host-dialog/lib/alpn";
+import {
   templateBindingsFromSelection,
   templateChipLabel,
 } from "../src/pages/hosts-page/components/host-dialog/lib/template-selection";
@@ -20,6 +24,40 @@ import {
 function formValues() {
   return { ...getHostFormValues(1), remark: "Example", address: "example.com" };
 }
+
+test("ALPN selection preserves protocol order, custom stored values and explicit empty arrays", () => {
+  assert.deepEqual(alpnOptions, ["h3", "h2", "http/1.1"]);
+  const values = formValues();
+  values.selected = ["alpn"];
+  for (const protocols of [["h2", "http/1.1"], ["custom-alpn", "h3"], []]) {
+    values.parameters.alpn = JSON.stringify(protocols);
+    assert.deepEqual(getAlpnSelection(values.parameters.alpn), protocols);
+    assert.deepEqual(toHostPayload(hostFormSchema.parse(values)).overrides, {
+      security: { alpn: protocols },
+    });
+  }
+  values.original_overrides = { security: { alpn: ["h2"] } };
+  values.selected = [];
+  assert.deepEqual(toHostPayload(hostFormSchema.parse(values)).overrides, {
+    security: null,
+  });
+});
+
+test("ALPN input tolerates absent and malformed stored text without changing the payload", () => {
+  assert.deepEqual(getAlpnSelection(""), []);
+  assert.deepEqual(getAlpnSelection("not JSON"), []);
+  assert.deepEqual(getAlpnSelection('["h2",1]'), []);
+  assert.deepEqual(getAlpnSelection('["h2","h2","http/1.1"]'), [
+    "h2",
+    "http/1.1",
+  ]);
+  const values = formValues();
+  values.selected = ["alpn"];
+  values.parameters.alpn = "not JSON";
+  assert.throws(() => toHostPayload(hostFormSchema.parse(values)), {
+    parameter: "alpn",
+  });
+});
 
 test("a new host starts without optional parameters or explicit template bindings", () => {
   const values = formValues();

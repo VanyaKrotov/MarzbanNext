@@ -23,6 +23,7 @@ import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import type { HostFormValues } from "../lib/form";
 import type { HostParameterDefinition } from "../lib/parameters";
+import { AlpnInput } from "./AlpnInput";
 
 type ParameterFieldProps = {
   definition: HostParameterDefinition;
@@ -93,6 +94,20 @@ function ParameterInput({
 }) {
   const { t } = useTranslation();
   const id = `host-parameter-${definition.id}`;
+
+  if (definition.id === "alpn") {
+    return (
+      <AlpnInput
+        id={id}
+        value={field.value ?? ""}
+        onChange={field.onChange}
+        onBlur={field.onBlur}
+        inputRef={field.ref}
+        disabled={pending}
+        invalid={invalid}
+      />
+    );
+  }
 
   if (definition.kind === "boolean" || definition.kind === "security") {
     const options =

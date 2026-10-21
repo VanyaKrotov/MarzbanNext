@@ -881,5 +881,6 @@
   "hostEditor.baselines_ms": "RTT baselines (ms, JSON array)",
   "hostEditor.costs": "Connection costs (JSON array)",
   "hostEditor.muxOptions": "MUX settings",
+  "hostEditor.noAlpnResults": "No protocols found",
   "hostEditor.defaultValue": "Default"
 }
