@@ -214,7 +214,7 @@ def user_subscription_with_client_type(
     config = client_config.get(client_type)
     if config is None:
         raise HTTPException(status_code=422, detail="Unsupported subscription format")
-    hosts = host_crud.get_hosts_v2(db, group_ids=parse_groups_query(groups))
+    hosts = host_crud.list_hosts(db, group_ids=parse_groups_query(groups)).all()
     conf = generate_subscription_from_hosts(
         user=user,
         hosts=hosts,

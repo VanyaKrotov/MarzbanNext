@@ -10,8 +10,8 @@ from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
 from app.db.crud import proxy_hosts as host_crud
 from app.db.models.proxies import ProxyInbound
-from app.models.proxy import ProxyHostCreate, ProxyHostModify, ProxyHostV2
-from app.services import system_service
+from app.models.host import HostCreate, HostPatch, HostResponse
+from app.services import host_service
 from app.subscription.share import build_subscription_hosts_by_inbound
 from app.subscription.v2ray import V2rayJsonConfig, V2rayShareLink
 from app.xray.config import XRayConfig
@@ -72,71 +72,32 @@ class XhttpHostTests(TestCase):
     def tearDown(self):
         self.db.close()
 
-    def make_host(self, inbound_tag="XHTTP", **overrides):
-        values = {
-            "inbound_tag": inbound_tag,
-            "remark": "XHTTP host",
-            "address": "example.com",
-            **overrides,
-        }
-        return ProxyHostCreate(**values)
+    def make_host(self, inbound_tag="XHTTP", **extra):
+        inbound = self.xhttp_inbound if inbound_tag == "XHTTP" else self.tcp_inbound
+        return HostCreate(inbound_id=inbound.id, remark="XHTTP host", address="example.com",
+                          overrides={"transport": {"xhttp": {"extra": extra}}})
 
     def test_host_settings_round_trip_preserves_zero_false_and_method(self):
-        host = host_crud.create_host_v2(
-            self.db,
-            self.make_host(
-                sc_max_buffered_posts=0,
-                x_padding_obfs_mode=False,
-                uplink_http_method="put",
-            ),
-        )
-
-        response = ProxyHostV2.model_validate(host)
-        self.assertEqual(response.sc_max_buffered_posts, 0)
-        self.assertFalse(response.x_padding_obfs_mode)
-        self.assertEqual(response.uplink_http_method, "PUT")
-
-        subscription_host = build_subscription_hosts_by_inbound([host])["XHTTP"][0]
-        self.assertEqual(subscription_host["scMaxBufferedPosts"], 0)
-        self.assertFalse(subscription_host["xPaddingObfsMode"])
-        self.assertEqual(subscription_host["uplinkHTTPMethod"], "PUT")
-
-        updated = host_crud.update_host_v2(
-            self.db,
-            host,
-            ProxyHostModify(
-                inbound_tag="XHTTP",
-                remark="XHTTP host",
-                address="example.com",
-                sc_max_buffered_posts=None,
-                x_padding_obfs_mode=None,
-                uplink_http_method=None,
-            ),
-        )
-        response = ProxyHostV2.model_validate(updated)
-        self.assertIsNone(response.sc_max_buffered_posts)
-        self.assertIsNone(response.x_padding_obfs_mode)
-        self.assertIsNone(response.uplink_http_method)
+        host = host_crud.create_host(self.db, self.make_host(
+            scMaxBufferedPosts=0, xPaddingObfsMode=False, uplinkHTTPMethod="put"))
+        response = HostResponse.model_validate(host)
+        extra = response.overrides["transport"]["xhttp"]["extra"]
+        self.assertEqual(extra, {"scMaxBufferedPosts": 0, "xPaddingObfsMode": False, "uplinkHTTPMethod": "PUT"})
+        snapshot = build_subscription_hosts_by_inbound([host])["XHTTP"][0]
+        self.assertEqual(snapshot.overrides["transport"]["xhttp"]["extra"], extra)
+        host_crud.update_host(self.db, host, HostPatch(overrides={"transport": {"xhttp": {"extra": None}}}))
+        self.assertEqual(host.overrides, {"transport": {"xhttp": {}}})
 
     def test_xhttp_host_settings_require_xhttp_and_packet_up_for_get(self):
         with self.assertRaises(HTTPException) as context:
-            system_service.create_host_v2(
-                self.make_host("TCP", x_padding_obfs_mode=False),
-                db=self.db,
-                admin=None,
-            )
-        self.assertEqual(context.exception.status_code, 400)
-        self.assertIn("XHTTP host settings", context.exception.detail)
-
+            host_service.create_host(self.make_host("TCP", xPaddingObfsMode=False), db=self.db, admin=None)
+        self.assertEqual(context.exception.status_code, 422)
+        self.assertIn("XHTTP", context.exception.detail)
         self.xhttp_inbound.content["streamSettings"]["xhttpSettings"]["mode"] = "stream-up"
         with self.assertRaises(HTTPException) as context:
-            system_service.create_host_v2(
-                self.make_host(uplink_http_method="get"),
-                db=self.db,
-                admin=None,
-            )
-        self.assertEqual(context.exception.status_code, 400)
-        self.assertIn("GET requires XHTTP packet-up", context.exception.detail)
+            host_service.create_host(self.make_host(uplinkHTTPMethod="get"), db=self.db, admin=None)
+        self.assertEqual(context.exception.status_code, 422)
+        self.assertIn("GET requires packet-up", context.exception.detail)
 
     def test_xhttp_inbound_inherits_padding_settings_only_when_present(self):
         config = XRayConfig(
@@ -204,4 +165,4 @@ class XhttpHostTests(TestCase):
 
         with_options = config.splithttp_config(xhttp_extra=XHTTP_EXTRA)
         for name, value in XHTTP_EXTRA.items():
-            self.assertEqual(with_options[name], value)
+            self.assertEqual(with_options["extra"][name], value)

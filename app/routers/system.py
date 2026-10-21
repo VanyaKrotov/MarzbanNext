@@ -7,8 +7,6 @@ from app.models.proxy import (
     InboundResponse,
     HostGroupResponse,
     OutboundResponse,
-    ProxyHost,
-    ProxyHostV2,
     ProxyInbound,
     ProxyTypes,
     XrayCapabilities,
@@ -124,52 +122,6 @@ router.delete(
     responses={403: responses._403, 404: responses._404},
     summary="Delete a host group",
 )(service.delete_host_group)
-
-router.get(
-    "/hosts", response_model=Dict[str, List[ProxyHost]], responses={403: responses._403}
-)(service.get_hosts)
-
-router.get(
-    "/hosts/v2", response_model=List[ProxyHostV2], responses={403: responses._403}
-)(service.get_hosts_v2)
-
-router.post(
-    "/hosts/v2", response_model=ProxyHostV2, responses={403: responses._403}
-)(service.create_host_v2)
-
-router.put(
-    "/hosts/v2/reorder",
-    response_model=List[ProxyHostV2],
-    responses={403: responses._403},
-)(service.reorder_hosts_v2)
-
-router.put(
-    "/hosts/v2/{host_id}",
-    response_model=ProxyHostV2,
-    responses={403: responses._403, 404: responses._404},
-)(service.update_host_v2)
-
-router.post(
-    "/hosts/v2/{host_id}/groups",
-    response_model=ProxyHostV2,
-    responses={403: responses._403, 404: responses._404},
-    summary="Attach a host to groups",
-)(service.attach_host_groups)
-
-router.delete(
-    "/hosts/v2/{host_id}/groups",
-    response_model=ProxyHostV2,
-    responses={403: responses._403, 404: responses._404},
-    summary="Detach a host from groups",
-)(service.detach_host_groups)
-
-router.delete(
-    "/hosts/v2/{host_id}", responses={403: responses._403, 404: responses._404}
-)(service.delete_host_v2)
-
-router.put(
-    "/hosts", response_model=Dict[str, List[ProxyHost]], responses={403: responses._403}
-)(service.modify_hosts)
 
 router.get("/version", response_model=str)(service.get_version)
 

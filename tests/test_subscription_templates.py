@@ -19,7 +19,6 @@ from app.db import get_db
 from app.db.base import Base
 from app.db.crud import proxy_hosts as host_crud
 from app.db.crud import proxy_inbounds as inbound_crud
-from app.db.crud import subscription_balancers as balancer_crud
 from app.db.crud import subscription_templates as template_crud
 from app.db.models.proxies import ProxyInbound
 from app.db.models.subscription_templates import (
@@ -29,19 +28,15 @@ from app.db.models.subscription_templates import (
 from app.dependencies import get_validated_sub
 from app.models.admin import Admin
 from app.models.proxy import (
-    ProxyHost,
-    ProxyHostCreate,
-    ProxyHostModify,
-    ProxyHostV2,
     ProxyTypes,
     ShadowsocksSettings,
 )
-from app.models.settings import SubscriptionBalancerCreate
 from app.models.subscription_template import (
     SubscriptionFormat,
     SubscriptionTemplateCreate,
     SubscriptionTemplateModify,
 )
+from app.models.host import HostCreate as ProxyHostCreate, HostPatch as ProxyHostModify, HostResponse as ProxyHostV2
 from app.models.user import UserResponse, UserStatus
 from app.routers.settings import router as settings_router
 from app.routers.subscription import router as public_router
@@ -105,8 +100,8 @@ class SubscriptionTemplateTests(TestCase):
         self.engine.dispose()
 
     def create_host(self, name='First', **kwargs):
-        return host_crud.create_host_v2(self.db, ProxyHostCreate(
-            inbound_tag='SS', remark=name, address=f'{name.lower()}.example.com', **kwargs,
+        return host_crud.create_host(self.db, ProxyHostCreate(
+            inbound_id=1, remark=name, address=f'{name.lower()}.example.com', **kwargs,
         ))
 
     def create_template(self, format='v2ray-json', name='custom', content=None):
@@ -115,8 +110,8 @@ class SubscriptionTemplateTests(TestCase):
         ), db=self.db, admin=self.admin)
 
     def update_host(self, host, **kwargs):
-        return host_crud.update_host_v2(self.db, host, ProxyHostModify(
-            inbound_tag='SS', remark=host.remark, address=host.address, **kwargs,
+        return host_crud.update_host(self.db, host, ProxyHostModify(
+            **kwargs,
         ))
 
     def generate(self, format, hosts=None, **kwargs):
@@ -210,7 +205,7 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(existing.subscription_template_ids, self.defaults)
         self.assertEqual(self.create_host('Second').subscription_template_ids['v2ray-json'], custom.id)
         inbound_crud.add_default_host(self.db, self.db.query(ProxyInbound).filter_by(tag='SS').one())
-        self.assertEqual(host_crud.get_hosts(self.db, 'SS')[-1].subscription_template_ids['v2ray-json'], custom.id)
+        self.assertEqual(host_crud.list_hosts(self.db, inbound_id=1).all()[-1].subscription_template_ids['v2ray-json'], custom.id)
 
     def test_assignment_replace_omit_disable_and_copy(self):
         host = self.create_host()
@@ -228,9 +223,9 @@ class SubscriptionTemplateTests(TestCase):
         self.update_host(host)
         self.assertEqual(host.subscription_template_ids, {})
         self.assertEqual(self.create_host('Disabled', subscription_template_ids={}).subscription_template_ids, {})
-        hidden = self.create_host('Hidden', is_disabled=True)
+        hidden = self.create_host('Hidden', enabled=False)
         self.update_host(hidden, subscription_template_ids={})
-        self.assertTrue(hidden.is_disabled)
+        self.assertFalse(hidden.enabled)
         self.db.delete(copy)
         self.db.commit()
         self.assertEqual(self.db.query(HostSubscriptionTemplate).filter_by(host_id=copy.id).count(), 0)
@@ -243,9 +238,9 @@ class SubscriptionTemplateTests(TestCase):
             self.assertEqual(host.subscription_template_ids, self.defaults)
         for bindings in ({'mux': 1}, {'clash': None}, {'clash': True}, {'clash': '1'}, {'clash': 0}, None):
             with self.assertRaises(ValidationError):
-                ProxyHostCreate(inbound_tag='SS', remark='Invalid',
+                ProxyHostCreate(inbound_id=1, remark='Invalid',
                                 address='example.com', subscription_template_ids=bindings)
-        alias = ProxyHostCreate(inbound_tag='SS', remark='Alias', address='example.com',
+        alias = ProxyHostCreate(inbound_id=1, remark='Alias', address='example.com',
                                 subscription_template_ids={'mihomo': self.defaults['clash']})
         self.assertEqual(alias.subscription_template_ids, {'clash': self.defaults['clash']})
 
@@ -354,11 +349,9 @@ class SubscriptionTemplateTests(TestCase):
     def test_balancers_respect_disabled_host_formats(self):
         first = self.create_host()
         disabled = self.create_host('Disabled', subscription_template_ids={})
-        balancer_crud.create_subscription_balancer(self.db, SubscriptionBalancerCreate(
-            name='Automatic', probe_url='https://example.com/204', host_ids=[first.id, disabled.id],
-        ))
-        self.assertEqual(self.generate('v2ray'), '')
-        self.assertEqual(self.generate('outline'), '')
+        self.update_host(first, linked_host_ids=[disabled.id], balancer_settings={'remark': 'Automatic'})
+        self.assertTrue(self.generate('v2ray'))
+        self.assertTrue(self.generate('outline'))
         json_config = self.generate('v2ray-json')
         self.assertIn('first.example.com', json_config)
         self.assertNotIn('disabled.example.com', json_config)
@@ -367,25 +360,21 @@ class SubscriptionTemplateTests(TestCase):
             self.assertIn('first.example.com', output)
             self.assertNotIn('disabled.example.com', output)
 
-    def test_legacy_update_preserves_explicit_disabled_bindings(self):
+    def test_patch_preserves_explicit_disabled_bindings(self):
         host = self.create_host(subscription_template_ids={})
-        host_crud.update_hosts(self.db, 'SS', [ProxyHost(remark='Renamed', address='example.com')])
-        self.assertEqual(host_crud.get_hosts(self.db, 'SS')[0].id, host.id)
-        self.assertEqual(host_crud.get_hosts(self.db, 'SS')[0].subscription_template_ids, {})
+        self.update_host(host, remark='Renamed')
+        self.assertEqual(host_crud.get_host(self.db, host.id).subscription_template_ids, {})
 
-    def test_json_balancer_requires_one_template_or_explicit_override(self):
+    def test_json_balancer_uses_owner_template(self):
         first = self.create_host()
         custom = self.create_template()
         second = self.create_host('Second', subscription_template_ids={'v2ray-json': custom.id})
-        balancer_crud.create_subscription_balancer(self.db, SubscriptionBalancerCreate(
-            name='Automatic', probe_url='https://example.com/204', host_ids=[first.id, second.id],
-        ))
-        with self.assertRaises(HTTPException) as error:
-            self.generate('v2ray-json')
-        self.assertEqual(error.exception.status_code, 409)
-        output = self.generate('v2ray-json', template_id=custom.id)
+        self.update_host(first, linked_host_ids=[second.id], balancer_settings={'remark': 'Automatic'})
+        output = self.generate('v2ray-json')
         self.assertIn('first.example.com', output)
         self.assertIn('second.example.com', output)
+        self.assertIn('Automatic', output)
+        self.assertTrue(self.generate('v2ray-json', template_id=custom.id))
 
     def test_template_sandbox_and_generator_validation(self):
         with self.assertRaises(ValueError):

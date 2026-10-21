@@ -7,6 +7,7 @@ export type ProtocolType =
   | "hysteria";
 
 export type InboundType = {
+  id: number;
   tag: string;
   protocol: ProtocolType;
   network: string;

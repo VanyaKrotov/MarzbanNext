@@ -26,6 +26,8 @@ XHTTP_EXTRA_FIELDS = (
 
 
 def get_xhttp_extra(inbound: dict) -> dict:
+    if "_xhttp_extra" in inbound:
+        return copy.deepcopy(inbound["_xhttp_extra"])
     return {
         field: inbound[field]
         for field in XHTTP_EXTRA_FIELDS
@@ -33,19 +35,17 @@ def get_xhttp_extra(inbound: dict) -> dict:
     }
 
 
-class V2rayShareLink(str):
-    def __init__(self):
+class V2rayShareLink:
+    def __init__(self, external_config: str = ""):
         self.links = []
+        self.external_config = external_config
 
     def add_link(self, link):
         self.links.append(link)
 
     def render(self, reverse=False):
-        from app.utils.runtime_settings import get_runtime_settings
-
-        settings = get_runtime_settings()
-        if settings.external_config:
-            self.links.append(settings.external_config)
+        if self.external_config:
+            self.links.append(self.external_config)
         if reverse:
             self.links.reverse()
         return self.links
@@ -272,9 +272,9 @@ class V2rayShareLink(str):
             }
             if xmux:
                 extra["xmux"] = xmux
-            extra.update(xhttp_extra or {})
+            extra = copy.deepcopy(xhttp_extra) if xhttp_extra is not None else extra
             payload["type"] = mode
-            if keepAlivePeriod > 0:
+            if keepAlivePeriod > 0 and xhttp_extra is None:
                 extra["keepAlivePeriod"] = keepAlivePeriod
             payload["extra"] = extra
 
@@ -357,7 +357,7 @@ class V2rayShareLink(str):
                 extra["keepAlivePeriod"] = keepAlivePeriod
             if xmux:
                 extra["xmux"] = xmux
-            extra.update(xhttp_extra or {})
+            extra = copy.deepcopy(xhttp_extra) if xhttp_extra is not None else extra
             payload["extra"] = json.dumps(extra)
 
         elif net == 'kcp':
@@ -463,7 +463,7 @@ class V2rayShareLink(str):
                 extra["keepAlivePeriod"] = keepAlivePeriod
             if xmux:
                 extra["xmux"] = xmux
-            extra.update(xhttp_extra or {})
+            extra = copy.deepcopy(xhttp_extra) if xhttp_extra is not None else extra
             payload["extra"] = json.dumps(extra)
 
         elif net == 'quic':
@@ -540,29 +540,27 @@ class V2rayShareLink(str):
         return f"hysteria2://{urlparse.quote(auth, safe='')}@{address}:{port}{query}#{urlparse.quote(remark)}"
 
 
-class V2rayJsonConfig(str):
+class V2rayJsonConfig:
 
-    def __new__(cls, template: str | None = None):
-        return super().__new__(cls, "")
+    def __init__(self, template: str | None = None, defaults: dict | None = None):
+        from app.utils.runtime_settings import build_default_generator_templates
 
-    def __init__(self, template: str | None = None):
-        from app.utils.runtime_settings import get_generator_template
+        defaults = defaults if defaults is not None else build_default_generator_templates()
 
         from app.utils.subscription_template_defaults import default_subscription_content
 
         self.config = []
-        self.balancer_configs = []
         self.template = render_template_content(
             template if template is not None else default_subscription_content("v2ray-json"))
-        self.mux_template = render_template_content(get_generator_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
+        self.mux_template = render_template_content(defaults["mux"])
+        user_agent_data = json.loads(render_template_content(defaults["user_agent"]))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
         else:
             self.user_agent_list = []
 
-        grpc_user_agent_data = json.loads(render_template_content(get_generator_template("grpc_user_agent")))
+        grpc_user_agent_data = json.loads(render_template_content(defaults["grpc_user_agent"]))
 
         if 'list' in grpc_user_agent_data and isinstance(grpc_user_agent_data['list'], list):
             self.grpc_user_agent_data = grpc_user_agent_data['list']
@@ -570,7 +568,7 @@ class V2rayJsonConfig(str):
             self.grpc_user_agent_data = []
 
         try:
-            self.settings = json.loads(render_template_content(get_generator_template("v2ray_settings")))
+            self.settings = json.loads(render_template_content(defaults["v2ray_settings"]))
         except TemplateNotFound:
             self.settings = {}
 
@@ -586,7 +584,7 @@ class V2rayJsonConfig(str):
         configs = list(self.config)
         if reverse:
             configs.reverse()
-        return json.dumps(self.balancer_configs + configs, indent=4, cls=UUIDEncoder)
+        return json.dumps(configs, indent=4, cls=UUIDEncoder)
 
     @staticmethod
     def tls_config(sni=None, fp=None, alpn=None, ais: bool = False) -> dict:
@@ -671,6 +669,15 @@ class V2rayJsonConfig(str):
                          ) -> dict:
         config = copy.deepcopy(self.settings.get("splithttpSettings", {}))
 
+        if xhttp_extra is not None:
+            # The resolver owns the complete effective extra object, including explicit {}.
+            config = {"mode": mode, "host": host, "extra": copy.deepcopy(xhttp_extra)}
+            if path:
+                config["path"] = path
+            if random_user_agent:
+                config.setdefault("headers", {})["User-Agent"] = choice(self.user_agent_list)
+            return config
+
         config["mode"] = mode
         if path:
             config["path"] = path
@@ -688,7 +695,6 @@ class V2rayJsonConfig(str):
             config["xmux"] = xmux
         if keepAlivePeriod > 0:
             config["keepAlivePeriod"] = keepAlivePeriod
-        config.update(xhttp_extra or {})
         # core will ignore unknown variables
 
         return config
@@ -1182,63 +1188,3 @@ class V2rayJsonConfig(str):
         if return_outbounds:
             return outbounds
         self.add_config(remarks=remark, outbounds=outbounds)
-
-    def add_balancer_config(
-        self,
-        balancer_id: int,
-        name: str,
-        strategy: str,
-        probe_url: str,
-        probe_interval: int,
-        endpoints: list[dict],
-    ) -> bool:
-        profile_outbounds = []
-        selector_prefix = f"mb-balancer-{balancer_id}-"
-
-        for endpoint in endpoints:
-            outbound_tag = f"{selector_prefix}host-{endpoint['host_id']}"
-            outbounds = self.add(
-                remark=endpoint["remark"],
-                address=endpoint["address"],
-                inbound=endpoint["inbound"],
-                settings=endpoint["settings"],
-                outbound_tag=outbound_tag,
-                return_outbounds=True,
-            )
-            if outbounds:
-                profile_outbounds.extend(outbounds)
-
-        if not profile_outbounds:
-            return False
-
-        config = json.loads(self.template)
-        config["remarks"] = name
-        config["outbounds"] = profile_outbounds + config.get("outbounds", [])
-        config["observatory"] = {
-            "subjectSelector": [selector_prefix],
-            "probeUrl": probe_url,
-            "probeInterval": f"{probe_interval}s",
-            "enableConcurrency": True,
-        }
-        routing = config.setdefault("routing", {})
-        routing.setdefault("rules", []).append(
-            {
-                "type": "field",
-                "network": "tcp,udp",
-                "balancerTag": f"mb-balancer-{balancer_id}",
-            }
-        )
-        routing.setdefault("balancers", []).append(
-            {
-                "tag": f"mb-balancer-{balancer_id}",
-                "selector": [selector_prefix],
-                "strategy": {"type": {
-                    "least_ping": "leastPing",
-                    "least_load": "leastLoad",
-                    "random": "random",
-                    "round_robin": "roundRobin",
-                }[strategy]},
-            }
-        )
-        self.balancer_configs.append(config)
-        return True

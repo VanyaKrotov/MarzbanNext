@@ -6,13 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 
 import { DeleteHostButton } from "./DeleteHostButton";
+import { HostCompositionSummary } from "./HostCompositionSummary";
+import { HostOrderButtons } from "./HostOrderButtons";
+import type { HostType } from "../types";
 import { HostGroupBadges } from "./HostGroupBadges";
 
 import type { HostRow } from "../lib/model";
 
 type HostsCardsProps = {
   rows: HostRow[];
+  hostsById: ReadonlyMap<number, HostType>;
+  onMove: (row: HostRow, direction: -1 | 1) => void;
   pending: boolean;
+  reorderDisabled: boolean;
   onEdit: (row: HostRow) => void;
   onDuplicate: (row: HostRow) => void;
   onToggle: (row: HostRow, checked: boolean) => void;
@@ -21,7 +27,10 @@ type HostsCardsProps = {
 
 export function HostsCards({
   rows,
+  hostsById,
+  onMove,
   pending,
+  reorderDisabled,
   onEdit,
   onDuplicate,
   onToggle,
@@ -31,7 +40,7 @@ export function HostsCards({
 
   return (
     <div className="grid gap-3 md:hidden">
-      {rows.map((row) => (
+      {rows.map((row, index) => (
         <article
           key={row.id}
           className="rounded-xl border bg-card p-4 shadow-xs"
@@ -39,9 +48,9 @@ export function HostsCards({
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="font-medium">{row.remark}</p>
+              <Button type="button" variant="link" className="h-auto whitespace-normal p-0 text-start font-medium text-foreground" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>{row.remark}</Button><HostCompositionSummary host={row} hostsById={hostsById} onEdit={onEdit} />
               <p className="font-mono text-xs text-muted-foreground">
-                {row.address}:{row.port ?? "default"}
+                {row.address}:{row.port ?? t("hostEditor.portFromInbound")}
               </p>
             </div>
             <Badge variant="outline">{row.inbound_tag}</Badge>
@@ -54,11 +63,12 @@ export function HostsCards({
             onClick={(event) => event.stopPropagation()}
           >
             <Switch
-              checked={!row.is_disabled}
+              checked={row.enabled}
               disabled={pending}
               onCheckedChange={(checked) => onToggle(row, checked)}
             />
             <div className="flex gap-1">
+              <HostOrderButtons disabled={pending || reorderDisabled} first={index === 0} last={index === rows.length - 1} onMove={(direction) => onMove(row, direction)} />
               <Button
                 variant="ghost"
                 size="icon-sm"

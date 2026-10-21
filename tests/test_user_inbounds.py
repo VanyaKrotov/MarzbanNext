@@ -1,5 +1,6 @@
 import importlib
 from types import SimpleNamespace
+from contextlib import nullcontext
 from unittest import TestCase
 from unittest.mock import patch
 
@@ -78,16 +79,18 @@ class UserInboundTests(TestCase):
     def tearDown(self):
         self.db.close()
 
-    def test_create_missing_inbounds_uses_all_available_inbounds(self):
-        with patch.object(user_models.xray, "config", FakeConfig):
+    def test_create_missing_inbounds_preserves_explicit_assignment_policy(self):
+        with patch("app.utils.xray_config_registry.get_enabled_inbound_registry", return_value=FakeConfig), \
+                patch("app.db.GetDB", return_value=nullcontext(self.db)):
             user = user_models.UserCreate(
                 username="test_user",
                 proxies={"vless": {}},
             )
-            self.assertEqual(user.excluded_inbounds[ProxyTypes.VLESS], [])
+            self.assertEqual(user.excluded_inbounds[ProxyTypes.VLESS], ["VLESS TCP", "VLESS WS"])
 
     def test_create_empty_inbounds_excludes_all_current_protocol_inbounds(self):
-        with patch.object(user_models.xray, "config", FakeConfig):
+        with patch("app.utils.xray_config_registry.get_enabled_inbound_registry", return_value=FakeConfig), \
+                patch("app.db.GetDB", return_value=nullcontext(self.db)):
             user = user_models.UserCreate(
                 username="test_user",
                 proxies={"vless": {}},
@@ -99,7 +102,8 @@ class UserInboundTests(TestCase):
             )
 
     def test_modify_empty_inbounds_excludes_all_current_protocol_inbounds(self):
-        with patch.object(user_models.xray, "config", FakeConfig):
+        with patch("app.utils.xray_config_registry.get_enabled_inbound_registry", return_value=FakeConfig), \
+                patch("app.db.GetDB", return_value=nullcontext(self.db)):
             user = user_models.UserModify(inbounds={"vless": []})
             self.assertIn("inbounds", user.model_fields_set)
             self.assertEqual(
@@ -133,7 +137,8 @@ class UserInboundTests(TestCase):
             )
         ]
 
-        with patch.object(xray, "config", FakeConfig):
+        with patch("app.utils.xray_config_registry.get_enabled_inbound_registry", return_value=FakeConfig), \
+                patch("app.db.GetDB", return_value=nullcontext(self.db)):
             self.assertEqual(dbuser.inbounds[ProxyTypes.VLESS], ["VLESS WS"])
 
     def test_ensure_protocol_inbounds_adds_missing_proxy_with_only_new_tags(self):

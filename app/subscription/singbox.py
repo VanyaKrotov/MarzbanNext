@@ -9,13 +9,12 @@ from app.subscription.funcs import get_grpc_gun
 from app.templates import render_template_content
 
 
-class SingBoxConfiguration(str):
+class SingBoxConfiguration:
 
-    def __new__(cls, template: str | None = None):
-        return super().__new__(cls, "")
+    def __init__(self, template: str | None = None, defaults: dict | None = None):
+        from app.utils.runtime_settings import build_default_generator_templates
 
-    def __init__(self, template: str | None = None):
-        from app.utils.runtime_settings import get_generator_template
+        defaults = defaults if defaults is not None else build_default_generator_templates()
 
         from app.utils.subscription_template_defaults import default_subscription_content
 
@@ -24,8 +23,8 @@ class SingBoxConfiguration(str):
         self.managed_balancer_tags = set()
         self.config = json.loads(render_template_content(
             template if template is not None else default_subscription_content("sing-box")))
-        self.mux_template = render_template_content(get_generator_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
+        self.mux_template = render_template_content(defaults["mux"])
+        user_agent_data = json.loads(render_template_content(defaults["user_agent"]))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -33,7 +32,7 @@ class SingBoxConfiguration(str):
             self.user_agent_list = []
 
         try:
-            self.settings = json.loads(render_template_content(get_generator_template("singbox_settings")))
+            self.settings = json.loads(render_template_content(defaults["singbox_settings"]))
         except TemplateNotFound:
             self.settings = {}
 

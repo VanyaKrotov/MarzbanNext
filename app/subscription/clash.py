@@ -14,8 +14,10 @@ from app.utils.subscription_templates import parse_subscription_document, render
 
 
 class ClashConfiguration(object):
-    def __init__(self, template: str | None = None):
-        from app.utils.runtime_settings import get_generator_template
+    def __init__(self, template: str | None = None, defaults: dict | None = None):
+        from app.utils.runtime_settings import build_default_generator_templates
+
+        defaults = defaults if defaults is not None else build_default_generator_templates()
 
         from app.utils.subscription_template_defaults import default_subscription_content
 
@@ -28,8 +30,8 @@ class ClashConfiguration(object):
         }
         self.proxy_remarks = []
         self.default_proxy_remarks = []
-        self.mux_template = render_template_content(get_generator_template("mux"))
-        user_agent_data = json.loads(render_template_content(get_generator_template("user_agent")))
+        self.mux_template = render_template_content(defaults["mux"])
+        user_agent_data = json.loads(render_template_content(defaults["user_agent"]))
 
         if 'list' in user_agent_data and isinstance(user_agent_data['list'], list):
             self.user_agent_list = user_agent_data['list']
@@ -38,7 +40,7 @@ class ClashConfiguration(object):
 
         try:
             self.settings = yaml.load(
-                render_template_content(get_generator_template("clash_settings")),
+                render_template_content(defaults["clash_settings"]),
                 Loader=yaml.SafeLoader,
             )
         except TemplateNotFound:

@@ -14,11 +14,11 @@ import {
   removeHost,
   reorderHost,
   toHostPayload,
-  updateHost,
   type HostRow,
 } from "../lib/model";
 import {
   useCreateHostMutation,
+  useCloneHostMutation,
   useDeleteHostMutation,
   useHostGroupsQuery,
   useHostsQuery,
@@ -63,16 +63,20 @@ export function useHostsPageController() {
   } = useHostsQuery(selectedGroupIds, filterSearch);
   const { data: hostGroups = [] } = useHostGroupsQuery();
   const createHost = useCreateHostMutation();
+  const cloneHost = useCloneHostMutation();
+  const { data: allHosts = [] } = useHostsQuery();
+  const hostsById = useMemo(() => new Map(allHosts.map((host) => [host.id, host])), [allHosts]);
   const updateHostMutation = useUpdateHostMutation();
   const deleteHost = useDeleteHostMutation();
   const reorderHosts = useReorderHostsMutation();
   const pending =
     createHost.isPending ||
+    cloneHost.isPending ||
     updateHostMutation.isPending ||
     deleteHost.isPending ||
     reorderHosts.isPending;
   const rows = useMemo(() => hosts, [hosts]);
-  const reorderDisabled = Boolean(selectedGroupIds.length);
+  const reorderDisabled = Boolean(selectedGroupIds.length || filterSearch.trim());
 
   useEffect(() => {
     if (hostsData) setHosts(cloneHosts(hostsData));
@@ -139,30 +143,6 @@ export function useHostsPageController() {
     [updateFilters],
   );
 
-  const persistUpdate = (
-    hostId: number,
-    nextHosts: HostsSchema,
-    values: HostFormValues,
-    successMessage?: string,
-  ) => {
-    if (!hostsData) return;
-    const previousHosts = hosts;
-    const payload = toHostPayload(values);
-    setHosts(nextHosts);
-    updateHostMutation.mutate(
-      { id: hostId, host: payload },
-      {
-        onSuccess: () => {
-          if (successMessage) generateSuccessMessage(successMessage);
-        },
-        onError: (error) => {
-          setHosts(previousHosts);
-          generateErrorMessage(error);
-        },
-      },
-    );
-  };
-
   const persistReorder = (nextHosts: HostsSchema) => {
     if (!hostsData) return;
     const previousHosts = hosts;
@@ -217,35 +197,16 @@ export function useHostsPageController() {
   };
 
   const duplicate = (row: HostRow) => {
-    createHost.mutate(
-      {
-        ...toHostPayload({
-          ...row,
-          inboundTag: row.inbound_tag,
-          group_ids: row.groups.map((group) => group.id),
-        }),
-        remark: `${row.remark} ${t("hostsPage.copySuffix")}`,
-        is_disabled: true,
-      },
-      {
-        onSuccess: () => generateSuccessMessage(t("hostsPage.copied")),
-        onError: (error) => generateErrorMessage(error),
-      },
-    );
+    cloneHost.mutate({ id: row.id, remark: `${row.remark} ${t("hostsPage.copySuffix")}` }, {
+      onSuccess: () => generateSuccessMessage(t("hostsPage.copied")),
+      onError: (error) => generateErrorMessage(error),
+    });
   };
 
   const toggleHost = (row: HostRow, checked: boolean) => {
-    const values: HostFormValues = {
-      ...row,
-      inboundTag: row.inbound_tag,
-      group_ids: row.groups.map((group) => group.id),
-      is_disabled: !checked,
-    };
-    persistUpdate(
-      row.id,
-      updateHost(hosts, row.id, toHostPayload(values), hostGroups),
-      values,
-    );
+    updateHostMutation.mutate({ id: row.id, host: { enabled: checked } }, {
+      onError: (error) => generateErrorMessage(error),
+    });
   };
 
   const removeHostRow = (row: HostRow) => {
@@ -261,6 +222,13 @@ export function useHostsPageController() {
 
   const dragStart = (row: HostRow) => {
     if (!reorderDisabled) setDraggedRow(row);
+  };
+
+  const moveRow = (row: HostRow, direction: -1 | 1) => {
+    if (reorderDisabled || pending) return;
+    const index = rows.findIndex((item) => item.id === row.id);
+    const next = index + direction;
+    if (index >= 0 && next >= 0 && next < rows.length) persistReorder(reorderHost(hosts, index, next));
   };
 
   const dragEnd = () => {
@@ -313,6 +281,7 @@ export function useHostsPageController() {
     editingRow,
     hasLoadedHosts: Boolean(hostsData),
     hostGroups,
+    hostsById,
     isError,
     isFetching,
     isLoading,
@@ -322,6 +291,7 @@ export function useHostsPageController() {
     search,
     selectedGroupIds,
     duplicate,
+    moveRow,
     dragEnd,
     dragOver,
     dragStart,

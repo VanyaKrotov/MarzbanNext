@@ -234,93 +234,6 @@ class FormatVariables(dict):
         return key.join("{}")
 
 
-class ProxyHost(BaseModel):
-    subscription_template_ids: dict[str, int] = Field(default_factory=dict)
-
-    @field_validator("subscription_template_ids", mode="before")
-    @classmethod
-    def validate_template_bindings(cls, value):
-        from app.models.subscription_template import normalize_template_bindings
-
-        if not isinstance(value, dict):
-            raise ValueError("Template assignments must be an object")
-        return normalize_template_bindings(value)
-
-    remark: str
-    address: str
-    port: Optional[int] = Field(None, nullable=True)
-    sni: Optional[str] = Field(None, nullable=True)
-    host: Optional[str] = Field(None, nullable=True)
-    path: Optional[str] = Field(None, nullable=True)
-    security: ProxyHostSecurity = ProxyHostSecurity.inbound_default
-    alpn: ProxyHostALPN = ProxyHostALPN.none
-    fingerprint: ProxyHostFingerprint = ProxyHostFingerprint.none
-    allowinsecure: Union[bool, None] = None
-    is_disabled: Union[bool, None] = None
-    mux_enable: Union[bool, None] = None
-    fragment_setting: Optional[str] = Field(None, nullable=True)
-    noise_setting: Optional[str] = Field(None, nullable=True)
-    random_user_agent: Union[bool, None] = None
-    use_sni_as_host: Union[bool, None] = None
-    sc_max_buffered_posts: Optional[int] = Field(None, ge=0)
-    x_padding_obfs_mode: Optional[bool] = None
-    uplink_http_method: Optional[str] = Field(None, max_length=32)
-    model_config = ConfigDict(from_attributes=True)
-
-    @field_validator("remark", mode="after")
-    def validate_remark(cls, v):
-        try:
-            v.format_map(FormatVariables())
-        except ValueError as exc:
-            raise ValueError("Invalid formatting variables")
-
-        return v
-
-    @field_validator("address", mode="after")
-    def validate_address(cls, v):
-        try:
-            v.format_map(FormatVariables())
-        except ValueError as exc:
-            raise ValueError("Invalid formatting variables")
-
-        return v
-
-    @field_validator("fragment_setting", check_fields=False)
-    @classmethod
-    def validate_fragment(cls, v):
-        if v and not FRAGMENT_PATTERN.match(v):
-            raise ValueError(
-                "Fragment setting must be like this: length,interval,packet (10-100,100-200,tlshello)."
-            )
-        return v
-
-    @field_validator("noise_setting", check_fields=False)
-    @classmethod
-    def validate_noise(cls, v):
-        if v:
-            if not NOISE_PATTERN.match(v):
-                raise ValueError(
-                    "Noise setting must be like this: packet,delay (rand:10-20,100-200)."
-                )
-            if len(v) > 2000:
-                raise ValueError(
-                    "Noise can't be longer that 2000 character"
-                )
-        return v
-
-    @field_validator("uplink_http_method")
-    @classmethod
-    def validate_uplink_http_method(cls, v):
-        if v is None:
-            return None
-        value = v.strip()
-        if not value:
-            return None
-        if not HTTP_TOKEN_PATTERN.fullmatch(value):
-            raise ValueError("Uplink HTTP method must be a valid HTTP token")
-        return value.upper()
-
-
 class HostGroupBase(BaseModel):
     name: str = Field(min_length=1, max_length=256)
     description: Optional[str] = None
@@ -361,36 +274,13 @@ class HostGroupAttachRequest(BaseModel):
     group_ids: List[str] = Field(default_factory=list)
 
 
-class ProxyHostV2(ProxyHost):
-    id: int
-    inbound_id: int
-    inbound_tag: str
-    position: int
-    groups: List[HostGroupRef] = Field(default_factory=list)
-
-
-class ProxyHostCreate(ProxyHost):
-    inbound_tag: str = Field(min_length=1, max_length=256)
-    position: Optional[int] = None
-    group_ids: List[str] = Field(default_factory=list)
-
-
-class ProxyHostModify(ProxyHost):
-    inbound_tag: str = Field(min_length=1, max_length=256)
-    position: Optional[int] = None
-    group_ids: List[str] = Field(default_factory=list)
-
-
-class ProxyHostReorder(BaseModel):
-    host_ids: List[int]
-
-
 class InboundNodeRef(BaseModel):
     id: int
     name: str
 
 
 class ProxyInbound(BaseModel):
+    id: int | None = None
     tag: str
     protocol: ProxyTypes
     network: str

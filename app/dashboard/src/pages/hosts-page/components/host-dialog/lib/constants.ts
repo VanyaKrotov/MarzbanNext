@@ -1,5 +1,3 @@
-import type { HostFormValues } from "./form";
-
 export const HOST_VARIABLES = [
   "SERVER_IP",
   "SERVER_IPV6",
@@ -15,12 +13,3 @@ export const HOST_VARIABLES = [
   "PROTOCOL",
   "TRANSPORT",
 ] as const;
-
-export const HOST_BOOLEAN_FIELDS = [
-  ["use_sni_as_host", "hostsDialog.useSniAsHost"],
-  ["allowinsecure", "hostsDialog.allowinsecure"],
-  ["mux_enable", "hostsDialog.muxEnable"],
-  ["random_user_agent", "hostsDialog.randomUserAgent"],
-] as const satisfies ReadonlyArray<
-  readonly [keyof HostFormValues, string]
->;

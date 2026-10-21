@@ -1,129 +1,59 @@
-"""Domain CRUD helpers extracted from the former app.db.crud module."""
+"""Host and group persistence. A host mutation commits exactly once after validation."""
 
-from typing import List, Optional, Sequence
+from copy import deepcopy
+from dataclasses import dataclass
+from datetime import UTC, datetime
+from typing import List, Optional
 
-from sqlalchemy import String, cast, or_
-from sqlalchemy.orm import Query, Session, joinedload
+from sqlalchemy import String, cast, func, or_
+from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.db.models.proxies import HostGroup, ProxyHost
-from app.models.proxy import (
-    HostGroupCreate,
-    HostGroupModify,
-    ProxyHost as ProxyHostModify,
-    ProxyHostCreate,
-    ProxyHostModify as ProxyHostV2Modify,
-)
-
-from app.db.crud import proxy_inbounds as inbound_crud
+from app.db.models.proxies import HostGroup, HostLink, ProxyHost, ProxyInbound
+from app.db.crud import subscription_templates as template_crud
+from app.models.host import HostCreate, HostPatch, HostOverrides, BalancerSettings
+from app.models.proxy import HostGroupCreate, HostGroupModify
+from app.subscription.capabilities import validate_balancer
 
 
-def _normalize_host_group_filter(
-    group_id: Optional[str] = None,
-    group_ids: Optional[Sequence[str]] = None,
-) -> List[str]:
-    normalized_group_ids = []
-    for value in [group_id, *(group_ids or [])]:
-        if value and value not in normalized_group_ids:
-            normalized_group_ids.append(value)
-    return normalized_group_ids
+@dataclass
+class PreparedHost:
+    inbound: ProxyInbound
+    groups: list[HostGroup]
+    bindings: list
+    overrides: dict
+    balancer_settings: dict | None
 
 
-def _filter_hosts_by_groups(
-    query: Query,
-    group_id: Optional[str] = None,
-    group_ids: Optional[Sequence[str]] = None,
-) -> Query:
-    normalized_group_ids = _normalize_host_group_filter(group_id, group_ids)
-    if not normalized_group_ids:
-        return query
-    return (
-        query
-        .join(ProxyHost.groups)
-        .filter(HostGroup.id.in_(normalized_group_ids))
-        .distinct()
+def host_query(db: Session):
+    return db.query(ProxyHost).options(
+        joinedload(ProxyHost.inbound), selectinload(ProxyHost.groups),
+        selectinload(ProxyHost.subscription_templates), selectinload(ProxyHost.outgoing_links),
+        selectinload(ProxyHost.incoming_links).joinedload(HostLink.owner),
     )
 
 
-def _filter_hosts_by_search(query: Query, search: Optional[str] = None) -> Query:
-    term = search.strip() if search else ""
-    if not term:
-        return query
-    pattern = f"%{term}%"
-    return query.filter(
-        or_(
-            ProxyHost.remark.ilike(pattern),
-            ProxyHost.address.ilike(pattern),
-            cast(ProxyHost.port, String).ilike(pattern),
-        )
-    )
+def list_hosts(db: Session, group_id=None, group_ids=None, search=None, inbound_id=None,
+               enabled=None, composition=None):
+    query = host_query(db)
+    groups = list(dict.fromkeys([value for value in [group_id, *(group_ids or [])] if value]))
+    if groups:
+        query = query.filter(ProxyHost.groups.any(HostGroup.id.in_(groups)))
+    if search and search.strip():
+        term = "%" + search.strip() + "%"
+        query = query.filter(or_(ProxyHost.remark.ilike(term), ProxyHost.address.ilike(term),
+                                 cast(ProxyHost.port, String).ilike(term)))
+    if inbound_id is not None:
+        query = query.filter(ProxyHost.inbound_id == inbound_id)
+    if enabled is not None:
+        query = query.filter(ProxyHost.enabled == enabled)
+    if composition is not None:
+        query = query.filter(ProxyHost.balancer_settings.is_not(None) if composition
+                             else ProxyHost.balancer_settings.is_(None))
+    return query.order_by(ProxyHost.position, ProxyHost.id)
 
 
-def get_hosts(
-    db: Session,
-    inbound_tag: str,
-    group_id: Optional[str] = None,
-    group_ids: Optional[Sequence[str]] = None,
-    search: Optional[str] = None,
-) -> List[ProxyHost]:
-    """
-    Retrieves hosts for a given inbound tag.
-
-    Args:
-        db (Session): Database session.
-        inbound_tag (str): The tag of the inbound.
-
-    Returns:
-        List[ProxyHost]: List of hosts for the inbound.
-    """
-    inbound = inbound_crud.get_inbound(db, inbound_tag)
-    if not inbound:
-        return []
-    query = (
-        db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
-        .filter(ProxyHost.inbound_id == inbound.id)
-    )
-    query = _filter_hosts_by_groups(query, group_id=group_id, group_ids=group_ids)
-    query = _filter_hosts_by_search(query, search=search)
-    return _sort_hosts_groups(query.order_by(ProxyHost.position, ProxyHost.id).all())
-
-
-def get_hosts_v2(
-    db: Session,
-    group_id: Optional[str] = None,
-    group_ids: Optional[Sequence[str]] = None,
-    search: Optional[str] = None,
-) -> List[ProxyHost]:
-    query = (
-        db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
-    )
-    query = _filter_hosts_by_groups(query, group_id=group_id, group_ids=group_ids)
-    query = _filter_hosts_by_search(query, search=search)
-    return _sort_hosts_groups(query.order_by(ProxyHost.position, ProxyHost.id).all())
-
-
-def get_host_v2(db: Session, host_id: int) -> Optional[ProxyHost]:
-    host = (
-        db.query(ProxyHost)
-        .options(joinedload(ProxyHost.inbound), joinedload(ProxyHost.groups), joinedload(ProxyHost.subscription_templates))
-        .filter(ProxyHost.id == host_id)
-        .first()
-    )
-    if host:
-        _sort_host_groups(host)
-    return host
-
-
-def _sort_host_groups(host: ProxyHost) -> ProxyHost:
-    host.groups.sort(key=lambda group: group.id)
-    return host
-
-
-def _sort_hosts_groups(hosts: List[ProxyHost]) -> List[ProxyHost]:
-    for host in hosts:
-        _sort_host_groups(host)
-    return hosts
+def get_host(db: Session, host_id: int):
+    return host_query(db).filter(ProxyHost.id == host_id).first()
 
 
 def get_host_groups(db: Session) -> List[HostGroup]:
@@ -178,147 +108,144 @@ def _get_existing_host_groups(db: Session, group_ids: List[str]) -> List[HostGro
     return [groups_by_id[group_id] for group_id in unique_ids]
 
 
-def set_host_groups(db: Session, dbhost: ProxyHost, group_ids: List[str]) -> ProxyHost:
-    dbhost.groups = _get_existing_host_groups(db, group_ids)
-    db.commit()
-    db.refresh(dbhost)
-    return get_host_v2(db, dbhost.id)
+def merge_patch(current: dict, patch: dict, path: tuple[str, ...] = ()) -> dict:
+    result = deepcopy(current) if isinstance(current, dict) else {}
+    for key, value in patch.items():
+        if value is None:
+            result.pop(key, None)
+        elif isinstance(value, dict) and (*path, key) != ("transport", "xhttp", "extra"):
+            result[key] = merge_patch(result.get(key, {}), value, (*path, key))
+        else:
+            result[key] = deepcopy(value)
+    return result
 
 
-def attach_host_groups(
-    db: Session, dbhost: ProxyHost, group_ids: List[str]
-) -> ProxyHost:
-    groups = _get_existing_host_groups(db, group_ids)
-    existing_ids = {group.id for group in dbhost.groups}
-    for group in groups:
-        if group.id not in existing_ids:
-            dbhost.groups.append(group)
-    db.commit()
-    db.refresh(dbhost)
-    return get_host_v2(db, dbhost.id)
+def validate_connection_options(inbound: ProxyInbound, overrides: dict):
+    transport = overrides.get("transport", {})
+    xhttp = transport.get("xhttp", {})
+    stream = inbound.content.get("streamSettings", {})
+    network = stream.get("network", "tcp")
+    if "extra" in xhttp:
+        if network not in {"xhttp", "splithttp"}:
+            raise ValueError("XHTTP extra requires an XHTTP inbound")
+        settings = stream.get("xhttpSettings") or stream.get("splithttpSettings") or {}
+        if xhttp["extra"].get("uplinkHTTPMethod") == "GET" and settings.get("mode", "auto") != "packet-up":
+            raise ValueError("overrides.transport.xhttp.extra.uplinkHTTPMethod: GET requires packet-up mode")
 
 
-def detach_host_groups(
-    db: Session, dbhost: ProxyHost, group_ids: List[str]
-) -> ProxyHost:
-    _get_existing_host_groups(db, group_ids)
-    remove_ids = set(group_ids)
-    dbhost.groups = [group for group in dbhost.groups if group.id not in remove_ids]
-    db.commit()
-    db.refresh(dbhost)
-    return get_host_v2(db, dbhost.id)
+def prepare_host(db: Session, data: HostCreate, host_id: int | None) -> PreparedHost:
+    inbound = db.get(ProxyInbound, data.inbound_id)
+    if inbound is None:
+        raise ValueError("Inbound not found")
+    if host_id in data.linked_host_ids:
+        raise ValueError("A host cannot reference itself")
+    members = db.query(ProxyHost).filter(ProxyHost.id.in_(data.linked_host_ids)).all() if data.linked_host_ids else []
+    if len(members) != len(data.linked_host_ids):
+        raise ValueError("Linked host not found")
+    groups = _get_existing_host_groups(db, data.group_ids)
+    bindings = template_crud.build_host_bindings(db, data.subscription_template_ids)
+    overrides = (data.overrides.model_dump(exclude_unset=True, exclude_none=True, by_alias=True)
+                 if data.overrides else {})
+    validate_connection_options(inbound, overrides)
+    balancer = data.balancer_settings
+    if data.linked_host_ids and balancer is None:
+        balancer = BalancerSettings()
+    settings = balancer.model_dump(exclude_none=True, by_alias=True) if balancer is not None else None
+    if settings is not None:
+        validate_balancer(settings, data.subscription_template_ids, set(data.linked_host_ids) | {host_id})
+    return PreparedHost(inbound, groups, bindings, overrides, settings)
 
 
-def _apply_host_fields(dbhost: ProxyHost, host: ProxyHostModify) -> None:
-    dbhost.remark = host.remark
-    dbhost.address = host.address
-    dbhost.port = host.port
-    dbhost.path = host.path
-    dbhost.sni = host.sni
-    dbhost.host = host.host
-    dbhost.security = host.security
-    dbhost.alpn = host.alpn
-    dbhost.fingerprint = host.fingerprint
-    dbhost.allowinsecure = host.allowinsecure
-    if host.is_disabled is not None:
-        dbhost.is_disabled = host.is_disabled
-    if host.mux_enable is not None:
-        dbhost.mux_enable = host.mux_enable
-    dbhost.fragment_setting = host.fragment_setting
-    dbhost.noise_setting = host.noise_setting
-    if host.random_user_agent is not None:
-        dbhost.random_user_agent = host.random_user_agent
-    if host.use_sni_as_host is not None:
-        dbhost.use_sni_as_host = host.use_sni_as_host
-    dbhost.sc_max_buffered_posts = host.sc_max_buffered_posts
-    dbhost.x_padding_obfs_mode = host.x_padding_obfs_mode
-    dbhost.uplink_http_method = host.uplink_http_method
+def _apply(db: Session, host: ProxyHost, data: HostCreate, prepared: PreparedHost):
+    host.inbound = prepared.inbound
+    for name in ("remark", "address", "port", "enabled", "show_when_composed"):
+        setattr(host, name, getattr(data, name))
+    if data.position is not None:
+        host.position = data.position
+    host.groups = prepared.groups
+    host.subscription_templates = prepared.bindings
+    host.overrides = prepared.overrides
+    host.balancer_settings = prepared.balancer_settings
+    host.updated_at = datetime.now(UTC).replace(tzinfo=None)
+    # Delete first so reordering cannot transiently violate the unique owner/position key.
+    host.outgoing_links.clear()
+    db.flush()
+    host.outgoing_links = [HostLink(member_host_id=member_id, position=index)
+                           for index, member_id in enumerate(data.linked_host_ids)]
 
 
-def _prepare_template_bindings(db: Session, host: ProxyHostModify, creating: bool = False):
-    from app.db.crud import subscription_templates as template_crud
-
-    if "subscription_template_ids" in host.model_fields_set:
-        return template_crud.build_host_bindings(db, host.subscription_template_ids)
-    if not creating:
-        return None
-    return template_crud.build_default_host_bindings(db)
-
-
-def create_host_v2(db: Session, host: ProxyHostCreate) -> ProxyHost:
-    bindings = _prepare_template_bindings(db, host, creating=True)
-    inbound = inbound_crud.get_inbound_or_raise(db, host.inbound_tag)
-    position = host.position
+def create_host(db: Session, data: HostCreate) -> ProxyHost:
+    if "subscription_template_ids" not in data.model_fields_set:
+        if not template_crud.get_defaults(db):
+            template_crud.seed_defaults(db)
+        data = data.model_copy(update={"subscription_template_ids": template_crud.get_default_bindings(db)})
+    prepared = prepare_host(db, data, None)
+    position = data.position
     if position is None:
-        position = inbound_crud.get_next_host_position(db)
-    groups = _get_existing_host_groups(db, host.group_ids)
-    dbhost = ProxyHost(inbound=inbound, position=position, subscription_templates=bindings)
-    _apply_host_fields(dbhost, host)
-    dbhost.groups = groups
-    db.add(dbhost)
+        maximum = db.query(func.max(ProxyHost.position)).scalar()
+        position = (maximum if maximum is not None else -1) + 1
+    host = ProxyHost(position=position)
+    db.add(host)
+    _apply(db, host, data, prepared)
+    db.add(host)
     db.commit()
-    db.refresh(dbhost)
-    return get_host_v2(db, dbhost.id)
+    return get_host(db, host.id)
 
 
-def update_host_v2(
-    db: Session, dbhost: ProxyHost, host: ProxyHostV2Modify
-) -> ProxyHost:
-    bindings = _prepare_template_bindings(db, host)
-    inbound = inbound_crud.get_inbound_or_raise(db, host.inbound_tag)
-    groups = _get_existing_host_groups(db, host.group_ids)
-    dbhost.inbound = inbound
-    if bindings is not None:
-        dbhost.subscription_templates = bindings
-    if host.position is not None:
-        dbhost.position = host.position
-    _apply_host_fields(dbhost, host)
-    dbhost.groups = groups
+def update_host(db: Session, host: ProxyHost, patch: HostPatch) -> ProxyHost:
+    values = {name: getattr(host, name) for name in
+              ("inbound_id", "remark", "address", "port", "enabled", "position", "show_when_composed",
+               "overrides", "balancer_settings", "linked_host_ids", "subscription_template_ids")}
+    values["group_ids"] = [group.id for group in host.groups]
+    changes = patch.model_dump(exclude_unset=True)
+    for name in ("overrides", "balancer_settings"):
+        if name in changes and isinstance(changes[name], dict):
+            changes[name] = merge_patch(values[name] or {}, changes[name])
+    values.update(changes)
+    values["overrides"] = HostOverrides.model_validate(values["overrides"] or {})
+    data = HostCreate.model_validate(values)
+    prepared = prepare_host(db, data, host.id)
+    _apply(db, host, data, prepared)
     db.commit()
-    db.refresh(dbhost)
-    return get_host_v2(db, dbhost.id)
+    return get_host(db, host.id)
 
 
-def remove_host_v2(db: Session, dbhost: ProxyHost) -> None:
-    db.delete(dbhost)
+def remove_host(db: Session, host: ProxyHost):
+    db.delete(host)
     db.commit()
 
 
-def reorder_hosts_v2(db: Session, host_ids: List[int]) -> List[ProxyHost]:
-    hosts = get_hosts_v2(db)
-    existing_ids = {host.id for host in hosts}
-    if len(host_ids) != len(set(host_ids)) or set(host_ids) != existing_ids:
+def reorder_hosts(db: Session, ids: list[int]):
+    hosts = list_hosts(db).all()
+    if len(ids) != len(set(ids)) or set(ids) != {host.id for host in hosts}:
         raise ValueError("Host order must contain every host exactly once")
-
-    hosts_by_id = {host.id: host for host in hosts}
-    for position, host_id in enumerate(host_ids):
-        hosts_by_id[host_id].position = position
-
+    by_id = {host.id: host for host in hosts}
+    for position, host_id in enumerate(ids):
+        by_id[host_id].position = position
     db.commit()
-    return get_hosts_v2(db)
+    return list_hosts(db).all()
 
 
-def add_host(db: Session, inbound_tag: str, host: ProxyHostModify) -> List[ProxyHost]:
-    create_host_v2(db, ProxyHostCreate(inbound_tag=inbound_tag, **host.model_dump(exclude_unset=True)))
-    return get_hosts(db, inbound_tag)
-
-
-def update_hosts(db: Session, inbound_tag: str, modified_hosts: List[ProxyHostModify]) -> List[ProxyHost]:
-    inbound = inbound_crud.get_inbound_or_raise(db, inbound_tag)
-    existing = get_hosts(db, inbound_tag)
-    # Legacy payloads have no IDs. Preserve their positional bindings instead of recreating every host.
-    prepared = [
-        _prepare_template_bindings(db, host, creating=index >= len(existing))
-        for index, host in enumerate(modified_hosts)
-    ]
-    position = inbound_crud.get_next_host_position(db)
-    for index, host in enumerate(modified_hosts):
-        dbhost = existing[index] if index < len(existing) else ProxyHost(inbound=inbound, position=position + index)
-        _apply_host_fields(dbhost, host)
-        if prepared[index] is not None:
-            dbhost.subscription_templates = prepared[index]
-        db.add(dbhost)
-    for dbhost in existing[len(modified_hosts):]:
-        db.delete(dbhost)
+def clone_host(db: Session, source: ProxyHost, remark: str):
+    data = HostCreate(
+        inbound_id=source.inbound_id, remark=remark, address=source.address, port=source.port,
+        enabled=False, show_when_composed=source.show_when_composed,
+        overrides=source.overrides, balancer_settings=source.balancer_settings,
+        linked_host_ids=source.linked_host_ids, group_ids=[group.id for group in source.groups],
+        subscription_template_ids=source.subscription_template_ids,
+    )
+    prepared = prepare_host(db, data, source.id)
+    maximum = db.query(func.max(ProxyHost.position)).scalar()
+    host = ProxyHost(position=(maximum if maximum is not None else -1) + 1)
+    db.add(host)
+    _apply(db, host, data, prepared)
+    # Costs identify connections by host ID; the owner's cost must follow its clone.
+    settings = deepcopy(host.balancer_settings)
+    if settings:
+        for options in settings.get("clients", {}).values():
+            for cost in (options.get("strategy_settings") or {}).get("costs", []):
+                if cost["host_id"] == source.id:
+                    cost["host_id"] = host.id
+        host.balancer_settings = settings
     db.commit()
-    return get_hosts(db, inbound_tag)
+    return get_host(db, host.id)

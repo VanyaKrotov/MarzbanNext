@@ -8,8 +8,9 @@ from sqlalchemy.orm import sessionmaker
 from app.db.base import Base
 from app.db.models.associations import host_group_hosts_association
 from app.db.models.proxies import ProxyInbound
-from app.models.proxy import HostGroupCreate, HostGroupModify, ProxyHostCreate, ProxyHostV2
-from app.subscription.share import build_subscription_hosts_by_inbound, filter_subscription_inbounds_by_hosts
+from app.models.proxy import HostGroupCreate, HostGroupModify
+from app.models.host import HostCreate as ProxyHostCreate, HostPatch, HostResponse as ProxyHostV2
+from app.subscription.share import build_subscription_hosts_by_inbound
 from app.db.crud import proxy_hosts as host_crud
 
 
@@ -34,10 +35,10 @@ class HostGroupTests(TestCase):
         )
 
     def create_host(self, remark="Germany", group_ids=None, address="example.com", port=None):
-        return host_crud.create_host_v2(
+        return host_crud.create_host(
             self.db,
             ProxyHostCreate(
-                inbound_tag="VLESS TCP",
+                inbound_id=1,
                 remark=remark,
                 address=address,
                 port=port,
@@ -79,52 +80,46 @@ class HostGroupTests(TestCase):
 
         response = ProxyHostV2.model_validate(host)
         self.assertEqual([group.id for group in response.groups], ["eu", "us"])
-        self.assertEqual([row.id for row in host_crud.get_hosts_v2(self.db, group_id="eu")], [host.id])
-        self.assertEqual([row.id for row in host_crud.get_hosts(self.db, "VLESS TCP", group_id="eu")], [host.id])
+        self.assertEqual([row.id for row in host_crud.list_hosts(self.db, group_id="eu")], [host.id])
+        self.assertEqual([row.id for row in host_crud.list_hosts(self.db, inbound_id=1, group_id="eu")], [host.id])
         self.assertEqual(
-            [row.remark for row in host_crud.get_hosts_v2(self.db, group_ids=["eu", "us"])],
+            [row.remark for row in host_crud.list_hosts(self.db, group_ids=["eu", "us"])],
             ["Germany", "Chicago"],
         )
         self.assertEqual(
-            [row.remark for row in host_crud.get_hosts(self.db, "VLESS TCP", group_ids=["eu", "us"])],
+            [row.remark for row in host_crud.list_hosts(self.db, inbound_id=1, group_ids=["eu", "us"])],
             ["Germany", "Chicago"],
         )
-        self.assertEqual([row.id for row in host_crud.get_hosts_v2(self.db, search="germany")], [host.id])
-        self.assertEqual([row.id for row in host_crud.get_hosts_v2(self.db, search="berlin")], [host.id])
-        self.assertEqual([row.id for row in host_crud.get_hosts_v2(self.db, search="1080")], [host.id])
+        self.assertEqual([row.id for row in host_crud.list_hosts(self.db, search="germany")], [host.id])
+        self.assertEqual([row.id for row in host_crud.list_hosts(self.db, search="berlin")], [host.id])
+        self.assertEqual([row.id for row in host_crud.list_hosts(self.db, search="1080")], [host.id])
 
     def test_subscription_hosts_are_built_from_filtered_hosts(self):
         self.create_group("eu", "Europe")
         self.create_host(group_ids=["eu"], address="berlin.example.com")
         disabled_host = self.create_host("Disabled", group_ids=["eu"], address="disabled.example.com")
-        disabled_host.is_disabled = True
+        disabled_host.enabled = False
         self.db.commit()
 
-        hosts = host_crud.get_hosts_v2(self.db, group_ids=["eu"])
+        hosts = host_crud.list_hosts(self.db, group_ids=["eu"])
         hosts_by_inbound = build_subscription_hosts_by_inbound(hosts)
         self.assertEqual(list(hosts_by_inbound), ["VLESS TCP"])
-        self.assertEqual([host["remark"] for host in hosts_by_inbound["VLESS TCP"]], ["Germany"])
-        self.assertEqual(
-            filter_subscription_inbounds_by_hosts(
-                {"vless": ["VLESS TCP", "VLESS WS"]},
-                hosts_by_inbound,
-            ),
-            {"vless": ["VLESS TCP"]},
-        )
+        self.assertEqual([host.remark for host in hosts_by_inbound["VLESS TCP"]], ["Germany"])
+
 
     def test_attach_detach_and_missing_group(self):
         host = self.create_host()
         self.create_group("eu", "Europe")
         self.create_group("us", "United States")
 
-        attached = host_crud.attach_host_groups(self.db, host, ["eu", "us"])
+        attached = host_crud.update_host(self.db, host, HostPatch(group_ids=["eu", "us"]))
         self.assertEqual([group.id for group in attached.groups], ["eu", "us"])
 
-        detached = host_crud.detach_host_groups(self.db, attached, ["eu"])
+        detached = host_crud.update_host(self.db, attached, HostPatch(group_ids=["us"]))
         self.assertEqual([group.id for group in detached.groups], ["us"])
 
         with self.assertRaises(ValueError):
-            host_crud.attach_host_groups(self.db, detached, ["missing"])
+            host_crud.update_host(self.db, detached, HostPatch(group_ids=["missing"]))
 
     def test_delete_group_or_host_cleans_associations(self):
         group = self.create_group()
@@ -135,8 +130,8 @@ class HostGroupTests(TestCase):
         self.assertEqual(self.association_count(), 0)
 
         group = self.create_group()
-        host = host_crud.set_host_groups(self.db, host, [group.id])
+        host = host_crud.update_host(self.db, host, HostPatch(group_ids=[group.id]))
         self.assertEqual(self.association_count(), 1)
 
-        host_crud.remove_host_v2(self.db, host)
+        host_crud.remove_host(self.db, host)
         self.assertEqual(self.association_count(), 0)

@@ -7,13 +7,12 @@ from app.db.models.associations import (  # noqa: F401
     node_outbounds_association,
     node_routing_rules_association,
     template_inbounds_association,
-    subscription_balancer_hosts_association,
 )
 from app.db.models.admins import Admin, AdminUsageLogs  # noqa: F401
 from app.db.models.users import NextPlan, User, UserTemplate, UserUsageResetLogs  # noqa: F401
-from app.db.models.proxies import HostGroup, Proxy, ProxyHost, ProxyInbound, ProxyOutbound  # noqa: F401
+from app.db.models.proxies import HostGroup, HostLink, Proxy, ProxyHost, ProxyInbound, ProxyOutbound  # noqa: F401
 from app.db.models.routing import RoutingRule  # noqa: F401
-from app.db.models.settings import JWT, RuntimeSettings, SubscriptionBalancer, System, TLS  # noqa: F401
+from app.db.models.settings import JWT, RuntimeSettings, System, TLS  # noqa: F401
 from app.db.models.nodes import Node  # noqa: F401
 from app.db.models.node_certificates import NodeCertificate  # noqa: F401
 from app.db.models.node_geo_resources import NodeGeoResourceUpdate  # noqa: F401

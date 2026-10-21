@@ -51,20 +51,3 @@ host_group_hosts_association = Table(
     Column("host_id", Integer, ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True),
     Column("group_id", String(64), ForeignKey("host_groups.id", ondelete="CASCADE"), primary_key=True),
 )
-
-subscription_balancer_hosts_association = Table(
-    "subscription_balancer_hosts",
-    Base.metadata,
-    Column(
-        "balancer_id",
-        Integer,
-        ForeignKey("subscription_balancers.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-    Column(
-        "host_id",
-        Integer,
-        ForeignKey("hosts.id", ondelete="CASCADE"),
-        primary_key=True,
-    ),
-)

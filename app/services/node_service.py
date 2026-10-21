@@ -38,7 +38,7 @@ from app.models.node import (
     validate_geo_resource_filename,
 )
 from app.xray.node import NodeAPIError
-from app.models.proxy import ProxyHost
+from app.models.host import HostCreate
 from app.utils.node_geo_resources import (
     download_geo_resource,
     get_next_run_at,
@@ -63,12 +63,12 @@ from app.utils.xray_config_template import normalize_xray_config_template
 def add_host_if_needed(new_node: NodeCreate, dbnode, db: Session):
     """Add a host if specified in the new node settings."""
     if new_node.add_as_new_host:
-        host = ProxyHost(
-            remark=f"{new_node.name} ({{USERNAME}}) [{{PROTOCOL}} - {{TRANSPORT}}]",
-            address=new_node.address,
-        )
         for inbound in dbnode.inbounds:
-            host_crud.add_host(db, inbound.tag, host)
+            host_crud.create_host(db, HostCreate(
+                inbound_id=inbound.id,
+                remark=f"{new_node.name} ({{USERNAME}}) [{{PROTOCOL}} - {{TRANSPORT}}]",
+                address=new_node.address,
+            ))
 
 
 def get_node_settings(

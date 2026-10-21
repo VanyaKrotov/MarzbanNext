@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/table";
 
 import { DeleteHostButton } from "./DeleteHostButton";
+import { HostCompositionSummary } from "./HostCompositionSummary";
+import { HostOrderButtons } from "./HostOrderButtons";
+import type { HostType } from "../types";
 import { HostGroupBadges } from "./HostGroupBadges";
 
 import type { HostRow } from "../lib/model";
@@ -26,6 +29,8 @@ type DropTarget = {
 
 type HostsTableProps = {
   rows: HostRow[];
+  hostsById: ReadonlyMap<number, HostType>;
+  onMove: (row: HostRow, direction: -1 | 1) => void;
   pending: boolean;
   reorderDisabled: boolean;
   dropTarget: DropTarget;
@@ -41,6 +46,8 @@ type HostsTableProps = {
 
 export function HostsTable({
   rows,
+  hostsById,
+  onMove,
   pending,
   reorderDisabled,
   dropTarget,
@@ -66,11 +73,12 @@ export function HostsTable({
             <TableHead>{t("hostsPage.enabled")}</TableHead>
             <TableHead>{t("hostsPage.inbound")}</TableHead>
             <TableHead>{t("hostsPage.groups")}</TableHead>
+            <TableHead>{t("hostEditor.singleVisibility")}</TableHead>
             <TableHead className="w-28" />
           </TableRow>
         </TableHeader>
         <TableBody>
-          {rows.map((row) => (
+          {rows.map((row, index) => (
             <TableRow
               key={row.id}
               draggable={!reorderDisabled}
@@ -88,15 +96,16 @@ export function HostsTable({
               onClick={() => onEdit(row)}
             >
               <TableCell>
+                <HostOrderButtons disabled={pending || reorderDisabled} first={index === 0} last={index === rows.length - 1} onMove={(direction) => onMove(row, direction)} />
                 <GripVertical
                   className={`size-4 text-muted-foreground ${
                     reorderDisabled ? "opacity-30" : "cursor-grab"
                   }`}
                 />
               </TableCell>
-              <TableCell className="font-medium">{row.remark}</TableCell>
+              <TableCell className="font-medium"><Button type="button" variant="link" className="h-auto whitespace-normal p-0 text-start text-foreground" onClick={(event) => { event.stopPropagation(); onEdit(row); }}>{row.remark}</Button><HostCompositionSummary host={row} hostsById={hostsById} onEdit={onEdit} /></TableCell>
               <TableCell className="font-mono text-xs">
-                {row.address}:{row.port ?? "default"}
+                {row.address}:{row.port ?? t("hostEditor.portFromInbound")}
               </TableCell>
               <TableCell>
                 <div
@@ -104,7 +113,7 @@ export function HostsTable({
                   onClick={(event) => event.stopPropagation()}
                 >
                   <Switch
-                    checked={!row.is_disabled}
+                    checked={row.enabled}
                     disabled={pending}
                     onCheckedChange={(checked) => onToggle(row, checked)}
                   />
@@ -116,6 +125,7 @@ export function HostsTable({
               <TableCell>
                 <HostGroupBadges groups={row.groups} />
               </TableCell>
+              <TableCell>{t(row.show_when_composed ? "hostsDialog.enabled" : "hostsDialog.disabled")}</TableCell>
               <TableCell onClick={(event) => event.stopPropagation()}>
                 <div className="flex justify-end gap-1">
                   <Button

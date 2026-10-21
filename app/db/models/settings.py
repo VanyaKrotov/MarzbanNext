@@ -2,10 +2,8 @@ import os
 from datetime import datetime
 
 from sqlalchemy import JSON, BigInteger, Boolean, Column, DateTime, Integer, String, Text
-from sqlalchemy.orm import relationship
 
 from app.db.base import Base
-from app.db.models.associations import subscription_balancer_hosts_association
 from app.models.settings import default_node_config
 
 
@@ -82,26 +80,3 @@ class RuntimeSettings(Base):
     grpc_user_agent = Column(Text, nullable=False, default="")
 
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-
-
-class SubscriptionBalancer(Base):
-    __tablename__ = "subscription_balancers"
-
-    id = Column(Integer, primary_key=True)
-    name = Column(String(256), unique=True, nullable=False)
-    enabled = Column(Boolean, nullable=False, default=True, server_default="1")
-    strategy = Column(String(32), nullable=False, default="least_ping", server_default="least_ping")
-    probe_url = Column(String(2048), nullable=False)
-    probe_interval = Column(Integer, nullable=False, default=300, server_default="300")
-    position = Column(Integer, nullable=False, default=0, server_default="0", index=True)
-    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
-    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
-    hosts = relationship(
-        "ProxyHost",
-        secondary=subscription_balancer_hosts_association,
-        backref="subscription_balancers",
-    )
-
-    @property
-    def host_ids(self) -> list[int]:
-        return [host.id for host in self.hosts]

@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
+from sqlalchemy import JSON, Boolean, CheckConstraint, Column, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -11,7 +11,7 @@ from app.db.models.associations import (
     node_inbounds_association,
     node_outbounds_association,
 )
-from app.models.proxy import ProxyHostALPN, ProxyHostFingerprint, ProxyHostSecurity, ProxyTypes
+from app.models.proxy import ProxyTypes
 
 
 class Proxy(Base):
@@ -63,59 +63,32 @@ class ProxyOutbound(Base):
 
 class ProxyHost(Base):
     __tablename__ = "hosts"
-    # __table_args__ = (
-    #     UniqueConstraint('inbound_tag', 'remark'),
-    # )
 
     id = Column(Integer, primary_key=True)
-    remark = Column(String(256), unique=False, nullable=False)
-    address = Column(String(256), unique=False, nullable=False)
+    remark = Column(String(256), nullable=False)
+    address = Column(String(256), nullable=False)
     port = Column(Integer, nullable=True)
-    path = Column(String(256), unique=False, nullable=True)
-    sni = Column(String(1000), unique=False, nullable=True)
-    host = Column(String(1000), unique=False, nullable=True)
-    security = Column(
-        Enum(ProxyHostSecurity),
-        unique=False,
-        nullable=False,
-        default=ProxyHostSecurity.inbound_default,
-    )
-    alpn = Column(
-        Enum(ProxyHostALPN),
-        unique=False,
-        nullable=False,
-        default=ProxyHostSecurity.none,
-        server_default=ProxyHostSecurity.none.name
-    )
-    fingerprint = Column(
-        Enum(ProxyHostFingerprint),
-        unique=False,
-        nullable=False,
-        default=ProxyHostSecurity.none,
-        server_default=ProxyHostSecurity.none.name
-    )
-
     inbound_id = Column(Integer, ForeignKey("inbounds.id"), nullable=False)
     inbound = relationship("ProxyInbound", back_populates="hosts")
-    groups = relationship(
-        "HostGroup",
-        secondary=host_group_hosts_association,
-        back_populates="hosts",
-    )
+    enabled = Column(Boolean, nullable=False, default=True, server_default="1")
     position = Column(Integer, nullable=False, default=0, server_default="0", index=True)
-    allowinsecure = Column(Boolean, nullable=True)
-    is_disabled = Column(Boolean, nullable=True, default=False)
-    mux_enable = Column(Boolean, nullable=False, default=False, server_default='0')
-    fragment_setting = Column(String(100), nullable=True)
-    noise_setting = Column(String(2000), nullable=True)
-    random_user_agent = Column(Boolean, nullable=False, default=False, server_default='0')
-    use_sni_as_host = Column(Boolean, nullable=False, default=False, server_default="0")
-    sc_max_buffered_posts = Column(Integer, nullable=True)
-    x_padding_obfs_mode = Column(Boolean, nullable=True)
-    uplink_http_method = Column(String(32), nullable=True)
-
+    show_when_composed = Column(Boolean, nullable=False, default=True, server_default="1")
+    overrides = Column(JSON, nullable=False, default=dict)
+    balancer_settings = Column(JSON(none_as_null=True), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
+    updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
+    groups = relationship("HostGroup", secondary=host_group_hosts_association, back_populates="hosts",
+                          order_by="HostGroup.id")
     subscription_templates = relationship(
         "HostSubscriptionTemplate", back_populates="host", cascade="all, delete-orphan"
+    )
+    outgoing_links = relationship(
+        "HostLink", foreign_keys="HostLink.owner_host_id", back_populates="owner",
+        cascade="all, delete-orphan", order_by="HostLink.position",
+    )
+    incoming_links = relationship(
+        "HostLink", foreign_keys="HostLink.member_host_id", back_populates="member",
+        cascade="all, delete-orphan",
     )
 
     @property
@@ -124,7 +97,28 @@ class ProxyHost(Base):
 
     @property
     def inbound_tag(self):
-        return self.inbound.tag if self.inbound else None
+        return self.inbound.tag
+
+    @property
+    def linked_host_ids(self) -> list[int]:
+        return [link.member_host_id for link in self.outgoing_links]
+
+    @property
+    def member_of(self) -> list[dict]:
+        return [{"id": link.owner_host_id, "remark": link.owner.remark} for link in self.incoming_links]
+
+
+class HostLink(Base):
+    __tablename__ = "host_links"
+    __table_args__ = (
+        CheckConstraint("owner_host_id != member_host_id", name="ck_host_link_no_self"),
+        UniqueConstraint("owner_host_id", "position", name="uq_host_link_position"),
+    )
+    owner_host_id = Column(Integer, ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True)
+    member_host_id = Column(Integer, ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True, index=True)
+    position = Column(Integer, nullable=False)
+    owner = relationship("ProxyHost", foreign_keys=[owner_host_id], back_populates="outgoing_links")
+    member = relationship("ProxyHost", foreign_keys=[member_host_id], back_populates="incoming_links")
 
 
 class HostGroup(Base):

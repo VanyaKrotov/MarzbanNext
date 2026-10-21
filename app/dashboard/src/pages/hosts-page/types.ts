@@ -20,6 +20,8 @@ export type HostGroupPayload = {
 
 export type HostGroupUpdatePayload = Omit<HostGroupPayload, "id">;
 
+export type JsonObject = Record<string, unknown>;
+
 export type HostType = {
   id: number;
   inbound_id: number;
@@ -28,33 +30,34 @@ export type HostType = {
   remark: string;
   address: string;
   port: number | null;
-  path: string | null;
-  sni: string | null;
-  host: string | null;
-  mux_enable: boolean;
-  allowinsecure: boolean | null;
-  is_disabled: boolean;
-  fragment_setting: string | null;
-  noise_setting: string | null;
-  random_user_agent: boolean;
-  security: string;
-  alpn: string;
-  fingerprint: string;
-  use_sni_as_host: boolean;
-  sc_max_buffered_posts: number | null;
-  x_padding_obfs_mode: boolean | null;
-  uplink_http_method: string | null;
+  enabled: boolean;
+  show_when_composed: boolean;
+  overrides: JsonObject;
+  balancer_settings: JsonObject | null;
+  linked_host_ids: number[];
+  member_of: { id: number; remark: string }[];
   groups: HostGroupRef[];
   subscription_template_ids: TemplateBindings;
+  created_at: string;
+  updated_at: string;
 };
 
-export type HostPayload = Omit<
-  HostType,
-  "id" | "inbound_id" | "inbound_tag" | "position" | "groups"
-> & {
-  inbound_tag: string;
-  position?: number | null;
-  group_ids: string[];
+export type HostPayload = {
+  inbound_id: number;
+  remark: string;
+  address: string;
+  port: number | null;
+  enabled: boolean;
+  show_when_composed: boolean;
+  overrides?: JsonObject | null;
+  balancer_settings?: JsonObject | null;
+  linked_host_ids?: number[];
+  group_ids?: string[];
+  subscription_template_ids?: TemplateBindings;
 };
 
 export type HostsSchema = HostType[];
+export type HostCapabilities = {
+  schema_version: number;
+  strategies: Record<string, string[]>;
+};

@@ -1,6 +1,5 @@
 from copy import deepcopy
-from datetime import datetime
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
 from urllib.parse import urlparse
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -214,48 +213,3 @@ class RuntimeSettingsModify(BaseModel):
     _validate_webhook_addresses = field_validator(
         "webhook_addresses"
     )(RuntimeSettingsBase.validate_webhook_addresses.__func__)
-
-
-SubscriptionBalancerStrategy = Literal[
-    "least_ping",
-    "least_load",
-    "random",
-    "round_robin",
-]
-
-
-class SubscriptionBalancerBase(BaseModel):
-    name: str = Field(min_length=1, max_length=256)
-    enabled: bool = True
-    strategy: SubscriptionBalancerStrategy = "least_ping"
-    probe_url: str = Field(min_length=1, max_length=2048)
-    probe_interval: int = Field(default=300, ge=10, le=86400)
-    host_ids: list[int] = Field(default_factory=list)
-
-    @field_validator("probe_url")
-    @classmethod
-    def validate_probe_url(cls, value: str) -> str:
-        value = value.strip()
-        parsed = urlparse(value)
-        if parsed.scheme not in ("http", "https") or not parsed.netloc:
-            raise ValueError("must be an http or https URL")
-        return value
-
-
-class SubscriptionBalancerCreate(SubscriptionBalancerBase):
-    pass
-
-
-class SubscriptionBalancerModify(SubscriptionBalancerBase):
-    pass
-
-
-class SubscriptionBalancerReorder(BaseModel):
-    balancer_ids: list[int]
-
-
-class SubscriptionBalancerResponse(SubscriptionBalancerBase):
-    id: int
-    created_at: datetime
-    updated_at: datetime
-    model_config = ConfigDict(from_attributes=True)

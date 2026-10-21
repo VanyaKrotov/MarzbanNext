@@ -1,7 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { useInboundsListQuery } from "hooks/useInboundsQuery";
-import { subscriptionBalancersQueryKey } from "./subscription-balancers-query";
 import type {
   HostGroupType,
   HostGroupPayload,
@@ -12,24 +11,26 @@ import type {
 } from "../types";
 import { api } from "service/http";
 
-export const hostsQueryKey = ["hosts", "v2"] as const;
+export const hostsQueryKey = ["hosts", "unified"] as const;
 export const hostGroupsQueryKey = ["host-groups"] as const;
 
 export function useHostsQuery(groupIds: string[] = [], search = "") {
   return useQuery({
     queryKey: [...hostsQueryKey, groupIds, search],
-    queryFn: () => {
-      const params = new URLSearchParams();
-      if (groupIds.length) {
-        params.set("groups", groupIds.join(","));
+    queryFn: async ({ signal }) => {
+      const params = new URLSearchParams({ limit: "1000" });
+      if (groupIds.length) params.set("groups", groupIds.join(","));
+      if (search.trim()) params.set("search", search.trim());
+      const items: HostsSchema = [];
+      let total = 1;
+      while (items.length < total) {
+        params.set("offset", String(items.length));
+        const page = await api.get<{ items: HostsSchema; total: number }>("/hosts", { params, signal });
+        items.push(...page.items);
+        total = page.total;
+        if (!page.items.length) break;
       }
-      const trimmedSearch = search.trim();
-      if (trimmedSearch) {
-        params.set("search", trimmedSearch);
-      }
-      return api.get<HostsSchema>("/hosts/v2", {
-        params: params.size ? params : undefined,
-      });
+      return items;
     },
   });
 }
@@ -65,7 +66,6 @@ export function useUpdateHostGroupMutation() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: hostsQueryKey }),
         queryClient.invalidateQueries({ queryKey: hostGroupsQueryKey }),
-        queryClient.invalidateQueries({ queryKey: subscriptionBalancersQueryKey }),
         queryClient.invalidateQueries({ queryKey: ["users"] }),
       ]),
   });
@@ -79,7 +79,6 @@ export function useDeleteHostGroupMutation() {
       Promise.all([
         queryClient.invalidateQueries({ queryKey: hostsQueryKey }),
         queryClient.invalidateQueries({ queryKey: hostGroupsQueryKey }),
-        queryClient.invalidateQueries({ queryKey: subscriptionBalancersQueryKey }),
         queryClient.invalidateQueries({ queryKey: ["users"] }),
       ]),
   });
@@ -95,7 +94,6 @@ function useHostsMutation<TData, TVariables>(
       Promise.all([
         queryClient.invalidateQueries({ queryKey: hostsQueryKey }),
         queryClient.invalidateQueries({ queryKey: hostGroupsQueryKey }),
-        queryClient.invalidateQueries({ queryKey: subscriptionBalancersQueryKey }),
         queryClient.invalidateQueries({ queryKey: ["users"] }),
       ]),
   });
@@ -103,43 +101,38 @@ function useHostsMutation<TData, TVariables>(
 
 export function useCreateHostMutation() {
   return useHostsMutation((host: HostPayload) =>
-    api.post<HostType>("/hosts/v2", host),
+    api.post<HostType>("/hosts", host),
+  );
+}
+
+export function useCloneHostMutation() {
+  return useHostsMutation(({ id, remark }: { id: number; remark: string }) =>
+    api.post<HostType>(`/hosts/${id}/clone`, { remark }),
   );
 }
 
 export function useUpdateHostMutation() {
   return useHostsMutation(
-    ({ id, host }: { id: number; host: HostPayload }) =>
-      api.put<HostType>(`/hosts/v2/${id}`, host),
+    ({ id, host }: { id: number; host: Partial<HostPayload> }) =>
+      api.patch<HostType>(`/hosts/${id}`, host),
   );
 }
 
 export function useDeleteHostMutation() {
-  return useHostsMutation((id: number) => api.delete(`/hosts/v2/${id}`));
+  return useHostsMutation((id: number) => api.delete(`/hosts/${id}`));
 }
 
 export function useReorderHostsMutation() {
   return useHostsMutation((hostIds: number[]) =>
-    api.put<HostsSchema>("/hosts/v2/reorder", { host_ids: hostIds }),
+    api.post<HostsSchema>("/hosts/reorder", { host_ids: hostIds }),
   );
 }
 
-export function useAttachHostGroupsMutation() {
-  return useHostsMutation(
-    ({ hostId, groupIds }: { hostId: number; groupIds: string[] }) =>
-      api.post<HostType>(`/hosts/v2/${hostId}/groups`, {
-        group_ids: groupIds,
-      }),
-  );
-}
-
-export function useDetachHostGroupsMutation() {
-  return useHostsMutation(
-    ({ hostId, groupIds }: { hostId: number; groupIds: string[] }) =>
-      api.delete<HostType>(`/hosts/v2/${hostId}/groups`, {
-        data: { group_ids: groupIds },
-      }),
-  );
+export function useHostCapabilitiesQuery() {
+  return useQuery({
+    queryKey: ["host-capabilities"],
+    queryFn: () => api.get<import("../types").HostCapabilities>("/hosts/capabilities"),
+  });
 }
 
 export function useInboundsQuery(includeTag?: string) {

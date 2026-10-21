@@ -29,8 +29,8 @@ def add_default_host(db: Session, inbound: ProxyInbound):
     )
     from app.db.crud.subscription_templates import build_default_host_bindings
 
-    host.subscription_templates = build_default_host_bindings(db)
     db.add(host)
+    host.subscription_templates = build_default_host_bindings(db)
     db.commit()
 
 
@@ -192,6 +192,12 @@ def update_inbound(
             raise ValueError("Content of read-only inbounds cannot be changed")
         content = dict(modified.content)
         content["tag"] = dbinbound.tag
+        from app.db.crud.proxy_hosts import validate_connection_options
+
+        # Validate against the proposed content before mutating the managed inbound.
+        proposed = ProxyInbound(content=content)
+        for host in dbinbound.hosts:
+            validate_connection_options(proposed, host.overrides)
         dbinbound.content = content
     if modified.enabled is not None:
         dbinbound.enabled = True if dbinbound.readonly else modified.enabled

@@ -11,16 +11,11 @@ from app.models.proxy import (
     InboundCreate,
     InboundModify,
     InboundResponse,
-    HostGroupAttachRequest,
     HostGroupCreate,
     HostGroupModify,
     OutboundCreate,
     OutboundModify,
     OutboundResponse,
-    ProxyHost,
-    ProxyHostCreate,
-    ProxyHostModify,
-    ProxyHostReorder,
     RUNTIME_API_PROTOCOLS,
     USER_ACCOUNT_PROTOCOLS,
     XRAY_INBOUND_PROTOCOLS,
@@ -40,7 +35,6 @@ from app.utils.xray_config_registry import (
     get_enabled_inbound_registry,
 )
 from app.xray.config import XRayConfig
-from app.db.crud.subscription_templates import TemplateBindingError
 from app.db.crud import admins as admin_crud
 from app.db.crud import node_certificates as certificate_crud
 from app.db.crud import proxy_hosts as host_crud
@@ -196,18 +190,21 @@ def get_inbounds(
     admin: Admin = Depends(Admin.get_current),
 ):
     """Retrieve inbound configurations grouped by protocol."""
+    inbound_rows = inbound_crud.get_inbounds(db)
+    ids_by_tag = {inbound.tag: inbound.id for inbound in inbound_rows}
     nodes_by_inbound_tag = {
         inbound.tag: [
             {"id": node.id, "name": node.name}
             for node in sorted(inbound.nodes, key=lambda node: (node.name, node.id))
         ]
-        for inbound in inbound_crud.get_inbounds(db)
+        for inbound in inbound_rows
     }
     registry = get_enabled_inbound_registry(db)
     return {
         protocol: [
             {
                 **inbound,
+                "id": ids_by_tag[inbound["tag"]],
                 "nodes": nodes_by_inbound_tag.get(inbound["tag"], []),
             }
             for inbound in inbounds
@@ -228,28 +225,6 @@ def get_inbound_configs(
         _inbound_response(inbound)
         for inbound in inbound_crud.get_inbounds(db, node_id=node_id)
     ]
-
-
-def _validate_host_xhttp_settings(host: ProxyHost, inbound) -> None:
-    xhttp_fields = (
-        "sc_max_buffered_posts",
-        "x_padding_obfs_mode",
-        "uplink_http_method",
-    )
-    if not any(getattr(host, field) is not None for field in xhttp_fields):
-        return
-
-    stream_settings = (inbound.content or {}).get("streamSettings", {})
-    network = stream_settings.get("network", "tcp").lower()
-    if network not in {"xhttp", "splithttp"}:
-        raise HTTPException(status_code=400, detail="XHTTP host settings require an XHTTP inbound")
-
-    xhttp_settings = stream_settings.get("xhttpSettings") or stream_settings.get("splithttpSettings") or {}
-    if host.uplink_http_method == "GET" and xhttp_settings.get("mode", "auto") != "packet-up":
-        raise HTTPException(
-            status_code=400,
-            detail="Uplink HTTP method GET requires XHTTP packet-up mode",
-        )
 
 
 def create_inbound_config(
@@ -516,169 +491,6 @@ def delete_host_group(
         raise HTTPException(status_code=404, detail="Host group not found")
     host_crud.delete_host_group(db, dbgroup)
     return {}
-
-
-def get_hosts(
-    group_id: Union[str, None] = Query(None),
-    groups: Union[str, None] = Query(None),
-    search: Union[str, None] = Query(None),
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Get a list of proxy hosts grouped by inbound tag."""
-    hosts = {
-        tag: host_crud.get_hosts(
-            db,
-            tag,
-            group_id=group_id,
-            group_ids=parse_groups_query(groups),
-            search=search,
-        )
-        for tag in [inbound.tag for inbound in inbound_crud.get_inbounds(db)]
-    }
-    return hosts
-
-
-def get_hosts_v2(
-    group_id: Union[str, None] = Query(None),
-    groups: Union[str, None] = Query(None),
-    search: Union[str, None] = Query(None),
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Get a flat list of proxy hosts ordered by position."""
-    return host_crud.get_hosts_v2(
-        db,
-        group_id=group_id,
-        group_ids=parse_groups_query(groups),
-        search=search,
-    )
-
-
-def create_host_v2(
-    host: ProxyHostCreate,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Create a proxy host."""
-    inbound = inbound_crud.get_inbound(db, host.inbound_tag)
-    if not inbound:
-        raise HTTPException(
-            status_code=400, detail=f"Inbound {host.inbound_tag} doesn't exist"
-        )
-    _validate_host_xhttp_settings(host, inbound)
-    try:
-        dbhost = host_crud.create_host_v2(db, host)
-    except TemplateBindingError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return dbhost
-
-
-def reorder_hosts_v2(
-    payload: ProxyHostReorder,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Update the global proxy host order without changing inbound assignments."""
-    try:
-        hosts = host_crud.reorder_hosts_v2(db, payload.host_ids)
-    except ValueError as exc:
-        raise HTTPException(status_code=400, detail=str(exc)) from exc
-    return hosts
-
-
-def update_host_v2(
-    host_id: int,
-    host: ProxyHostModify,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Update a proxy host."""
-    inbound = inbound_crud.get_inbound(db, host.inbound_tag)
-    if not inbound:
-        raise HTTPException(
-            status_code=400, detail=f"Inbound {host.inbound_tag} doesn't exist"
-        )
-    _validate_host_xhttp_settings(host, inbound)
-    dbhost = host_crud.get_host_v2(db, host_id)
-    if not dbhost:
-        raise HTTPException(status_code=404, detail="Host not found")
-    try:
-        dbhost = host_crud.update_host_v2(db, dbhost, host)
-    except TemplateBindingError as exc:
-        raise HTTPException(status_code=422, detail=str(exc)) from exc
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-    return dbhost
-
-
-def attach_host_groups(
-    host_id: int,
-    payload: HostGroupAttachRequest,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Attach a proxy host to one or more host groups."""
-    dbhost = host_crud.get_host_v2(db, host_id)
-    if not dbhost:
-        raise HTTPException(status_code=404, detail="Host not found")
-    try:
-        return host_crud.attach_host_groups(db, dbhost, payload.group_ids)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-
-def detach_host_groups(
-    host_id: int,
-    payload: HostGroupAttachRequest,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Detach a proxy host from one or more host groups."""
-    dbhost = host_crud.get_host_v2(db, host_id)
-    if not dbhost:
-        raise HTTPException(status_code=404, detail="Host not found")
-    try:
-        return host_crud.detach_host_groups(db, dbhost, payload.group_ids)
-    except ValueError as exc:
-        raise HTTPException(status_code=404, detail=str(exc)) from exc
-
-
-def delete_host_v2(
-    host_id: int,
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Delete a proxy host."""
-    dbhost = host_crud.get_host_v2(db, host_id)
-    if not dbhost:
-        raise HTTPException(status_code=404, detail="Host not found")
-    host_crud.remove_host_v2(db, dbhost)
-    return {}
-
-
-def modify_hosts(
-    modified_hosts: Dict[str, List[ProxyHost]],
-    db: Session = Depends(get_db),
-    admin: Admin = Depends(Admin.check_sudo_admin),
-):
-    """Modify proxy hosts and update the configuration."""
-    known_inbounds = {inbound.tag for inbound in inbound_crud.get_inbounds(db)}
-    for inbound_tag in modified_hosts:
-        if inbound_tag not in known_inbounds:
-            raise HTTPException(
-                status_code=400, detail=f"Inbound {inbound_tag} doesn't exist"
-            )
-
-    for inbound_tag, hosts in modified_hosts.items():
-        inbound = inbound_crud.get_inbound_or_raise(db, inbound_tag)
-        for host in hosts:
-            _validate_host_xhttp_settings(host, inbound)
-        host_crud.update_hosts(db, inbound_tag, hosts)
-
-    return {tag: host_crud.get_hosts(db, tag) for tag in known_inbounds}
 
 
 def get_version():

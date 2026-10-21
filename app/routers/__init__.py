@@ -12,6 +12,7 @@ from . import (
     settings,
     subscription_templates,
     stats,
+    hosts,
 )
 
 api_router = APIRouter()
@@ -29,6 +30,7 @@ routers = [
     settings.router,
     subscription_templates.router,
     stats.router,
+    hosts.router,
 ]
 
 for router in routers:
