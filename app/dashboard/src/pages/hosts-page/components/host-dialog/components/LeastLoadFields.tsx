@@ -7,8 +7,8 @@ const PREFIX = "balancer_clients.v2ray-json.strategy_settings" as const;
 export function LeastLoadFields({ pending }: { pending: boolean }) {
   const { t } = useTranslation();
   return (
-    <FieldGroup>
-      <span className="text-sm font-medium">
+    <FieldGroup className="grid grid-cols-1 gap-x-4 gap-y-5 md:col-span-2 md:grid-cols-2">
+      <span className="text-sm font-medium md:col-span-2">
         {t("hostEditor.leastLoadOptions")}
       </span>
       <BalancerOptionField

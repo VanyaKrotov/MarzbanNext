@@ -161,16 +161,19 @@ export function StandaloneField({ pending }: { pending: boolean }) {
       control={control}
       name="show_when_composed"
       render={({ field }) => (
-        <Field>
+        <Field orientation="horizontal" className="min-w-0 flex-1">
           <Switch
-            aria-label={t("hostEditor.showWhenComposed")}
+            id="host-show-when-composed"
             checked={field.value}
             onCheckedChange={field.onChange}
             disabled={pending}
           />
-          <FieldDescription>
-            {t("hostEditor.showWhenComposedHint")}
-          </FieldDescription>
+          <FieldLabel
+            id="host-option-show_when_composed"
+            htmlFor="host-show-when-composed"
+          >
+            {t("hostEditor.showWhenComposed")}
+          </FieldLabel>
         </Field>
       )}
     />

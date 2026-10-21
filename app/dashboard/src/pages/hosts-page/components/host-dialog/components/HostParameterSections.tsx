@@ -126,9 +126,13 @@ export function HostParameterSections(props: HostFormProps) {
             aria-labelledby={`host-option-${id}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <h3 id={`host-option-${id}`} className="text-sm font-medium">
-                {label}
-              </h3>
+              {id === "show_when_composed" ? (
+                <StandaloneField pending={pending} />
+              ) : (
+                <h3 id={`host-option-${id}`} className="text-sm font-medium">
+                  {label}
+                </h3>
+              )}
               <Button
                 type="button"
                 variant="ghost"
@@ -177,8 +181,6 @@ function SpecialParameter({
           pending={pending}
         />
       );
-    case "show_when_composed":
-      return <StandaloneField pending={pending} />;
     default:
       return null;
   }

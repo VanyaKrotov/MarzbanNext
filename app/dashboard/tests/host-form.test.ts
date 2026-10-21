@@ -12,6 +12,10 @@ import {
 } from "../src/pages/hosts-page/lib/balancer";
 import { subscriptionFormats } from "../src/pages/subscription-templates-page/lib/formats";
 import { getAvailableParameterGroups } from "../src/pages/hosts-page/components/host-dialog/lib/parameters";
+import {
+  templateBindingsFromSelection,
+  templateChipLabel,
+} from "../src/pages/hosts-page/components/host-dialog/lib/template-selection";
 
 function formValues() {
   return { ...getHostFormValues(1), remark: "Example", address: "example.com" };
@@ -108,6 +112,51 @@ test("the grouped option menu excludes selected parameters and incompatible XHTT
     getAvailableParameterGroups([], true)
       .flatMap((group) => group.options)
       .some((option) => option.id === "xhttp_extra"),
+  );
+});
+
+test("selecting a template replaces only the existing binding of its format", () => {
+  const previous = { clash: 1, "sing-box": 3 };
+  for (const selected of [
+    [
+      { id: 1, format: "clash" },
+      { id: 2, format: "clash" },
+      { id: 3, format: "sing-box" },
+    ],
+    [
+      { id: 2, format: "clash" },
+      { id: 1, format: "clash" },
+      { id: 3, format: "sing-box" },
+    ],
+  ] as const) {
+    assert.deepEqual(templateBindingsFromSelection(selected, previous), {
+      clash: 2,
+      "sing-box": 3,
+    });
+  }
+  assert.deepEqual(previous, { clash: 1, "sing-box": 3 });
+});
+
+test("removing a template chip excludes its format and clearing all chips disables all formats", () => {
+  const previous = { clash: 1, "sing-box": 3 };
+  const remaining = templateBindingsFromSelection(
+    [{ id: 3, format: "sing-box" }],
+    previous,
+  );
+  assert.deepEqual(remaining, { "sing-box": 3 });
+  const values = formValues();
+  values.selected = ["templates"];
+  values.subscription_template_ids = templateBindingsFromSelection(
+    [],
+    previous,
+  );
+  assert.deepEqual(
+    toHostPayload(hostFormSchema.parse(values)).subscription_template_ids,
+    {},
+  );
+  assert.equal(
+    templateChipLabel({ format: "clash", name: "Mobile" }),
+    "clash:Mobile",
   );
 });
 

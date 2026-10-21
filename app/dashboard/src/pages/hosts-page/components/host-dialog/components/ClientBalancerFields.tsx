@@ -89,8 +89,8 @@ function ClientBalancerEditor({
   const name = t(`subscriptionTemplates.formats.${target}`);
 
   return (
-    <FieldGroup>
-      <div className="flex items-center justify-between">
+    <FieldGroup className="grid grid-cols-1 gap-x-4 gap-y-5 md:grid-cols-2">
+      <div className="flex items-center justify-between md:col-span-2">
         <span className="text-sm font-medium">{name}</span>
         <Button
           type="button"
