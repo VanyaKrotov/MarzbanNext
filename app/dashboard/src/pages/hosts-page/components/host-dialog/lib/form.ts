@@ -1,9 +1,3 @@
-import {
-  balancerClientFormSchema,
-  balancerTargets,
-  balancerStrategies,
-  getBalancerClientFormValues,
-} from "../../../lib/balancer";
 import { z } from "zod";
 import {
   subscriptionFormats,
@@ -26,22 +20,15 @@ export const hostFormSchema = z.object({
     .refine((value) => Boolean(value.trim())),
   port: z.number().int().min(1).max(65535).nullable(),
   enabled: z.boolean(),
-  show_when_composed: z.boolean(),
+  is_hidden: z.boolean(),
   selected: z.array(z.string()),
   parameters: z.record(z.string()),
   original_overrides: z.record(z.unknown()),
-  original_balancer: z.record(z.unknown()).nullable(),
-  linked_host_ids: z.array(z.number().int().positive()),
   group_ids: z.array(z.string()),
   subscription_template_ids: z.record(
     z.enum(subscriptionFormats),
     z.number().int().positive(),
   ),
-  balancer_remark: z.string(),
-  balancer_strategy: z.enum(balancerStrategies),
-  balancer_probe_url: z.string(),
-  balancer_probe_interval: z.number().int().min(10).max(86400),
-  balancer_clients: z.record(z.enum(balancerTargets), balancerClientFormSchema),
 });
 export type HostFormValues = z.infer<typeof hostFormSchema>;
 
@@ -62,30 +49,18 @@ export function getHostFormValues(
         : String(value);
   }
   if (host) selected.push("templates");
-  if (host?.balancer_settings || host?.linked_host_ids.length)
-    selected.push("composition");
-  if (host?.show_when_composed === false) selected.push("show_when_composed");
-  const balancer = host?.balancer_settings;
+  if (host?.is_hidden) selected.push("is_hidden");
   return {
     inbound_id: host?.inbound_id ?? inboundId,
     remark: host?.remark ?? "",
     address: host?.address ?? "",
     port: host?.port ?? null,
     enabled: host?.enabled ?? true,
-    show_when_composed: host?.show_when_composed ?? true,
+    is_hidden: host?.is_hidden ?? false,
     selected,
     parameters,
     original_overrides: host?.overrides ?? {},
-    original_balancer: host?.balancer_settings ?? null,
-    linked_host_ids: host?.linked_host_ids ?? [],
     group_ids: host?.groups.map((group) => group.id) ?? [],
     subscription_template_ids: host?.subscription_template_ids ?? bindings,
-    balancer_remark: String(balancer?.remark ?? ""),
-    balancer_strategy: balancer?.strategy ?? "least_ping",
-    balancer_probe_url: String(
-      balancer?.probe_url ?? "https://www.gstatic.com/generate_204",
-    ),
-    balancer_probe_interval: Number(balancer?.probe_interval ?? 300),
-    balancer_clients: getBalancerClientFormValues(balancer?.clients ?? {}),
   };
 }

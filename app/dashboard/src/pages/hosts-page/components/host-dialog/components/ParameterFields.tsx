@@ -168,26 +168,23 @@ function ParameterInput({
   );
 }
 
-export function StandaloneField({ pending }: { pending: boolean }) {
+export function VisibilityField({ pending }: { pending: boolean }) {
   const { t } = useTranslation();
   const { control } = useFormContext<HostFormValues>();
   return (
     <Controller
       control={control}
-      name="show_when_composed"
+      name="is_hidden"
       render={({ field }) => (
         <Field orientation="horizontal" className="min-w-0 flex-1">
           <Switch
-            id="host-show-when-composed"
+            id="host-is-hidden"
             checked={field.value}
             onCheckedChange={field.onChange}
             disabled={pending}
           />
-          <FieldLabel
-            id="host-option-show_when_composed"
-            htmlFor="host-show-when-composed"
-          >
-            {t("hostEditor.showWhenComposed")}
+          <FieldLabel id="host-option-is_hidden" htmlFor="host-is-hidden">
+            {t("hostEditor.isHidden")}
           </FieldLabel>
         </Field>
       )}

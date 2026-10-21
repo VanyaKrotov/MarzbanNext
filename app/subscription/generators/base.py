@@ -13,10 +13,10 @@ def builder_arguments(connection, remark=None):
             "inbound": deepcopy(connection.inbound), "settings": deepcopy(connection.credentials)}
 
 
-def finish(body, data, media_type):
+def finish(body, data, media_type, diagnostics=()):
     if data.as_base64 and body:
         body = base64.b64encode(body.encode()).decode()
-    return GenerationResult(body, media_type, len(data.profiles))
+    return GenerationResult(body, media_type, len(data.profiles), tuple(diagnostics))
 
 
 def map_node(node, connection, target):

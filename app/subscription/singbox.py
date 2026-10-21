@@ -11,7 +11,7 @@ from app.templates import render_template_content
 
 class SingBoxConfiguration:
 
-    def __init__(self, template: str | None = None, defaults: dict | None = None):
+    def __init__(self, template: str | None = None, defaults: dict | None = None, document: dict | None = None):
         from app.utils.runtime_settings import build_default_generator_templates
 
         defaults = defaults if defaults is not None else build_default_generator_templates()
@@ -21,7 +21,8 @@ class SingBoxConfiguration:
         self.proxy_remarks = []
         self.default_proxy_remarks = []
         self.managed_balancer_tags = set()
-        self.config = json.loads(render_template_content(
+        # Parsed templates must not be interpreted as Jinja a second time.
+        self.config = copy.deepcopy(document) if document is not None else json.loads(render_template_content(
             template if template is not None else default_subscription_content("sing-box")))
         self.mux_template = render_template_content(defaults["mux"])
         user_agent_data = json.loads(render_template_content(defaults["user_agent"]))

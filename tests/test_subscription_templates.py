@@ -205,7 +205,8 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(existing.subscription_template_ids, self.defaults)
         self.assertEqual(self.create_host('Second').subscription_template_ids['v2ray-json'], custom.id)
         inbound_crud.add_default_host(self.db, self.db.query(ProxyInbound).filter_by(tag='SS').one())
-        self.assertEqual(host_crud.list_hosts(self.db, inbound_id=1).all()[-1].subscription_template_ids['v2ray-json'], custom.id)
+        self.assertEqual(host_crud.list_hosts(self.db, inbound_id=1).all()
+                         [-1].subscription_template_ids['v2ray-json'], custom.id)
 
     def test_assignment_replace_omit_disable_and_copy(self):
         host = self.create_host()
@@ -354,7 +355,12 @@ class SubscriptionTemplateTests(TestCase):
     def test_balancers_respect_disabled_host_formats(self):
         first = self.create_host()
         disabled = self.create_host('Disabled', subscription_template_ids={})
-        self.update_host(first, linked_host_ids=[disabled.id], balancer_settings={'remark': 'Automatic'})
+        template = self.db.get(SubscriptionTemplate, self.defaults['clash'])
+        template.content = json.dumps({'proxies': [], 'proxy-groups': [{
+            'type': 'url-test', 'name': 'Automatic', 'proxies': [],
+            'marzban': {'include-proxies': True, 'selectFrom': 'ALL',
+                        'selector': {'type': 'ids', 'values': [first.id, disabled.id]}}}]})
+        self.db.commit()
         self.assertTrue(self.generate('v2ray'))
         self.assertTrue(self.generate('outline'))
         json_config = self.generate('v2ray-json')
@@ -374,11 +380,14 @@ class SubscriptionTemplateTests(TestCase):
         first = self.create_host()
         custom = self.create_template()
         second = self.create_host('Second', subscription_template_ids={'v2ray-json': custom.id})
-        self.update_host(first, linked_host_ids=[second.id], balancer_settings={'remark': 'Automatic'})
+        template = self.db.get(SubscriptionTemplate, self.defaults['v2ray-json'])
+        template.content = json.dumps({'outbounds': [], 'marzban': {'injectHosts': [{
+            'tagPrefix': 'member', 'selectFrom': 'ALL', 'selector': {'type': 'ids', 'values': [second.id]}}]}})
+        self.db.commit()
         output = self.generate('v2ray-json')
         self.assertIn('first.example.com', output)
         self.assertIn('second.example.com', output)
-        self.assertIn('Automatic', output)
+        self.assertIn('member', output)
         self.assertTrue(self.generate('v2ray-json', template_id=custom.id))
 
     def test_template_sandbox_and_generator_validation(self):

@@ -30,6 +30,7 @@ class ClashConfiguration(object):
         }
         self.proxy_remarks = []
         self.default_proxy_remarks = []
+        self.template_context = {}
         self.mux_template = render_template_content(defaults["mux"])
         user_agent_data = json.loads(render_template_content(defaults["user_agent"]))
 
@@ -58,7 +59,7 @@ class ClashConfiguration(object):
                 SubscriptionFormat.clash,
                 render_subscription_template(
                     self.template,
-                    {"conf": self.data, "proxy_remarks": self.default_proxy_remarks}
+                    {**self.template_context, "conf": self.data, "proxy_remarks": self.default_proxy_remarks}
                 ),
             ),
             sort_keys=False,

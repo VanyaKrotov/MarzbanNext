@@ -68,11 +68,11 @@ class ClashFormatMigrationTests(TestCase):
             self.assertEqual(list(connection.exec_driver_sql("PRAGMA foreign_key_check")), [])
 
     def test_upgrade_downgrade_and_reupgrade_preserve_data(self):
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "c82a6f0159bd")
         self.assert_format("clash")
         self.migrate("downgrade", "b57c20e91a46")
         self.assert_format("clash-meta")
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "c82a6f0159bd")
         self.assert_format("clash")
 
     def test_conflicts_are_rejected_before_schema_changes(self):
@@ -80,7 +80,7 @@ class ClashFormatMigrationTests(TestCase):
         with self.engine.begin() as connection:
             connection.execute(hosts.update().values(overrides={"clients": {
                 "clash-meta": {"ip_version": "ipv4"}, "clash": {"ip_version": "ipv6"}}}))
-        result = self.migrate("upgrade", "head", succeeds=False)
+        result = self.migrate("upgrade", "c82a6f0159bd", succeeds=False)
         self.assertIn(f"Host {self.host_id}: conflicting clash-meta/clash settings", result.stderr)
         with self.engine.connect() as connection:
             self.assertEqual(connection.exec_driver_sql("SELECT version_num FROM alembic_version").scalar(),

@@ -4,8 +4,9 @@ import re
 import yaml
 
 from app.subscription.clash import ClashMetaConfiguration
+from app.subscription.generators.composition import assemble_clash, required_sources
 from app.subscription.generators.base import apply_resolved_options, builder_arguments, finish, map_node
-from app.subscription.validation import OutputValidator, TagAllocator
+from app.subscription.validation import OutputValidator, TagAllocator, validate_identities
 
 
 def clash_xhttp(connection):
@@ -36,11 +37,14 @@ class ClashSubscriptionGenerator:
         if not data.profiles:
             return finish("", data, "text/yaml")
         builder = self.builder_class(template=data.profiles[0].template.content, defaults=data.defaults)
+        builder.template_context = {**data.profiles[0].connections[0].context,
+                                    "host_ids": [item.host_id for item in data.profiles[0].sources]}
         allocator = TagAllocator()
         baseline = yaml.safe_load(builder.render())
-        allocator.used.update(node["name"] for node in baseline.get("proxies", [])
-                              + baseline.get("proxy-groups", []) if "name" in node)
-        connections = {connection.host_id: connection for profile in data.profiles for connection in profile.connections}
+        allocator.used.update(validate_identities(baseline.get(
+            "proxies", []) + baseline.get("proxy-groups", []), "name"))
+        connections = {connection.host_id: connection
+                       for connection in required_sources(baseline, data.profiles[0], self.target)}
         names = {}
         for connection in connections.values():
             name = allocator.allocate(connection.remark, f"h{connection.host_id}")
@@ -68,20 +72,13 @@ class ClashSubscriptionGenerator:
             node = map_node(node, connection, "clash")
             builder.data["proxies"][-1] = node
             names[connection.host_id] = node["name"]
-        for profile in data.profiles:
-            if not profile.automatic:
-                if profile.owner.id in names:
-                    builder.default_proxy_remarks.append(names[profile.owner.id])
-                continue
-            options = profile.balancer
-            name = allocator.allocate(profile.remark, f"auto{profile.owner.id}")
-            builder.add_balancer(name, [names[item.host_id] for item in profile.connections if item.host_id in names],
-                                 options["probe_url"], options["probe_interval"], options["strategy"])
-            group = builder.data["proxy-groups"][-1]
-            for key in ("tolerance", "lazy"):
-                if key in options:
-                    group[key] = options[key]
-            builder.default_proxy_remarks.append(name)
-        rendered = builder.render(reverse=data.reverse)
-        OutputValidator().validate(yaml.safe_load(rendered), self.target)
-        return finish(rendered, data, "text/yaml")
+        diagnostics = []
+        profile = data.profiles[0]
+        nodes = {host_id: node for host_id, node in zip(names, builder.data["proxies"])}
+        builder.data["proxies"] = [nodes[host_id] for host_id in profile.visible_ids if host_id in nodes]
+        builder.default_proxy_remarks = [names[host_id] for host_id in profile.visible_ids if host_id in names]
+        document = assemble_clash(yaml.safe_load(builder.render(reverse=data.reverse)), profile, nodes, diagnostics)
+        if document is None:
+            return finish("", data, "text/yaml", diagnostics)
+        OutputValidator().validate(document, self.target)
+        return finish(yaml.safe_dump(document, allow_unicode=True, sort_keys=False), data, "text/yaml", diagnostics)

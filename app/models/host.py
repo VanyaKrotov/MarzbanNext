@@ -2,7 +2,6 @@
 
 from datetime import datetime
 from typing import Any, Literal
-from urllib.parse import urlparse
 
 from pydantic import AliasPath, BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
 
@@ -166,61 +165,6 @@ class HostOverrides(HostOptions):
         return value
 
 
-BalancerStrategy = Literal["least_ping", "least_load", "random", "round_robin"]
-ClientTarget = Literal["v2ray-json", "clash", "sing-box"]
-
-
-class HostCost(HostOptions):
-    host_id: StrictInt = Field(gt=0)
-    value: float = Field(gt=0)
-
-
-class LeastLoadOptions(HostOptions):
-    expected: StrictInt | None = Field(None, ge=1)
-    max_rtt_ms: StrictInt | None = Field(None, gt=0)
-    failure_tolerance: float | None = Field(None, ge=0, le=1)
-    baselines_ms: list[StrictInt] | None = None
-    costs: list[HostCost] | None = None
-
-    @field_validator("baselines_ms")
-    @classmethod
-    def positive_baselines(cls, values):
-        if values is not None and any(value <= 0 for value in values):
-            raise ValueError("RTT baselines must be positive")
-        return values
-
-
-class BalancerClientOptions(HostOptions):
-    strategy: BalancerStrategy | None = None
-    probe_url: str | None = Field(None, max_length=2048)
-    probe_interval: StrictInt | None = Field(None, ge=10, le=86400)
-    enable_concurrency: StrictBool | None = None
-    strategy_settings: LeastLoadOptions | None = None
-    tolerance: StrictInt | None = Field(None, ge=0)
-    lazy: StrictBool | None = None
-    idle_timeout: StrictInt | None = Field(None, gt=0)
-    interrupt_existing_connections: StrictBool | None = None
-
-    @field_validator("probe_url")
-    @classmethod
-    def validate_url(cls, value):
-        if value is not None:
-            parsed = urlparse(value)
-            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
-                raise ValueError("Probe URL must be an HTTP or HTTPS URL")
-        return value
-
-
-class BalancerSettings(HostOptions):
-    remark: str | None = Field(None, max_length=256)
-    strategy: BalancerStrategy = "least_ping"
-    probe_url: str = Field("https://www.gstatic.com/generate_204", max_length=2048)
-    probe_interval: StrictInt = Field(300, ge=10, le=86400)
-    clients: dict[ClientTarget, BalancerClientOptions] = Field(default_factory=dict)
-
-    _validate_url = field_validator("probe_url")(BalancerClientOptions.validate_url.__func__)
-
-
 class HostCreate(HostOptions):
     inbound_id: StrictInt = Field(gt=0)
     remark: str = Field(min_length=1, max_length=256)
@@ -228,10 +172,8 @@ class HostCreate(HostOptions):
     port: StrictInt | None = Field(None, ge=1, le=65535)
     enabled: StrictBool = True
     position: StrictInt | None = Field(None, ge=0)
-    show_when_composed: StrictBool = True
+    is_hidden: StrictBool = False
     overrides: HostOverrides | None = None
-    balancer_settings: BalancerSettings | None = None
-    linked_host_ids: list[StrictInt] = Field(default_factory=list)
     group_ids: list[str] = Field(default_factory=list)
     subscription_template_ids: dict[str, int] = Field(default_factory=dict)
 
@@ -243,7 +185,7 @@ class HostCreate(HostOptions):
         value.format_map(FormatVariables())
         return value
 
-    @field_validator("linked_host_ids", "group_ids")
+    @field_validator("group_ids")
     @classmethod
     def unique_ids(cls, values):
         if len(values) != len(set(values)):
@@ -267,26 +209,19 @@ class HostPatch(HostOptions):
     port: StrictInt | None = Field(None, ge=1, le=65535)
     enabled: StrictBool | None = None
     position: StrictInt | None = Field(None, ge=0)
-    show_when_composed: StrictBool | None = None
+    is_hidden: StrictBool | None = None
     # Validate the merged document, so clearing one SNI mode and setting another is atomic.
     overrides: dict[str, Any] | None = None
-    balancer_settings: dict[str, Any] | None = None
-    linked_host_ids: list[StrictInt] | None = None
     group_ids: list[str] | None = None
     subscription_template_ids: dict[str, int] | None = None
 
     @model_validator(mode="after")
     def reject_invalid_nulls(self):
-        nullable = {"port", "overrides", "balancer_settings"}
+        nullable = {"port", "overrides"}
         for name in self.model_fields_set - nullable:
             if getattr(self, name) is None:
                 raise ValueError(f"{name} cannot be null")
         return self
-
-
-class HostRef(BaseModel):
-    id: int
-    remark: str
 
 
 class HostResponse(BaseModel):
@@ -300,11 +235,8 @@ class HostResponse(BaseModel):
     port: int | None
     enabled: bool
     position: int
-    show_when_composed: bool
+    is_hidden: bool
     overrides: dict[str, Any]
-    balancer_settings: dict[str, Any] | None
-    linked_host_ids: list[int]
-    member_of: list[HostRef]
     groups: list[HostGroupRef]
     subscription_template_ids: dict[str, int]
     created_at: datetime

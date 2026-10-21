@@ -7,12 +7,9 @@ import { AddHostParameter } from "./AddHostParameter";
 import { HostParameterSection } from "./HostParameterSection";
 
 export function HostParameterSections({
-  host,
   pending,
   inbounds,
-  hosts,
   templates,
-  capabilities,
 }: HostFormProps) {
   const { control, getValues, setValue, clearErrors } =
     useFormContext<HostFormValues>();
@@ -26,12 +23,7 @@ export function HostParameterSections({
         { shouldDirty: true },
       );
       clearErrors(`parameters.${id}`);
-      if (id === "show_when_composed") setValue("show_when_composed", true);
-      if (id === "composition") {
-        setValue("linked_host_ids", []);
-        setValue("balancer_clients", {});
-        clearErrors("balancer_clients");
-      }
+      if (id === "is_hidden") setValue("is_hidden", false);
       requestAnimationFrame(() => triggerRef.current?.focus());
     },
     [getValues, setValue, clearErrors],
@@ -47,12 +39,9 @@ export function HostParameterSections({
         <HostParameterSection
           key={id}
           id={id}
-          hostId={host?.id}
           pending={pending}
           inbounds={inbounds}
-          hosts={hosts}
           templates={templates}
-          capabilities={capabilities}
           onRemove={removeParameter}
         />
       ))}

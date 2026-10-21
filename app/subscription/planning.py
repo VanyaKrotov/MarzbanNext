@@ -1,19 +1,8 @@
-"""Flat profile planning, permission checks, template selection and conditional visibility."""
+"""Permission-aware endpoint catalog and template recipients for each output format."""
 
-from copy import deepcopy
-
-from app.subscription.capabilities import STRATEGIES, TARGET_FAMILIES, supports_connection
+from app.subscription.capabilities import TARGET_FAMILIES, supports_connection
 from app.subscription.contracts import ConnectionInput, ProfilePlan, SubscriptionError, TemplateConflict
 from app.subscription.resolver import ConnectionResolver, ResolveContext
-
-
-class BalancerOptionsResolver:
-    def resolve(self, settings: dict, target: str) -> dict:
-        result = deepcopy(settings)
-        result.update(result.pop("clients", {}).get(target, {}))
-        if result["strategy"] not in STRATEGIES[target]:
-            raise SubscriptionError(f"Unsupported balancer strategy for {target}")
-        return result
 
 
 class TemplateSelector:
@@ -29,81 +18,58 @@ class TemplateSelector:
             raise TemplateConflict()
 
 
+class ConnectionCatalog:
+    def resolve(self, snapshot, hosts, target, proxies, allowed_inbounds, context):
+        resolved, diagnostics = {}, []
+        for host in hosts:
+            reason = self.exclusion_reason(snapshot, host, target, proxies, allowed_inbounds)
+            if reason:
+                diagnostics.append({"host_id": host.id, "reason": reason})
+                continue
+            inbound = snapshot.inbounds[host.inbound_id]
+            credentials = proxies[inbound["protocol"]]
+            if hasattr(credentials, "model_dump"):
+                credentials = credentials.model_dump()
+            resolved[host.id] = ConnectionResolver().resolve(
+                ConnectionInput(host, inbound, snapshot.raw_inbounds[host.inbound_id], credentials), context,
+            )
+        return resolved, tuple(diagnostics)
+
+    def exclusion_reason(self, snapshot, host, target, proxies, allowed_inbounds):
+        if not host.enabled or host.inbound_id not in snapshot.inbounds:
+            return "disabled_or_missing"
+        if TARGET_FAMILIES[target] not in host.subscription_template_ids:
+            return "format_disabled"
+        inbound = snapshot.inbounds[host.inbound_id]
+        protocol = inbound["protocol"]
+        if not proxies.get(protocol) or host.inbound_tag not in allowed_inbounds.get(protocol, []):
+            return "inbound_not_allowed"
+        if not supports_connection(target, inbound):
+            return "unsupported_connection"
+        return None
+
+
 class ProfilePlanner:
     def plan(self, snapshot, target, proxies, allowed_inbounds, context: ResolveContext,
              root_ids=None, groups=(), template_id=None):
         family = TARGET_FAMILIES[target]
-        by_id = {host.id: host for host in snapshot.hosts}
-        diagnostics = []
-        cache = {}
-
-        def connection(host_id):
-            if host_id in cache:
-                return cache[host_id]
-            cache[host_id] = None
-            host = by_id.get(host_id)
-            reason = None
-            if host is None or not host.enabled or host.inbound_id not in snapshot.inbounds:
-                reason = "disabled_or_missing"
-            elif family not in host.subscription_template_ids:
-                reason = "format_disabled"
-            else:
-                inbound = snapshot.inbounds[host.inbound_id]
-                protocol = inbound["protocol"]
-                credentials = proxies.get(protocol)
-                if not credentials or host.inbound_tag not in allowed_inbounds.get(protocol, []):
-                    reason = "inbound_not_allowed"
-                elif not supports_connection(target, inbound):
-                    reason = "unsupported_connection"
-                else:
-                    if hasattr(credentials, "model_dump"):
-                        credentials = credentials.model_dump()
-                    cache[host_id] = ConnectionResolver().resolve(
-                        ConnectionInput(host, inbound, snapshot.raw_inbounds[host.inbound_id], credentials), context,
-                    )
-            if reason:
-                diagnostics.append({"host_id": host_id, "reason": reason})
-            return cache[host_id]
-
         roots = [host for host in snapshot.hosts
                  if (root_ids is None or host.id in root_ids)
                  and (not groups or set(groups).intersection(host.group_ids))]
-        automatic = {}
-        participants = set()
-        if target in STRATEGIES:
-            for owner in roots:
-                if owner.balancer_settings is None and not owner.linked_host_ids:
-                    continue
-                own_connection = connection(owner.id)
-                if own_connection is None:
-                    continue
-                # Only each direct member's own endpoint is read; never walk the member's links.
-                connections = [own_connection]
-                connections.extend(item for member_id in owner.linked_host_ids
-                                   if (item := connection(member_id)) is not None)
-                from app.models.host import BalancerSettings
-
-                settings = owner.balancer_settings or BalancerSettings().model_dump(exclude_none=True)
-                options = BalancerOptionsResolver().resolve(settings, target)
-                name = options.get("remark") or f"{own_connection.remark} · Auto"
-                automatic[owner.id] = ProfilePlan(
-                    owner, tuple(connections), TemplateSelector().select(snapshot, owner, family, template_id),
-                    name.format_map(context.variables), options,
-                )
-                participants.update(item.host_id for item in connections)
-                if len(connections) == 1:
-                    diagnostics.append({"host_id": owner.id, "reason": "single_member_composition"})
-        profiles = []
-        for owner in roots:
-            own_connection = connection(owner.id)
-            if own_connection is None:
-                continue
-            if owner.show_when_composed or owner.id not in participants:
-                profiles.append(ProfilePlan(
-                    owner, (own_connection,), TemplateSelector().select(snapshot, owner, family, template_id),
-                    own_connection.remark,
-                ))
-            if owner.id in automatic:
-                profiles.append(automatic[owner.id])
+        # URI/Outline have no dependencies, so unrelated hosts must not affect their rendering.
+        source_hosts = roots if target in {"v2ray", "outline"} else snapshot.hosts
+        resolved, diagnostics = ConnectionCatalog().resolve(
+            snapshot, source_hosts, target, proxies, allowed_inbounds, context)
+        visible = [host for host in roots if host.id in resolved
+                   and (not host.is_hidden or target in {"v2ray", "outline"})]
+        recipients = visible
+        # Explicit aggregate templates can consume a pool containing only hidden hosts.
+        if not recipients and template_id is not None and target in {"clash", "sing-box"}:
+            recipients = [host for host in roots if host.id in resolved][:1]
+        sources, visible_ids = tuple(resolved.values()), tuple(host.id for host in visible)
+        profiles = tuple(ProfilePlan(
+            owner, (resolved[owner.id],), TemplateSelector().select(snapshot, owner, family, template_id),
+            resolved[owner.id].remark, sources, snapshot.hosts, visible_ids,
+        ) for owner in recipients)
         TemplateSelector().validate_aggregate(profiles, family)
-        return tuple(profiles), tuple(diagnostics)
+        return profiles, diagnostics

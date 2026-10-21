@@ -1,8 +1,8 @@
-import { memo, useMemo } from "react";
+import { memo } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
-import { FieldGroup } from "@/components/ui/field";
+import { FieldDescription, FieldGroup } from "@/components/ui/field";
 import {
   hostParameters,
   specialHostParameters,
@@ -10,8 +10,7 @@ import {
 } from "../lib/parameters";
 import type { HostFormProps } from "../lib/types";
 import { useSupportsXhttp } from "../lib/useSupportsXhttp";
-import { ParameterField, StandaloneField } from "./ParameterFields";
-import { CompositionFields } from "./CompositionFields";
+import { ParameterField, VisibilityField } from "./ParameterFields";
 import { SubscriptionTemplateFields } from "./SubscriptionTemplateFields";
 
 const parametersById = new Map(
@@ -19,10 +18,9 @@ const parametersById = new Map(
 );
 type SectionProps = Pick<
   HostFormProps,
-  "inbounds" | "templates" | "hosts" | "capabilities" | "pending"
+  "inbounds" | "templates" | "pending"
 > & {
   id: string;
-  hostId?: number;
   onRemove: (id: string) => void;
 };
 
@@ -40,8 +38,8 @@ export const HostParameterSection = memo(function HostParameterSection(
   return (
     <FieldGroup className="gap-3" aria-labelledby={`host-option-${id}`}>
       <div className="flex items-center justify-between gap-2">
-        {id === "show_when_composed" ? (
-          <StandaloneField pending={pending} />
+        {id === "is_hidden" ? (
+          <VisibilityField pending={pending} />
         ) : (
           <h3 id={`host-option-${id}`} className="text-sm font-medium">
             {label}
@@ -58,6 +56,9 @@ export const HostParameterSection = memo(function HostParameterSection(
           <X />
         </Button>
       </div>
+      {id === "is_hidden" && (
+        <FieldDescription>{t("hostEditor.hiddenHint")}</FieldDescription>
+      )}
       {definition ? (
         <OptionalParameterField
           definition={definition}
@@ -103,48 +104,8 @@ function XhttpParameterField({
   );
 }
 
-function SpecialParameter({
-  id,
-  hostId,
-  hosts,
-  templates,
-  capabilities,
-  pending,
-}: SectionProps) {
-  switch (id) {
-    case "templates":
-      return (
-        <SubscriptionTemplateFields templates={templates} pending={pending} />
-      );
-    case "composition":
-      return (
-        <CompositionParameter
-          hostId={hostId}
-          hosts={hosts}
-          capabilities={capabilities}
-          pending={pending}
-        />
-      );
-    default:
-      return null;
-  }
-}
-
-function CompositionParameter({
-  hostId,
-  hosts,
-  capabilities,
-  pending,
-}: Pick<SectionProps, "hostId" | "hosts" | "capabilities" | "pending">) {
-  const availableHosts = useMemo(
-    () => hosts.filter((host) => host.id !== hostId),
-    [hosts, hostId],
-  );
-  return (
-    <CompositionFields
-      hosts={availableHosts}
-      capabilities={capabilities}
-      pending={pending}
-    />
-  );
+function SpecialParameter({ id, templates, pending }: SectionProps) {
+  return id === "templates" ? (
+    <SubscriptionTemplateFields templates={templates} pending={pending} />
+  ) : null;
 }

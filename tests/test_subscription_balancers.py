@@ -1,19 +1,14 @@
-"""The old balancer API was replaced by host composition; regressions live in test_unified_hosts."""
+"""Legacy native strategy conversion is covered independently of the removed host API."""
 
-import json
 from unittest import TestCase
-from app.subscription.generators.xray_json import XrayBalancerBuilder
-from types import SimpleNamespace
+from app.db.migrations.template_composition_v1 import xray_overlay
 
 
-class SubscriptionBalancerBuilderTests(TestCase):
-    def test_balancer_rule_matches_tcp_and_udp(self):
-        profile = SimpleNamespace(owner=SimpleNamespace(id=17), balancer={
+class SubscriptionBalancerMigrationTests(TestCase):
+    def test_native_balancer_and_observer_share_only_endpoint_prefixes(self):
+        document = xray_overlay({"id": 17}, [1, 2], {
             "strategy": "least_ping", "probe_url": "https://example.com/204", "probe_interval": 300,
         })
-        document = {"outbounds": [], "routing": {"rules": []}}
-        XrayBalancerBuilder().apply(document, profile, {1: "mb-auto-17-host-1"})
-        rule = document["routing"]["rules"][-1]
-        self.assertEqual(rule["network"], "tcp,udp")
-        self.assertEqual(rule["balancerTag"], "mb-auto-17")
+        self.assertEqual(document["routing"]["balancers"][0]["selector"], ["mb-auto-17-host-"])
+        self.assertEqual(document["observatory"]["subjectSelector"], ["mb-auto-17-host-"])
         self.assertEqual(document["observatory"]["probeInterval"], "300s")

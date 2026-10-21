@@ -1,5 +1,4 @@
 import type { HostPayload, JsonObject } from "../../../types";
-import { serializeBalancerClients } from "../../../lib/balancer";
 import type { HostFormValues } from "./form";
 import {
   getPath,
@@ -66,37 +65,16 @@ function buildOverrides(values: HostFormValues): JsonObject {
   return overrides;
 }
 
-function buildBalancer(values: HostFormValues): JsonObject | null {
-  if (!values.selected.includes("composition")) return null;
-  const clients = serializeBalancerClients(
-    values.balancer_clients,
-    values.balancer_strategy,
-  );
-  return {
-    remark: values.balancer_remark || null,
-    strategy: values.balancer_strategy,
-    probe_url: values.balancer_probe_url,
-    probe_interval: values.balancer_probe_interval,
-    clients,
-  };
-}
-
 export function toHostPayload(values: HostFormValues): HostPayload {
   const overrides = buildOverrides(values);
-  const balancer = buildBalancer(values);
   return {
     inbound_id: values.inbound_id,
     remark: values.remark,
     address: values.address,
     port: values.port,
     enabled: values.enabled,
-    show_when_composed: values.show_when_composed,
+    is_hidden: values.is_hidden,
     overrides: overridePatch(values.original_overrides, overrides),
-    balancer_settings:
-      balancer === null
-        ? null
-        : overridePatch(values.original_balancer ?? {}, balancer),
-    linked_host_ids: balancer === null ? [] : values.linked_host_ids,
     group_ids: values.group_ids,
     ...(values.selected.includes("templates")
       ? { subscription_template_ids: values.subscription_template_ids }

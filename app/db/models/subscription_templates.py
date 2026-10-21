@@ -1,6 +1,7 @@
 from datetime import datetime
 
 from sqlalchemy import (
+    JSON,
     CheckConstraint,
     Column,
     DateTime,
@@ -52,3 +53,13 @@ class HostSubscriptionTemplate(Base):
                          ondelete="RESTRICT"), nullable=False, index=True)
     host = relationship("ProxyHost", back_populates="subscription_templates")
     template = relationship("SubscriptionTemplate")
+
+
+class HostCompositionArchive(Base):
+    """Migration-owned snapshots, retained solely for a checked downgrade."""
+
+    __tablename__ = "host_composition_archive"
+
+    id = Column(Integer, primary_key=True)
+    original = Column(JSON, nullable=False)
+    converted = Column(JSON, nullable=False)

@@ -131,14 +131,6 @@ export function useReorderHostsMutation() {
   );
 }
 
-export function useHostCapabilitiesQuery() {
-  return useQuery({
-    queryKey: ["host-capabilities"],
-    queryFn: () =>
-      api.get<import("../types").HostCapabilities>("/hosts/capabilities"),
-  });
-}
-
 export function useInboundsQuery(includeTag?: string) {
   return useInboundsListQuery({ assignedOnly: true, includeTag });
 }

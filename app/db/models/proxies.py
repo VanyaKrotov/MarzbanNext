@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy import JSON, Boolean, CheckConstraint, Column, DateTime, Enum, ForeignKey, Integer, String, Text, UniqueConstraint
+from sqlalchemy import JSON, Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 
 from app.db.base import Base
@@ -72,23 +72,14 @@ class ProxyHost(Base):
     inbound = relationship("ProxyInbound", back_populates="hosts")
     enabled = Column(Boolean, nullable=False, default=True, server_default="1")
     position = Column(Integer, nullable=False, default=0, server_default="0", index=True)
-    show_when_composed = Column(Boolean, nullable=False, default=True, server_default="1")
+    is_hidden = Column(Boolean, nullable=False, default=False, server_default="0")
     overrides = Column(JSON, nullable=False, default=dict)
-    balancer_settings = Column(JSON(none_as_null=True), nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)
     updated_at = Column(DateTime, nullable=False, default=datetime.utcnow, onupdate=datetime.utcnow)
     groups = relationship("HostGroup", secondary=host_group_hosts_association, back_populates="hosts",
                           order_by="HostGroup.id")
     subscription_templates = relationship(
         "HostSubscriptionTemplate", back_populates="host", cascade="all, delete-orphan"
-    )
-    outgoing_links = relationship(
-        "HostLink", foreign_keys="HostLink.owner_host_id", back_populates="owner",
-        cascade="all, delete-orphan", order_by="HostLink.position",
-    )
-    incoming_links = relationship(
-        "HostLink", foreign_keys="HostLink.member_host_id", back_populates="member",
-        cascade="all, delete-orphan",
     )
 
     @property
@@ -98,27 +89,6 @@ class ProxyHost(Base):
     @property
     def inbound_tag(self):
         return self.inbound.tag
-
-    @property
-    def linked_host_ids(self) -> list[int]:
-        return [link.member_host_id for link in self.outgoing_links]
-
-    @property
-    def member_of(self) -> list[dict]:
-        return [{"id": link.owner_host_id, "remark": link.owner.remark} for link in self.incoming_links]
-
-
-class HostLink(Base):
-    __tablename__ = "host_links"
-    __table_args__ = (
-        CheckConstraint("owner_host_id != member_host_id", name="ck_host_link_no_self"),
-        UniqueConstraint("owner_host_id", "position", name="uq_host_link_position"),
-    )
-    owner_host_id = Column(Integer, ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True)
-    member_host_id = Column(Integer, ForeignKey("hosts.id", ondelete="CASCADE"), primary_key=True, index=True)
-    position = Column(Integer, nullable=False)
-    owner = relationship("ProxyHost", foreign_keys=[owner_host_id], back_populates="outgoing_links")
-    member = relationship("ProxyHost", foreign_keys=[member_host_id], back_populates="incoming_links")
 
 
 class HostGroup(Base):

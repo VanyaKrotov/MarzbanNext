@@ -14,10 +14,8 @@ class HostSnapshot:
     port: int | None
     enabled: bool
     position: int
-    show_when_composed: bool
+    is_hidden: bool
     overrides: dict
-    balancer_settings: dict | None
-    linked_host_ids: tuple[int, ...]
     group_ids: tuple[str, ...]
     subscription_template_ids: dict[str, int]
 
@@ -80,11 +78,9 @@ class ProfilePlan:
     connections: tuple[ResolvedConnection, ...]
     template: TemplateSnapshot
     remark: str
-    balancer: dict | None = None
-
-    @property
-    def automatic(self):
-        return self.balancer is not None
+    sources: tuple[ResolvedConnection, ...] = ()
+    hosts: tuple[HostSnapshot, ...] = ()
+    visible_ids: tuple[int, ...] = ()
 
 
 @dataclass(frozen=True)

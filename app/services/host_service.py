@@ -32,14 +32,14 @@ def _mutate(db, action):
 
 
 def list_hosts(search: str | None = None, groups: str | None = None, inbound_id: int | None = None,
-               enabled: bool | None = None, composition: bool | None = None, offset: int = 0, limit: int = 100,
+               enabled: bool | None = None, offset: int = 0, limit: int = 100,
                db: Session = Depends(get_db), admin: Admin = Depends(Admin.check_sudo_admin)):
     from fastapi import HTTPException
 
     if offset < 0 or not 1 <= limit <= 1000:
         raise HTTPException(status_code=422, detail="Invalid pagination")
     query = crud.list_hosts(db, group_ids=groups.split(",") if groups else [], search=search,
-                            inbound_id=inbound_id, enabled=enabled, composition=composition)
+                            inbound_id=inbound_id, enabled=enabled)
     return {"items": query.offset(offset).limit(limit).all(), "total": query.count()}
 
 
@@ -100,13 +100,12 @@ def preview_host(payload: HostPreview, db: Session = Depends(get_db),
     if "subscription_template_ids" not in data.model_fields_set:
         data = data.model_copy(update={"subscription_template_ids": get_default_bindings(db)})
     try:
-        prepared = crud.prepare_host(db, data, payload.host_id)
+        prepared = crud.prepare_host(db, data)
         snapshot = SubscriptionSnapshotLoader().load(db)
         host_id = payload.host_id or max([host.id for host in snapshot.hosts] + [0]) + 1
         host = HostSnapshot(host_id, data.inbound_id, prepared.inbound.tag, data.remark, data.address, data.port,
-                            data.enabled, data.position or 0, data.show_when_composed,
-                            prepared.overrides, prepared.balancer_settings,
-                            tuple(data.linked_host_ids), tuple(data.group_ids), data.subscription_template_ids)
+                            data.enabled, data.position or 0, data.is_hidden,
+                            prepared.overrides, tuple(data.group_ids), data.subscription_template_ids)
         snapshot = replace(snapshot, hosts=tuple(row for row in snapshot.hosts if row.id != host_id) + (host,))
         proxies = {proxy.type.value: proxy.settings for proxy in user.proxies}
         context = setup_format_variables({"username": user.username, "used_traffic": user.used_traffic,
@@ -114,9 +113,9 @@ def preview_host(payload: HostPreview, db: Session = Depends(get_db),
         plans, diagnostics = ProfilePlanner().plan(snapshot, payload.target, proxies, user.inbounds,
                                                    ResolveContext(context), root_ids={host_id})
         GeneratorRegistry().for_target(payload.target).generate(RenderInput(payload.target, plans, snapshot.defaults))
-        return {"profiles": [{"owner_host_id": plan.owner.id, "automatic": plan.automatic,
+        return {"profiles": [{"owner_host_id": plan.owner.id,
                               "member_host_ids": [connection.host_id for connection in plan.connections],
-                              "template_id": plan.template.id, "strategy": (plan.balancer or {}).get("strategy")}
+                              "template_id": plan.template.id}
                              for plan in plans], "diagnostics": diagnostics}
     except SubscriptionError as exc:
         raise HTTPException(status_code=exc.status_code, detail=str(exc)) from exc

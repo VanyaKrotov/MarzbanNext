@@ -8,11 +8,10 @@ from typing import List, Optional
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, joinedload, selectinload
 
-from app.db.models.proxies import HostGroup, HostLink, ProxyHost, ProxyInbound
+from app.db.models.proxies import HostGroup, ProxyHost, ProxyInbound
 from app.db.crud import subscription_templates as template_crud
-from app.models.host import HostCreate, HostPatch, HostOverrides, BalancerSettings
+from app.models.host import HostCreate, HostPatch, HostOverrides
 from app.models.proxy import HostGroupCreate, HostGroupModify
-from app.subscription.capabilities import validate_balancer
 
 
 @dataclass
@@ -21,19 +20,17 @@ class PreparedHost:
     groups: list[HostGroup]
     bindings: list
     overrides: dict
-    balancer_settings: dict | None
 
 
 def host_query(db: Session):
     return db.query(ProxyHost).options(
         joinedload(ProxyHost.inbound), selectinload(ProxyHost.groups),
-        selectinload(ProxyHost.subscription_templates), selectinload(ProxyHost.outgoing_links),
-        selectinload(ProxyHost.incoming_links).joinedload(HostLink.owner),
+        selectinload(ProxyHost.subscription_templates),
     )
 
 
 def list_hosts(db: Session, group_id=None, group_ids=None, search=None, inbound_id=None,
-               enabled=None, composition=None):
+               enabled=None):
     query = host_query(db)
     groups = list(dict.fromkeys([value for value in [group_id, *(group_ids or [])] if value]))
     if groups:
@@ -46,9 +43,6 @@ def list_hosts(db: Session, group_id=None, group_ids=None, search=None, inbound_
         query = query.filter(ProxyHost.inbound_id == inbound_id)
     if enabled is not None:
         query = query.filter(ProxyHost.enabled == enabled)
-    if composition is not None:
-        query = query.filter(ProxyHost.balancer_settings.is_not(None) if composition
-                             else ProxyHost.balancer_settings.is_(None))
     return query.order_by(ProxyHost.position, ProxyHost.id)
 
 
@@ -133,45 +127,28 @@ def validate_connection_options(inbound: ProxyInbound, overrides: dict):
             raise ValueError("overrides.transport.xhttp.extra.uplinkHTTPMethod: GET requires packet-up mode")
 
 
-def prepare_host(db: Session, data: HostCreate, host_id: int | None) -> PreparedHost:
+def prepare_host(db: Session, data: HostCreate) -> PreparedHost:
     inbound = db.get(ProxyInbound, data.inbound_id)
     if inbound is None:
         raise ValueError("Inbound not found")
-    if host_id in data.linked_host_ids:
-        raise ValueError("A host cannot reference itself")
-    members = db.query(ProxyHost).filter(ProxyHost.id.in_(data.linked_host_ids)).all() if data.linked_host_ids else []
-    if len(members) != len(data.linked_host_ids):
-        raise ValueError("Linked host not found")
     groups = _get_existing_host_groups(db, data.group_ids)
     bindings = template_crud.build_host_bindings(db, data.subscription_template_ids)
     overrides = (data.overrides.model_dump(exclude_unset=True, exclude_none=True, by_alias=True)
                  if data.overrides else {})
     validate_connection_options(inbound, overrides)
-    balancer = data.balancer_settings
-    if data.linked_host_ids and balancer is None:
-        balancer = BalancerSettings()
-    settings = balancer.model_dump(exclude_none=True, by_alias=True) if balancer is not None else None
-    if settings is not None:
-        validate_balancer(settings, data.subscription_template_ids, set(data.linked_host_ids) | {host_id})
-    return PreparedHost(inbound, groups, bindings, overrides, settings)
+    return PreparedHost(inbound, groups, bindings, overrides)
 
 
-def _apply(db: Session, host: ProxyHost, data: HostCreate, prepared: PreparedHost):
+def _apply(host: ProxyHost, data: HostCreate, prepared: PreparedHost):
     host.inbound = prepared.inbound
-    for name in ("remark", "address", "port", "enabled", "show_when_composed"):
+    for name in ("remark", "address", "port", "enabled", "is_hidden"):
         setattr(host, name, getattr(data, name))
     if data.position is not None:
         host.position = data.position
     host.groups = prepared.groups
     host.subscription_templates = prepared.bindings
     host.overrides = prepared.overrides
-    host.balancer_settings = prepared.balancer_settings
     host.updated_at = datetime.now(UTC).replace(tzinfo=None)
-    # Delete first so reordering cannot transiently violate the unique owner/position key.
-    host.outgoing_links.clear()
-    db.flush()
-    host.outgoing_links = [HostLink(member_host_id=member_id, position=index)
-                           for index, member_id in enumerate(data.linked_host_ids)]
 
 
 def create_host(db: Session, data: HostCreate) -> ProxyHost:
@@ -179,33 +156,31 @@ def create_host(db: Session, data: HostCreate) -> ProxyHost:
         if not template_crud.get_defaults(db):
             template_crud.seed_defaults(db)
         data = data.model_copy(update={"subscription_template_ids": template_crud.get_default_bindings(db)})
-    prepared = prepare_host(db, data, None)
+    prepared = prepare_host(db, data)
     position = data.position
     if position is None:
         maximum = db.query(func.max(ProxyHost.position)).scalar()
         position = (maximum if maximum is not None else -1) + 1
     host = ProxyHost(position=position)
     db.add(host)
-    _apply(db, host, data, prepared)
-    db.add(host)
+    _apply(host, data, prepared)
     db.commit()
     return get_host(db, host.id)
 
 
 def update_host(db: Session, host: ProxyHost, patch: HostPatch) -> ProxyHost:
     values = {name: getattr(host, name) for name in
-              ("inbound_id", "remark", "address", "port", "enabled", "position", "show_when_composed",
-               "overrides", "balancer_settings", "linked_host_ids", "subscription_template_ids")}
+              ("inbound_id", "remark", "address", "port", "enabled", "position", "is_hidden",
+               "overrides", "subscription_template_ids")}
     values["group_ids"] = [group.id for group in host.groups]
     changes = patch.model_dump(exclude_unset=True)
-    for name in ("overrides", "balancer_settings"):
-        if name in changes and isinstance(changes[name], dict):
-            changes[name] = merge_patch(values[name] or {}, changes[name])
+    if isinstance(changes.get("overrides"), dict):
+        changes["overrides"] = merge_patch(values["overrides"] or {}, changes["overrides"])
     values.update(changes)
     values["overrides"] = HostOverrides.model_validate(values["overrides"] or {})
     data = HostCreate.model_validate(values)
-    prepared = prepare_host(db, data, host.id)
-    _apply(db, host, data, prepared)
+    prepared = prepare_host(db, data)
+    _apply(host, data, prepared)
     db.commit()
     return get_host(db, host.id)
 
@@ -229,23 +204,15 @@ def reorder_hosts(db: Session, ids: list[int]):
 def clone_host(db: Session, source: ProxyHost, remark: str):
     data = HostCreate(
         inbound_id=source.inbound_id, remark=remark, address=source.address, port=source.port,
-        enabled=False, show_when_composed=source.show_when_composed,
-        overrides=source.overrides, balancer_settings=source.balancer_settings,
-        linked_host_ids=source.linked_host_ids, group_ids=[group.id for group in source.groups],
+        enabled=False, is_hidden=source.is_hidden,
+        overrides=source.overrides,
+        group_ids=[group.id for group in source.groups],
         subscription_template_ids=source.subscription_template_ids,
     )
-    prepared = prepare_host(db, data, source.id)
+    prepared = prepare_host(db, data)
     maximum = db.query(func.max(ProxyHost.position)).scalar()
     host = ProxyHost(position=(maximum if maximum is not None else -1) + 1)
     db.add(host)
-    _apply(db, host, data, prepared)
-    # Costs identify connections by host ID; the owner's cost must follow its clone.
-    settings = deepcopy(host.balancer_settings)
-    if settings:
-        for options in settings.get("clients", {}).values():
-            for cost in (options.get("strategy_settings") or {}).get("costs", []):
-                if cost["host_id"] == source.id:
-                    cost["host_id"] = host.id
-        host.balancer_settings = settings
+    _apply(host, data, prepared)
     db.commit()
     return get_host(db, host.id)

@@ -9,9 +9,9 @@ def snapshot_host(host) -> HostSnapshot:
     return HostSnapshot(
         id=host.id, inbound_id=host.inbound_id, inbound_tag=host.inbound_tag,
         remark=host.remark, address=host.address, port=host.port, enabled=host.enabled,
-        position=host.position, show_when_composed=host.show_when_composed,
-        overrides=deepcopy(host.overrides), balancer_settings=deepcopy(host.balancer_settings),
-        linked_host_ids=tuple(host.linked_host_ids), group_ids=tuple(group.id for group in host.groups),
+        position=host.position, is_hidden=host.is_hidden,
+        overrides=deepcopy(host.overrides),
+        group_ids=tuple(group.id for group in host.groups),
         subscription_template_ids=dict(host.subscription_template_ids),
     )
 

@@ -1,4 +1,3 @@
-import type { BalancerSettings } from "./lib/balancer";
 import type { TemplateBindings } from "@/pages/subscription-templates-page/lib/formats";
 
 export type HostGroupRef = {
@@ -33,11 +32,8 @@ export type HostType = {
   address: string;
   port: number | null;
   enabled: boolean;
-  show_when_composed: boolean;
+  is_hidden: boolean;
   overrides: JsonObject;
-  balancer_settings: BalancerSettings | null;
-  linked_host_ids: number[];
-  member_of: { id: number; remark: string }[];
   groups: HostGroupRef[];
   subscription_template_ids: TemplateBindings;
   created_at: string;
@@ -50,16 +46,10 @@ export type HostPayload = {
   address: string;
   port: number | null;
   enabled: boolean;
-  show_when_composed: boolean;
+  is_hidden: boolean;
   overrides?: JsonObject | null;
-  balancer_settings?: JsonObject | null;
-  linked_host_ids?: number[];
   group_ids?: string[];
   subscription_template_ids?: TemplateBindings;
 };
 
 export type HostsSchema = HostType[];
-export type HostCapabilities = {
-  schema_version: number;
-  strategies: Record<string, string[]>;
-};

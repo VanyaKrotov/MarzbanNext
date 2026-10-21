@@ -10,7 +10,7 @@ from app.db.models.associations import (  # noqa: F401
 )
 from app.db.models.admins import Admin, AdminUsageLogs  # noqa: F401
 from app.db.models.users import NextPlan, User, UserTemplate, UserUsageResetLogs  # noqa: F401
-from app.db.models.proxies import HostGroup, HostLink, Proxy, ProxyHost, ProxyInbound, ProxyOutbound  # noqa: F401
+from app.db.models.proxies import HostGroup, Proxy, ProxyHost, ProxyInbound, ProxyOutbound  # noqa: F401
 from app.db.models.routing import RoutingRule  # noqa: F401
 from app.db.models.settings import JWT, RuntimeSettings, System, TLS  # noqa: F401
 from app.db.models.nodes import Node  # noqa: F401

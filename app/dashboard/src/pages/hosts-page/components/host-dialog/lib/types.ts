@@ -1,11 +1,6 @@
 import type { InboundType } from "@/types/Inbound";
 import type { SubscriptionTemplate } from "@/pages/subscription-templates-page/lib/query";
-import type {
-  HostCapabilities,
-  HostGroupType,
-  HostPayload,
-  HostType,
-} from "../../../types";
+import type { HostGroupType, HostPayload, HostType } from "../../../types";
 
 export type HostDialogProps = {
   open: boolean;
@@ -20,6 +15,4 @@ export type HostDialogProps = {
 export type HostFormProps = HostDialogProps & {
   inbounds: InboundType[];
   templates: SubscriptionTemplate[];
-  hosts: HostType[];
-  capabilities: HostCapabilities;
 };

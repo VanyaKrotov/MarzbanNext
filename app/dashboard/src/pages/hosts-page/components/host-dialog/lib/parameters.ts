@@ -3,8 +3,7 @@ import type { JsonObject } from "../../../types";
 type ParameterKind = "text" | "boolean" | "json" | "security";
 export const specialHostParameters = [
   { id: "templates", labelKey: "subscriptionTemplates.title" },
-  { id: "composition", labelKey: "hostEditor.composition" },
-  { id: "show_when_composed", labelKey: "hostEditor.showWhenComposed" },
+  { id: "is_hidden", labelKey: "hostEditor.isHidden" },
 ] as const;
 export type HostParameterDefinition = {
   id: string;
@@ -150,7 +149,7 @@ const parameterGroups = [
     ids: ["mux", "fragment", "noise", "sockopt", "final_mask"],
   },
   { id: "subscription", ids: ["templates", "clients", "mapper"] },
-  { id: "composition", ids: ["composition", "show_when_composed"] },
+  { id: "visibility", ids: ["is_hidden"] },
 ] as const;
 
 export function getAvailableParameterGroups(

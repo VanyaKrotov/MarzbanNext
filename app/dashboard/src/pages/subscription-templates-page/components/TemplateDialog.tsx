@@ -52,6 +52,16 @@ import {
   type SubscriptionFormat,
 } from "../lib/query";
 
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { CompositionHelper } from "./CompositionHelper";
+import { TemplatePreview } from "./TemplatePreview";
+import { compositionSchema } from "../lib/composition";
+
 const schema = z.object({
   name: z.string().trim().min(1).max(128),
   format: z.enum(subscriptionFormats),
@@ -93,6 +103,16 @@ export function TemplateDialog({
         <DialogContent
           aria-describedby={undefined}
           className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-4xl"
+          onEscapeKeyDown={(event) => {
+            // Base UI closes the nested picker after Radix handles the same Escape event.
+            if (
+              event.target instanceof Element &&
+              event.target.closest(
+                '[role="combobox"][aria-expanded="true"], [data-slot="combobox-content"]',
+              )
+            )
+              event.preventDefault();
+          }}
         >
           <TemplateLoader
             template={template}
@@ -246,7 +266,7 @@ function TemplateForm({
           )}
         </DialogTitle>
       </DialogHeader>
-      <form className="space-y-4" onSubmit={submit}>
+      <form className="flex flex-col gap-4" onSubmit={submit}>
         <div className="grid gap-4 sm:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
           <Field>
             <FieldLabel htmlFor="template-name">
@@ -306,6 +326,7 @@ function TemplateForm({
             render={({ field }) => (
               <MonacoJsonEditor
                 id="template-content"
+                schema={compositionSchema(format)}
                 value={field.value}
                 onChange={field.onChange}
                 language={
@@ -322,6 +343,41 @@ function TemplateForm({
           />
           <FieldError errors={[form.formState.errors.content]} />
         </Field>
+        <Accordion type="multiple">
+          {["v2ray-json", "clash", "sing-box"].includes(format) && (
+            <AccordionItem value="composition">
+              <AccordionTrigger>
+                {t("templateComposition.title")}
+              </AccordionTrigger>
+              <AccordionContent className="h-auto">
+                <CompositionHelper
+                  key={format}
+                  format={format}
+                  disabled={mutation.isPending}
+                  onInsert={(content) =>
+                    form.setValue("content", content, {
+                      shouldDirty: true,
+                      shouldValidate: true,
+                    })
+                  }
+                />
+              </AccordionContent>
+            </AccordionItem>
+          )}
+          <AccordionItem value="preview">
+            <AccordionTrigger>
+              {t("templateComposition.preview")}
+            </AccordionTrigger>
+            <AccordionContent className="h-auto">
+              <TemplatePreview
+                key={format}
+                format={format}
+                disabled={mutation.isPending}
+                getContent={() => form.getValues("content")}
+              />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
         <p className="text-sm text-muted-foreground">
           {t("subscriptionTemplates.variables")}
         </p>

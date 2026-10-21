@@ -77,7 +77,7 @@ class HostRedesignMigrationTests(TestCase):
         self.assertIn("subscription_balancers", sa.inspect(self.engine).get_table_names())
         with self.engine.connect() as connection:
             self.assertEqual(preflight(connection)["errors"], [])
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "c82a6f0159bd")
         metadata = sa.MetaData()
         metadata.reflect(self.engine)
         self.assertNotIn("subscription_balancers", metadata.tables)
@@ -108,9 +108,9 @@ class HostRedesignMigrationTests(TestCase):
         with self.engine.begin() as connection:
             connection.exec_driver_sql("DELETE FROM subscription_balancer_hosts")
             connection.exec_driver_sql("DELETE FROM subscription_balancers")
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "c82a6f0159bd")
         self.migrate("downgrade", "f6a82c1d5e90")
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "c82a6f0159bd")
         with self.engine.connect() as connection:
             self.assertEqual(connection.exec_driver_sql("SELECT id FROM hosts ORDER BY id").scalars().all(), ids)
 
@@ -119,11 +119,11 @@ class HostRedesignMigrationTests(TestCase):
         with self.engine.connect() as connection:
             report = preflight(connection)
             self.assertEqual(report["errors"][0]["reason"], "empty_balancer_requires_source_host")
-        self.migrate("upgrade", "head", succeeds=False)
+        self.migrate("upgrade", "c82a6f0159bd", succeeds=False)
         inspector = sa.inspect(self.engine)
         self.assertNotIn("host_links", inspector.get_table_names())
         self.assertIn("sc_max_buffered_posts", {column["name"] for column in inspector.get_columns("hosts")})
 
     def test_mysql_and_mariadb_tables_compile(self):
-        for name in ("hosts", "host_links"):
+        for name in ("hosts", "subscription_templates"):
             self.assertIn("CREATE TABLE", str(CreateTable(Base.metadata.tables[name]).compile(dialect=mysql.dialect())))

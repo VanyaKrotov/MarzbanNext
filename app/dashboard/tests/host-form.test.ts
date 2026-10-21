@@ -6,10 +6,6 @@ import {
   hostFormSchema,
 } from "../src/pages/hosts-page/components/host-dialog/lib/form";
 import { toHostPayload } from "../src/pages/hosts-page/components/host-dialog/lib/payload";
-import {
-  getBalancerClientFormValues,
-  serializeBalancerClients,
-} from "../src/pages/hosts-page/lib/balancer";
 import { subscriptionFormats } from "../src/pages/subscription-templates-page/lib/formats";
 import { getAvailableParameterGroups } from "../src/pages/hosts-page/components/host-dialog/lib/parameters";
 import {
@@ -198,97 +194,11 @@ test("removing a template chip excludes its format and clearing all chips disabl
   );
 });
 
-test("structured client settings preserve zero, false and least-load arrays", () => {
-  const clients = getBalancerClientFormValues({
-    clash: { tolerance: 0, lazy: false },
-    "v2ray-json": {
-      strategy: "least_load",
-      strategy_settings: {
-        failure_tolerance: 0,
-        baselines_ms: [100, 200],
-        costs: [{ host_id: 1, value: 2 }],
-      },
-    },
-  });
-  assert.equal(clients["clash"]?.lazy, false);
-  assert.deepEqual(serializeBalancerClients(clients, "least_ping"), {
-    clash: { tolerance: 0, lazy: false },
-    "v2ray-json": {
-      strategy: "least_load",
-      strategy_settings: {
-        failure_tolerance: 0,
-        baselines_ms: [100, 200],
-        costs: [{ host_id: 1, value: 2 }],
-      },
-    },
-  });
-});
-
-test("clearing a client option sends null while retaining other settings", () => {
+test("visibility uses only the new host contract", () => {
   const values = formValues();
-  values.selected = ["composition"];
-  values.original_balancer = {
-    clients: {
-      clash: { probe_url: "https://example.com", tolerance: 0 },
-    },
-  };
-  values.balancer_clients = {
-    clash: { probe_url: undefined, tolerance: 0 },
-  };
+  values.is_hidden = true;
   const payload = toHostPayload(hostFormSchema.parse(values));
-  const settings = payload.balancer_settings as {
-    clients: Record<string, unknown>;
-  };
-  assert.deepEqual(settings.clients, { clash: { probe_url: null } });
-});
-
-test("removing a client deletes its saved settings", () => {
-  const values = formValues();
-  values.selected = ["composition"];
-  values.original_balancer = { clients: { clash: { lazy: false } } };
-  const settings = toHostPayload(hostFormSchema.parse(values))
-    .balancer_settings as { clients: Record<string, unknown> };
-  assert.deepEqual(settings.clients, { clash: null });
-});
-
-test("invalid JSON arrays report their actual form path", () => {
-  const values = formValues();
-  values.balancer_clients = {
-    "v2ray-json": { strategy_settings: { costs: "[" } },
-  };
-  const result = hostFormSchema.safeParse(values);
-  assert.equal(result.success, false);
-  if (!result.success) {
-    assert.deepEqual(result.error.issues[0].path, [
-      "balancer_clients",
-      "v2ray-json",
-      "strategy_settings",
-      "costs",
-    ]);
-  }
-});
-
-test("cost entries and numeric fields validate their ranges", () => {
-  const values = formValues();
-  values.balancer_clients = {
-    "v2ray-json": { strategy_settings: { costs: '[{"host_id":1,"value":0}]' } },
-  };
-  assert.equal(hostFormSchema.safeParse(values).success, false);
-  values.balancer_clients = { clash: { tolerance: -1 } };
-  assert.equal(hostFormSchema.safeParse(values).success, false);
-});
-
-test("changing strategy removes inapplicable least-load settings", () => {
-  assert.deepEqual(
-    serializeBalancerClients(
-      {
-        "v2ray-json": {
-          strategy: "round_robin",
-          strategy_settings: { expected: 2, baselines_ms: "[100]" },
-        },
-      },
-      "least_ping",
-    ),
-    { "v2ray-json": { strategy: "round_robin" } },
-  );
+  assert.equal(payload.is_hidden, true);
+  assert.equal("linked_host_ids" in payload, false);
+  assert.equal("balancer_settings" in payload, false);
 });

@@ -3,11 +3,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FieldDescription } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAllTemplatesQuery } from "@/pages/subscription-templates-page/lib/query";
-import {
-  useHostCapabilitiesQuery,
-  useHostsQuery,
-  useInboundsQuery,
-} from "../../lib/query";
+import { useInboundsQuery } from "../../lib/query";
 import { HostForm } from "./components/HostForm";
 import type { HostDialogProps } from "./lib/types";
 
@@ -52,13 +48,11 @@ function HostFormLoader(props: HostDialogProps) {
   const { t } = useTranslation();
   const inbounds = useInboundsQuery(props.inboundTag ?? undefined);
   const templates = useAllTemplatesQuery();
-  const hosts = useHostsQuery();
-  const capabilities = useHostCapabilitiesQuery();
-  const queries = [inbounds, templates, hosts, capabilities];
+  const queries = [inbounds, templates];
 
   if (queries.some((query) => query.isLoading))
     return <Skeleton className="h-48" />;
-  if (queries.some((query) => query.isError) || !capabilities.data) {
+  if (queries.some((query) => query.isError)) {
     return (
       <FieldDescription>{t("hostsPage.loadErrorDescription")}</FieldDescription>
     );
@@ -75,8 +69,6 @@ function HostFormLoader(props: HostDialogProps) {
       {...props}
       inbounds={inbounds.data}
       templates={templates.data ?? []}
-      hosts={hosts.data ?? []}
-      capabilities={capabilities.data}
     />
   );
 }
