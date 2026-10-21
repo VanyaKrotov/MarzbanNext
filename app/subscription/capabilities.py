@@ -2,15 +2,15 @@
 
 STRATEGIES = {
     "v2ray-json": ("least_ping", "least_load", "random", "round_robin"),
-    "clash-meta": ("least_ping", "round_robin"),
+    "clash": ("least_ping", "round_robin"),
     "sing-box": ("least_ping",),
 }
 TARGET_FAMILIES = {
-    "v2ray": "v2ray", "v2ray-json": "v2ray-json", "clash-meta": "clash-meta", "sing-box": "sing-box", "outline": "outline",
+    "v2ray": "v2ray", "v2ray-json": "v2ray-json", "clash": "clash", "sing-box": "sing-box", "outline": "outline",
 }
 CLIENT_FIELDS = {
     "v2ray-json": {"strategy", "probe_url", "probe_interval", "enable_concurrency", "strategy_settings"},
-    "clash-meta": {"strategy", "probe_url", "probe_interval", "tolerance", "lazy"},
+    "clash": {"strategy", "probe_url", "probe_interval", "tolerance", "lazy"},
     "sing-box": {"strategy", "probe_url", "probe_interval", "tolerance", "idle_timeout",
                  "interrupt_existing_connections"},
 }
@@ -40,7 +40,7 @@ def supports_connection(target: str, inbound: dict) -> bool:
     protocol, network = inbound["protocol"], inbound["network"]
     if target == "outline":
         return protocol == "shadowsocks"
-    if target in {"clash-meta", "sing-box"} and network in {"kcp", "quic"}:
+    if target in {"clash", "sing-box"} and network in {"kcp", "quic"}:
         return False
     if target == "sing-box" and network in {"splithttp", "xhttp"}:
         return False
@@ -51,7 +51,7 @@ def host_capabilities() -> dict:
     from app.models.host import HostOverrides, BalancerSettings
 
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "overrides_schema": HostOverrides.model_json_schema(),
         "balancer_schema": BalancerSettings.model_json_schema(),
         "strategies": STRATEGIES,

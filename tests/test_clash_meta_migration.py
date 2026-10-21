@@ -73,15 +73,15 @@ class ClashMetaMigrationTests(TestCase):
 
     def test_upgrade_downgrade_preserves_ids_content_and_options(self):
         saved = self.seed()
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "b57c20e91a46")
         self.assert_upgraded(*saved)
         self.migrate("downgrade", "a319d48e7062")
-        self.migrate("upgrade", "head")
+        self.migrate("upgrade", "b57c20e91a46")
         self.assert_upgraded(*saved)
 
     def test_conflicts_fail_before_schema_or_data_changes(self):
         self.seed(conflict=True)
-        result = self.migrate("upgrade", "head", succeeds=False)
+        result = self.migrate("upgrade", "b57c20e91a46", succeeds=False)
         self.assertIn("conflicting Clash/Mihomo", result.stderr)
         with self.engine.connect() as connection:
             self.assertEqual(connection.exec_driver_sql(

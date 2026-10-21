@@ -786,7 +786,7 @@
   "usersTable.onlineHoursAgo_other": "{{count}} ساعت پیش",
   "subscriptionTemplates.formats.v2ray": "لینک‌های V2Ray",
   "subscriptionTemplates.formats.v2ray-json": "Xray JSON",
-  "subscriptionTemplates.formats.clash-meta": "Clash Meta",
+  "subscriptionTemplates.formats.clash": "Clash",
   "subscriptionTemplates.formats.sing-box": "sing-box",
   "subscriptionTemplates.formats.outline": "Outline",
   "validation.invalid": "مقدار معتبر وارد کنید",

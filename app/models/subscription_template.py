@@ -7,14 +7,12 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class SubscriptionFormat(str, Enum):
     v2ray = "v2ray"
     v2ray_json = "v2ray-json"
-    clash_meta = "clash-meta"
+    clash = "clash"
     sing_box = "sing-box"
     outline = "outline"
 
 
 FORMAT_ALIASES = {
-    "clash": "clash-meta",
-    "mihomo": "clash-meta",
     "singbox": "sing-box",
     "json": "v2ray-json",
     "xray-json": "v2ray-json",

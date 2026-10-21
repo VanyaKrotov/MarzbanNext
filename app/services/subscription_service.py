@@ -21,7 +21,7 @@ from app.db.crud import proxy_hosts as host_crud
 from app.db.crud import users as user_crud
 
 client_config = {
-    "clash-meta": {"config_format": "clash-meta", "media_type": "text/yaml", "as_base64": False, "reverse": False},
+    "clash": {"config_format": "clash", "media_type": "text/yaml", "as_base64": False, "reverse": False},
     "sing-box": {"config_format": "sing-box", "media_type": "application/json", "as_base64": False, "reverse": False},
     "v2ray": {"config_format": "v2ray", "media_type": "text/plain", "as_base64": True, "reverse": False},
     "outline": {"config_format": "outline", "media_type": "application/json", "as_base64": False, "reverse": False},
@@ -95,7 +95,7 @@ def user_subscription(
     settings = get_runtime_settings()
 
     if re.match(r"^(clash|flclash|mihomo|stash)", user_agent, re.IGNORECASE):
-        conf = generate_subscription(user=user, config_format="clash-meta",
+        conf = generate_subscription(user=user, config_format="clash",
                                      as_base64=False, reverse=False, template_id=template_id)
         return _subscription_response(content=conf, media_type="text/yaml", headers=response_headers)
 
@@ -193,7 +193,7 @@ def user_subscription_with_client_type(
     request: Request,
     dbuser: UserResponse = Depends(get_validated_sub),
     client_type: str = Path(...,
-                            pattern="^(sing-box|singbox|clash-meta|mihomo|clash|outline|v2ray|v2ray-json|xray-json|json)$"),
+                            pattern="^(sing-box|singbox|clash|outline|v2ray|v2ray-json|xray-json|json)$"),
     groups: Union[str, None] = Query(None),
     db: Session = Depends(get_db),
     user_agent: str = Header(default=""),

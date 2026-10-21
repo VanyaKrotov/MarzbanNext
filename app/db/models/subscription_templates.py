@@ -24,7 +24,7 @@ class SubscriptionTemplate(Base):
         UniqueConstraint("format", "default_marker", name="uq_subscription_template_default"),
         CheckConstraint("default_marker IS NULL OR default_marker = 1", name="ck_subscription_template_default"),
         CheckConstraint(
-            "format IN ('v2ray', 'v2ray-json', 'clash-meta', 'sing-box', 'outline')",
+            "format IN ('v2ray', 'v2ray-json', 'clash', 'sing-box', 'outline')",
             name="ck_subscription_template_format",
         ),
     )

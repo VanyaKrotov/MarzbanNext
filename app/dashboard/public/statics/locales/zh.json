@@ -785,7 +785,7 @@
   "usersTable.onlineHoursAgo_other": "{{count}} 小时前",
   "subscriptionTemplates.formats.v2ray": "V2Ray 链接",
   "subscriptionTemplates.formats.v2ray-json": "Xray JSON",
-  "subscriptionTemplates.formats.clash-meta": "Clash Meta",
+  "subscriptionTemplates.formats.clash": "Clash",
   "subscriptionTemplates.formats.sing-box": "sing-box",
   "subscriptionTemplates.formats.outline": "Outline",
   "validation.invalid": "请输入有效值",

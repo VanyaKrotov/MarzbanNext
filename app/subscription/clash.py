@@ -21,7 +21,7 @@ class ClashConfiguration(object):
 
         from app.utils.subscription_template_defaults import default_subscription_content
 
-        self.template = template if template is not None else default_subscription_content("clash-meta")
+        self.template = template if template is not None else default_subscription_content("clash")
         self.data = {
             'proxies': [],
             'proxy-groups': [],
@@ -55,7 +55,7 @@ class ClashConfiguration(object):
         yaml.add_representer(UUID, yml_uuid_representer)
         return yaml.dump(
             parse_subscription_document(
-                SubscriptionFormat.clash_meta,
+                SubscriptionFormat.clash,
                 render_subscription_template(
                     self.template,
                     {"conf": self.data, "proxy_remarks": self.default_proxy_remarks}
@@ -388,7 +388,7 @@ class ClashMetaConfiguration(ClashConfiguration):
         settings: dict,
         include_in_default: bool = True,
     ):
-        # not supported by clash-meta
+        # not supported by clash
         if inbound['network'] in ("kcp", "splithttp", "xhttp") or (inbound['network'] == "quic" and inbound["header_type"] != "none"):
             return None
 

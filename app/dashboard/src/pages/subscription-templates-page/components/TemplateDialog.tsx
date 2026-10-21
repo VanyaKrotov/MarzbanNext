@@ -309,7 +309,7 @@ function TemplateForm({
                 value={field.value}
                 onChange={field.onChange}
                 language={
-                  format === "clash-meta"
+                  format === "clash"
                     ? "yaml"
                     : format === "v2ray"
                       ? "text"

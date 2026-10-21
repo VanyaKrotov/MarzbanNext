@@ -1,7 +1,7 @@
 export const subscriptionFormats = [
   "v2ray",
   "v2ray-json",
-  "clash-meta",
+  "clash",
   "sing-box",
   "outline",
 ] as const;
@@ -12,7 +12,7 @@ export type TemplateBindings = Partial<Record<SubscriptionFormat, number>>;
 export const formatLabelKeys: Record<SubscriptionFormat, string> = {
   v2ray: "subscriptionTemplates.formats.v2ray",
   "v2ray-json": "subscriptionTemplates.formats.v2ray-json",
-  "clash-meta": "subscriptionTemplates.formats.clash-meta",
+  clash: "subscriptionTemplates.formats.clash",
   "sing-box": "subscriptionTemplates.formats.sing-box",
   outline: "subscriptionTemplates.formats.outline",
 };

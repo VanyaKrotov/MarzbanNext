@@ -25,11 +25,11 @@ test("a new host starts without optional parameters or explicit template binding
   assert.equal("subscription_template_ids" in payload, false);
 });
 
-test("clash-meta is the only YAML format in the catalog", () => {
+test("clash is the only YAML format in the catalog", () => {
   assert.deepEqual(subscriptionFormats, [
     "v2ray",
     "v2ray-json",
-    "clash-meta",
+    "clash",
     "sing-box",
     "outline",
   ]);
@@ -67,7 +67,7 @@ test("removing an optional override sends a deletion", () => {
 
 test("structured client settings preserve zero, false and least-load arrays", () => {
   const clients = getBalancerClientFormValues({
-    "clash-meta": { tolerance: 0, lazy: false },
+    clash: { tolerance: 0, lazy: false },
     "v2ray-json": {
       strategy: "least_load",
       strategy_settings: {
@@ -77,9 +77,9 @@ test("structured client settings preserve zero, false and least-load arrays", ()
       },
     },
   });
-  assert.equal(clients["clash-meta"]?.lazy, false);
+  assert.equal(clients["clash"]?.lazy, false);
   assert.deepEqual(serializeBalancerClients(clients, "least_ping"), {
-    "clash-meta": { tolerance: 0, lazy: false },
+    clash: { tolerance: 0, lazy: false },
     "v2ray-json": {
       strategy: "least_load",
       strategy_settings: {
@@ -96,26 +96,26 @@ test("clearing a client option sends null while retaining other settings", () =>
   values.selected = ["composition"];
   values.original_balancer = {
     clients: {
-      "clash-meta": { probe_url: "https://example.com", tolerance: 0 },
+      clash: { probe_url: "https://example.com", tolerance: 0 },
     },
   };
   values.balancer_clients = {
-    "clash-meta": { probe_url: undefined, tolerance: 0 },
+    clash: { probe_url: undefined, tolerance: 0 },
   };
   const payload = toHostPayload(hostFormSchema.parse(values));
   const settings = payload.balancer_settings as {
     clients: Record<string, unknown>;
   };
-  assert.deepEqual(settings.clients, { "clash-meta": { probe_url: null } });
+  assert.deepEqual(settings.clients, { clash: { probe_url: null } });
 });
 
 test("removing a client deletes its saved settings", () => {
   const values = formValues();
   values.selected = ["composition"];
-  values.original_balancer = { clients: { "clash-meta": { lazy: false } } };
+  values.original_balancer = { clients: { clash: { lazy: false } } };
   const settings = toHostPayload(hostFormSchema.parse(values))
     .balancer_settings as { clients: Record<string, unknown> };
-  assert.deepEqual(settings.clients, { "clash-meta": null });
+  assert.deepEqual(settings.clients, { clash: null });
 });
 
 test("invalid JSON arrays report their actual form path", () => {
@@ -141,7 +141,7 @@ test("cost entries and numeric fields validate their ranges", () => {
     "v2ray-json": { strategy_settings: { costs: '[{"host_id":1,"value":0}]' } },
   };
   assert.equal(hostFormSchema.safeParse(values).success, false);
-  values.balancer_clients = { "clash-meta": { tolerance: -1 } };
+  values.balancer_clients = { clash: { tolerance: -1 } };
   assert.equal(hostFormSchema.safeParse(values).success, false);
 });
 

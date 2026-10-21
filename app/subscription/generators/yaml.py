@@ -8,7 +8,7 @@ from app.subscription.generators.base import apply_resolved_options, builder_arg
 from app.subscription.validation import OutputValidator, TagAllocator
 
 
-def clash_meta_xhttp(connection):
+def clash_xhttp(connection):
     inbound = connection.inbound
     options = {key: inbound[key] for key in ("path", "host", "mode") if inbound.get(key)}
     extra = inbound.get("_xhttp_extra", {})
@@ -28,9 +28,9 @@ def clash_meta_xhttp(connection):
     return options
 
 
-class ClashMetaSubscriptionGenerator:
+class ClashSubscriptionGenerator:
     builder_class = ClashMetaConfiguration
-    target = "clash-meta"
+    target = "clash"
 
     def generate(self, data):
         if not data.profiles:
@@ -53,9 +53,9 @@ class ClashMetaSubscriptionGenerator:
                 continue
             node = builder.data["proxies"][-1]
             if xhttp:
-                node.update({"network": "xhttp", "xhttp-opts": clash_meta_xhttp(connection)})
+                node.update({"network": "xhttp", "xhttp-opts": clash_xhttp(connection)})
             apply_resolved_options(node, connection, self.target)
-            options = connection.client_options.get("clash-meta", {})
+            options = connection.client_options.get("clash", {})
             if "ip_version" in options:
                 node["ip-version"] = options["ip_version"]
             if "x25519" in options and "reality-opts" in node:
@@ -65,7 +65,7 @@ class ClashMetaSubscriptionGenerator:
                                 for key, value in connection.mux["smux"].items()}
             if "server_description" in connection.client_options:
                 node["serverDescription"] = connection.client_options["server_description"]
-            node = map_node(node, connection, "clash-meta")
+            node = map_node(node, connection, "clash")
             builder.data["proxies"][-1] = node
             names[connection.host_id] = node["name"]
         for profile in data.profiles:

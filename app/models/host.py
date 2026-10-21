@@ -113,13 +113,13 @@ class StreamOverrides(HostOptions):
     final_mask: dict[str, Any] | None = None
 
 
-class ClashMetaOptions(HostOptions):
+class ClashOptions(HostOptions):
     ip_version: Literal["dual", "ipv4", "ipv6", "ipv4-prefer", "ipv6-prefer"] | None = None
     x25519: StrictBool | None = None
 
 
 class ClientOverrides(HostOptions):
-    clash_meta: ClashMetaOptions | None = Field(None, alias="clash-meta")
+    clash: ClashOptions | None = None
     server_description: str | None = None
 
 
@@ -142,7 +142,7 @@ class MapperOperation(HostOptions):
 
 class HostMapperOptions(HostOptions):
     xrayJson: list[MapperOperation] | None = None
-    clash_meta: list[MapperOperation] | None = Field(None, alias="clash-meta")
+    clash: list[MapperOperation] | None = None
     singbox: list[MapperOperation] | None = None
     base64: list[MapperOperation] | None = None
 
@@ -167,7 +167,7 @@ class HostOverrides(HostOptions):
 
 
 BalancerStrategy = Literal["least_ping", "least_load", "random", "round_robin"]
-ClientTarget = Literal["v2ray-json", "clash-meta", "sing-box"]
+ClientTarget = Literal["v2ray-json", "clash", "sing-box"]
 
 
 class HostCost(HostOptions):
@@ -328,4 +328,4 @@ class HostPreview(HostOptions):
     host: HostCreate
     host_id: StrictInt | None = Field(None, gt=0)
     user_id: StrictInt = Field(gt=0)
-    target: Literal["v2ray", "v2ray-json", "clash-meta", "sing-box", "outline"]
+    target: Literal["v2ray", "v2ray-json", "clash", "sing-box", "outline"]

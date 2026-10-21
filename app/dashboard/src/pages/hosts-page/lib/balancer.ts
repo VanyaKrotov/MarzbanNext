@@ -6,11 +6,7 @@ export const balancerStrategies = [
   "random",
   "round_robin",
 ] as const;
-export const balancerTargets = [
-  "v2ray-json",
-  "clash-meta",
-  "sing-box",
-] as const;
+export const balancerTargets = ["v2ray-json", "clash", "sing-box"] as const;
 export type BalancerTarget = (typeof balancerTargets)[number];
 
 const baselinesSchema = z.array(z.number().int().positive());

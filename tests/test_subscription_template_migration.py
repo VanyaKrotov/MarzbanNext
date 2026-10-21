@@ -87,6 +87,6 @@ class SubscriptionTemplateMigrationTests(TestCase):
         self.migrate('upgrade', 'head')
         with self.engine.connect() as connection:
             formats = connection.execute(sa.select(self.table('subscription_templates').c.format)).scalars().all()
-            self.assertEqual(set(formats), {'v2ray', 'v2ray-json', 'clash-meta', 'sing-box', 'outline'})
+            self.assertEqual(set(formats), {'v2ray', 'v2ray-json', 'clash', 'sing-box', 'outline'})
             self.assertEqual(connection.scalar(sa.select(sa.func.count()).select_from(
                 self.table('host_subscription_templates'))), 0)

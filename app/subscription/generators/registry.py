@@ -3,14 +3,14 @@ from app.subscription.generators.outline import OutlineSubscriptionGenerator
 from app.subscription.generators.singbox import SingBoxSubscriptionGenerator
 from app.subscription.generators.uri import UriSubscriptionGenerator
 from app.subscription.generators.xray_json import XrayJsonSubscriptionGenerator
-from app.subscription.generators.yaml import ClashMetaSubscriptionGenerator
+from app.subscription.generators.yaml import ClashSubscriptionGenerator
 
 
 class GeneratorRegistry:
     generators = {
         "v2ray": UriSubscriptionGenerator,
         "v2ray-json": XrayJsonSubscriptionGenerator,
-        "clash-meta": ClashMetaSubscriptionGenerator,
+        "clash": ClashSubscriptionGenerator,
         "sing-box": SingBoxSubscriptionGenerator,
         "outline": OutlineSubscriptionGenerator,
     }

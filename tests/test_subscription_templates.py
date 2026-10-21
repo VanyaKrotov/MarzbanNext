@@ -125,11 +125,11 @@ class SubscriptionTemplateTests(TestCase):
             )
 
     def test_api_crud_clone_filter_and_default(self):
-        response = self.client.get('/api/subscription-templates', params={'format': 'clash-meta', 'limit': 1})
+        response = self.client.get('/api/subscription-templates', params={'format': 'clash', 'limit': 1})
         self.assertEqual(response.status_code, 200)
         self.assertEqual(response.json()['total'], 1)
         self.assertNotIn('content', response.json()['items'][0])
-        default_id = self.defaults['clash-meta']
+        default_id = self.defaults['clash']
         created = self.client.post(f'/api/subscription-templates/{default_id}/clone', json={'name': '  custom  '})
         self.assertEqual(created.status_code, 201, created.text)
         template = created.json()
@@ -169,8 +169,8 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(template_crud.get_default_bindings(self.db), self.defaults)
 
     def test_default_rename_retains_validation_and_protection(self):
-        template_id = self.defaults['clash-meta']
-        self.create_template('clash-meta', name='Custom')
+        template_id = self.defaults['clash']
+        self.create_template('clash', name='Custom')
         response = self.client.patch(f'/api/subscription-templates/{template_id}', json={'name': 'CUSTOM'})
         self.assertEqual(response.status_code, 409)
         for name in ('', '   ', None, 'x' * 129):
@@ -188,10 +188,10 @@ class SubscriptionTemplateTests(TestCase):
                 'name': 'invalid', 'format': 'v2ray-json', 'content': content,
             })
             self.assertEqual(response.status_code, 422, response.text)
-        response = self.client.patch(f'/api/subscription-templates/{self.defaults["clash-meta"]}', json={'name': None})
+        response = self.client.patch(f'/api/subscription-templates/{self.defaults["clash"]}', json={'name': None})
         self.assertEqual(response.status_code, 422, response.text)
         self.assertEqual(self.client.post('/api/subscription-templates', json={
-            'name': 'DEFAULT', 'format': 'clash-meta', 'content': default_subscription_content('clash-meta'),
+            'name': 'DEFAULT', 'format': 'clash', 'content': default_subscription_content('clash'),
         }).status_code, 409)
         self.client.app.dependency_overrides.pop(Admin.check_sudo_admin)
         self.assertEqual(self.client.get('/api/subscription-templates').status_code, 401)
@@ -213,7 +213,7 @@ class SubscriptionTemplateTests(TestCase):
         self.update_host(host)
         self.assertEqual(host.subscription_template_ids, self.defaults)
         custom = self.create_template()
-        bindings = {'v2ray-json': custom.id, 'clash-meta': self.defaults['clash-meta']}
+        bindings = {'v2ray-json': custom.id, 'clash': self.defaults['clash']}
         self.update_host(host, subscription_template_ids=bindings)
         self.assertEqual(host.subscription_template_ids, bindings)
         copy = self.create_host('Copy', subscription_template_ids=host.subscription_template_ids)
@@ -232,17 +232,18 @@ class SubscriptionTemplateTests(TestCase):
 
     def test_invalid_assignment_does_not_mutate_host(self):
         host = self.create_host()
-        for bindings in ({'v2ray': self.defaults['clash-meta']}, {'clash-meta': 999999}):
+        for bindings in ({'v2ray': self.defaults['clash']}, {'clash': 999999}):
             with self.assertRaises(ValueError):
                 self.update_host(host, subscription_template_ids=bindings)
             self.assertEqual(host.subscription_template_ids, self.defaults)
-        for bindings in ({'mux': 1}, {'clash-meta': None}, {'clash-meta': True}, {'clash-meta': '1'}, {'clash-meta': 0}, None):
+        for bindings in ({'mux': 1}, {'clash': None}, {'clash': True}, {'clash': '1'}, {'clash': 0}, None):
             with self.assertRaises(ValidationError):
                 ProxyHostCreate(inbound_id=1, remark='Invalid',
                                 address='example.com', subscription_template_ids=bindings)
-        alias = ProxyHostCreate(inbound_id=1, remark='Alias', address='example.com',
-                                subscription_template_ids={'mihomo': self.defaults['clash-meta']})
-        self.assertEqual(alias.subscription_template_ids, {'clash-meta': self.defaults['clash-meta']})
+        for alias in ('clash-meta', 'mihomo'):
+            with self.subTest(alias=alias), self.assertRaises(ValidationError):
+                ProxyHostCreate(inbound_id=1, remark='Alias', address='example.com',
+                                subscription_template_ids={alias: self.defaults['clash']})
 
     def test_assigned_templates_cannot_be_deleted_or_change_format(self):
         custom = self.create_template()
@@ -265,7 +266,7 @@ class SubscriptionTemplateTests(TestCase):
                 self.assertTrue(result)
                 if format == SubscriptionFormat.v2ray:
                     self.assertTrue(result.startswith('ss://'))
-                elif format == SubscriptionFormat.clash_meta:
+                elif format == SubscriptionFormat.clash:
                     self.assertEqual(yaml.safe_load(result)['proxies'][0]['server'], 'first.example.com')
                 elif format == SubscriptionFormat.outline:
                     self.assertEqual(json.loads(result)['server'], 'first.example.com')
@@ -274,7 +275,6 @@ class SubscriptionTemplateTests(TestCase):
                 else:
                     self.assertTrue(any(outbound.get('server') ==
                                     'first.example.com' for outbound in json.loads(result)['outbounds']))
-        self.assertEqual(yaml.safe_load(self.generate('mihomo'))['proxies'][0]['server'], 'first.example.com')
 
     def test_disabled_formats_stay_disabled_with_explicit_template(self):
         host = self.create_host(subscription_template_ids={})
@@ -299,9 +299,14 @@ class SubscriptionTemplateTests(TestCase):
             response = self.client.get(f'{public_router.prefix}/test', headers={'User-Agent': 'unknown-client'})
             self.assertEqual(response.status_code, 200, response.text)
             self.assertTrue(base64.b64decode(response.text).startswith(b'ss://'))
-            for format in ('json', 'xray-json', 'mihomo', 'singbox'):
+            for format in ('json', 'xray-json', 'clash', 'singbox'):
                 response = self.client.get(f'{public_router.prefix}/test/{format}')
                 self.assertEqual(response.status_code, 204, response.text)
+            for format in ('clash-meta', 'mihomo'):
+                response = self.client.get(f'{public_router.prefix}/test/{format}')
+                self.assertEqual(response.status_code, 422, response.text)
+                response = self.client.get('/api/subscription-templates', params={'format': format})
+                self.assertEqual(response.status_code, 422, response.text)
 
     def test_per_host_json_and_link_templates_and_live_edits(self):
         first = self.create_host()
@@ -332,7 +337,7 @@ class SubscriptionTemplateTests(TestCase):
 
     def test_aggregate_conflict_and_explicit_override(self):
         first = self.create_host()
-        for format in ('clash-meta', 'sing-box', 'outline'):
+        for format in ('clash', 'sing-box', 'outline'):
             with self.subTest(format=format):
                 custom = self.create_template(format)
                 second = self.create_host(format, subscription_template_ids={format: custom.id})
@@ -355,7 +360,7 @@ class SubscriptionTemplateTests(TestCase):
         json_config = self.generate('v2ray-json')
         self.assertIn('first.example.com', json_config)
         self.assertNotIn('disabled.example.com', json_config)
-        for format in ('sing-box', 'clash-meta'):
+        for format in ('sing-box', 'clash'):
             output = self.generate(format)
             self.assertIn('first.example.com', output)
             self.assertNotIn('disabled.example.com', output)
@@ -385,7 +390,7 @@ class SubscriptionTemplateTests(TestCase):
             validate_generator_settings('user_agent', '{"list": [null]}')
 
     def test_generator_settings_are_editable_separately_from_full_templates(self):
-        content = '{"v2ray": {"enabled": false}, "clash-meta": {}, "sing-box": {}}'
+        content = '{"v2ray": {"enabled": false}, "clash": {}, "sing-box": {}}'
         response = self.client.patch('/api/settings', json={'mux': content})
         self.assertEqual(response.status_code, 200, response.text)
         self.assertEqual(response.json()['mux'], content)

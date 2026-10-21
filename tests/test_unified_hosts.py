@@ -175,7 +175,7 @@ class UnifiedHostTests(TestCase):
 
     def test_renderers_use_detached_snapshot_without_database_access(self):
         self.host("A")
-        for target in ("v2ray", "v2ray-json", "clash-meta", "sing-box", "outline"):
+        for target in ("v2ray", "v2ray-json", "clash", "sing-box", "outline"):
             with self.subTest(target=target):
                 snapshot, plans, _ = self.plan(target)
                 with patch("app.db.GetDB", side_effect=AssertionError("Renderer accessed DB")):
@@ -225,7 +225,7 @@ class UnifiedHostTests(TestCase):
         self.assertEqual(cloned.status_code, 201, cloned.text)
         self.assertEqual(client.delete(f"/api/hosts/{row['id']}").status_code, 204)
         self.assertEqual(client.get(f"/api/hosts/{row['id']}").status_code, 404)
-        self.assertEqual(client.get("/api/hosts/capabilities").json()["schema_version"], 2)
+        self.assertEqual(client.get("/api/hosts/capabilities").json()["schema_version"], 3)
         client.close()
 
     def test_scalar_xhttp_fields_and_explicit_nulls_are_not_accepted(self):
@@ -304,7 +304,7 @@ class UnifiedHostTests(TestCase):
         self.host("A", overrides={"transport": {"path": "", "host": ""},
                                   "security": {"alpn": [], "allow_insecure": False}})
         snapshot = SubscriptionSnapshotLoader().load(self.db, self.settings)
-        for target in ("v2ray-json", "clash-meta", "sing-box"):
+        for target in ("v2ray-json", "clash", "sing-box"):
             with self.subTest(target=target):
                 plans, _ = ProfilePlanner().plan(snapshot, target,
                                                  {"vmess": {"id": "d2719ec9-8f2d-4b70-91ad-621c6b10a13a"}}, {"vmess": ["SS"]}, ResolveContext({}))
@@ -313,7 +313,7 @@ class UnifiedHostTests(TestCase):
                     node = json.loads(body)[0]["outbounds"][0]
                     transport, tls = node["streamSettings"]["wsSettings"], node["streamSettings"]["tlsSettings"]
                     self.assertFalse(tls["allowInsecure"])
-                elif target == "clash-meta":
+                elif target == "clash":
                     node = yaml.safe_load(body)["proxies"][0]
                     transport, tls = node["ws-opts"], node
                     self.assertFalse(tls["skip-cert-verify"])
@@ -325,17 +325,22 @@ class UnifiedHostTests(TestCase):
                 self.assertEqual(transport["headers"]["X-Test"], "kept")
                 self.assertEqual(tls["alpn"], [])
 
-    def test_clash_meta_is_the_only_yaml_target_and_accepts_client_overrides(self):
+    def test_clash_is_the_only_yaml_target_and_accepts_client_overrides(self):
         from app.models.subscription_template import normalize_subscription_client_type
         from app.subscription.capabilities import host_capabilities
         import yaml
 
-        self.host("A", overrides={"clients": {"clash-meta": {"ip_version": "ipv4"}},
-                                  "mapper": {"clash-meta": [{"op": "set", "to": "udp", "value": False}]}})
-        self.assertEqual(set(GeneratorRegistry.generators), {"v2ray", "v2ray-json", "clash-meta", "sing-box", "outline"})
-        self.assertEqual(set(host_capabilities()["strategies"]), {"v2ray-json", "clash-meta", "sing-box"})
-        for alias in ("clash", "mihomo", "clash-meta"):
-            self.assertEqual(normalize_subscription_client_type(alias), "clash-meta")
-        node = yaml.safe_load(self.generate("clash-meta"))["proxies"][0]
+        self.host("A", overrides={"clients": {"clash": {"ip_version": "ipv4"}},
+                                  "mapper": {"clash": [{"op": "set", "to": "udp", "value": False}]}})
+        self.assertEqual(set(GeneratorRegistry.generators), {"v2ray", "v2ray-json", "clash", "sing-box", "outline"})
+        self.assertEqual(set(host_capabilities()["strategies"]), {"v2ray-json", "clash", "sing-box"})
+        self.assertEqual(normalize_subscription_client_type("clash"), "clash")
+        for alias in ("clash-meta", "mihomo"):
+            with self.subTest(alias=alias), self.assertRaises(ValueError):
+                normalize_subscription_client_type(alias)
+            with self.assertRaises(ValidationError):
+                HostCreate(inbound_id=self.inbound.id, remark="Invalid", address="example.com",
+                           overrides={"clients": {alias: {"ip_version": "ipv4"}}})
+        node = yaml.safe_load(self.generate("clash"))["proxies"][0]
         self.assertEqual(node["ip-version"], "ipv4")
         self.assertFalse(node["udp"])

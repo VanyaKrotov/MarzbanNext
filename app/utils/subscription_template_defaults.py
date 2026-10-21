@@ -16,7 +16,7 @@ from config import (
 )
 
 FULL_TEMPLATE_SOURCES = {
-    "clash-meta": ("clash_subscription", CLASH_SUBSCRIPTION_TEMPLATE),
+    "clash": ("clash_subscription", CLASH_SUBSCRIPTION_TEMPLATE),
     "sing-box": ("singbox_subscription", SINGBOX_SUBSCRIPTION_TEMPLATE),
     "v2ray-json": ("v2ray_subscription", V2RAY_SUBSCRIPTION_TEMPLATE),
 }

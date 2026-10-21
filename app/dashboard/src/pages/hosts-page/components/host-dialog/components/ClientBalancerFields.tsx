@@ -167,9 +167,9 @@ function ClientBalancerEditor({
           pending={pending}
         />
       )}
-      {target === "clash-meta" && (
+      {target === "clash" && (
         <BalancerOptionField
-          name="balancer_clients.clash-meta.lazy"
+          name="balancer_clients.clash.lazy"
           label={t("hostEditor.lazy")}
           kind="boolean"
           pending={pending}
