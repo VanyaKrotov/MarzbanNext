@@ -2,7 +2,6 @@ import type { JsonObject } from "../../../types";
 
 type ParameterKind = "text" | "boolean" | "json" | "security";
 export const specialHostParameters = [
-  { id: "groups", labelKey: "hostsPage.groups" },
   { id: "templates", labelKey: "subscriptionTemplates.title" },
   { id: "composition", labelKey: "hostEditor.composition" },
   { id: "show_when_composed", labelKey: "hostEditor.showWhenComposed" },
@@ -122,6 +121,55 @@ export const hostParameters: readonly HostParameterDefinition[] = [
     kind: "json",
   },
 ];
+
+const parameterGroups = [
+  {
+    id: "security",
+    ids: [
+      "security",
+      "sni",
+      "keep_sni_blank",
+      "sni_from_address",
+      "alpn",
+      "fingerprint",
+      "allow_insecure",
+    ],
+  },
+  {
+    id: "transport",
+    ids: [
+      "host",
+      "path",
+      "use_sni_as_host",
+      "random_user_agent",
+      "xhttp_extra",
+    ],
+  },
+  {
+    id: "connection",
+    ids: ["mux", "fragment", "noise", "sockopt", "final_mask"],
+  },
+  { id: "subscription", ids: ["templates", "clients", "mapper"] },
+  { id: "composition", ids: ["composition", "show_when_composed"] },
+] as const;
+
+export function getAvailableParameterGroups(
+  selected: readonly string[],
+  supportsXhttp: boolean,
+) {
+  const options = [
+    ...hostParameters.filter((item) => !item.xhttpOnly || supportsXhttp),
+    ...specialHostParameters,
+  ].filter((item) => !selected.includes(item.id));
+  return parameterGroups
+    .map((group) => ({
+      id: group.id,
+      options: options.filter((item) =>
+        (group.ids as readonly string[]).includes(item.id),
+      ),
+    }))
+    .filter((group) => group.options.length > 0);
+}
 
 export function getPath(object: JsonObject, path: readonly string[]): unknown {
   let value: unknown = object;

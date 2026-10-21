@@ -17,6 +17,18 @@ export function HostDialog(props: HostDialogProps) {
       <DialogContent
         aria-describedby={undefined}
         className="max-h-[calc(100svh-2rem)] overflow-y-auto sm:max-w-2xl"
+        onEscapeKeyDown={(event) => {
+          // Radix observes Escape before the nested Base UI combobox closes its popup.
+          const target = event.target;
+          if (
+            target instanceof Element &&
+            target.closest(
+              '[role="combobox"][aria-expanded="true"], [data-slot="combobox-content"]',
+            )
+          ) {
+            event.preventDefault();
+          }
+        }}
       >
         <HostDialogContent {...props} />
       </DialogContent>

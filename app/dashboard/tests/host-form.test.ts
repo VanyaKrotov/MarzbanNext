@@ -11,6 +11,7 @@ import {
   serializeBalancerClients,
 } from "../src/pages/hosts-page/lib/balancer";
 import { subscriptionFormats } from "../src/pages/subscription-templates-page/lib/formats";
+import { getAvailableParameterGroups } from "../src/pages/hosts-page/components/host-dialog/lib/parameters";
 
 function formValues() {
   return { ...getHostFormValues(1), remark: "Example", address: "example.com" };
@@ -63,6 +64,51 @@ test("removing an optional override sends a deletion", () => {
   assert.deepEqual(toHostPayload(hostFormSchema.parse(values)).overrides, {
     security: null,
   });
+});
+
+test("selected text fields preserve both empty and filled input values", () => {
+  const values = formValues();
+  values.selected = ["sni", "path", "fingerprint"];
+  values.parameters = { sni: "", path: "/custom", fingerprint: "" };
+  values.original_overrides = { security: { sni: "old.example.com" } };
+  assert.deepEqual(toHostPayload(hostFormSchema.parse(values)).overrides, {
+    security: { sni: "", fingerprint: "" },
+    transport: { path: "/custom" },
+  });
+  values.selected = [];
+  assert.deepEqual(toHostPayload(hostFormSchema.parse(values)).overrides, {
+    security: null,
+  });
+});
+
+test("empty boolean selections still inherit and groups do not require an optional section", () => {
+  const values = formValues();
+  values.selected = ["allow_insecure", "security"];
+  values.group_ids = ["basic"];
+  const payload = toHostPayload(hostFormSchema.parse(values));
+  assert.deepEqual(payload.overrides, {});
+  assert.deepEqual(payload.group_ids, ["basic"]);
+});
+
+test("the grouped option menu excludes selected parameters and incompatible XHTTP", () => {
+  const groups = getAvailableParameterGroups(["sni", "templates"], false);
+  const options = groups.flatMap((group) =>
+    group.options.map((option) => option.id),
+  );
+  assert.equal(options.includes("sni"), false);
+  assert.equal(options.includes("templates"), false);
+  assert.equal(options.includes("groups"), false);
+  assert.equal(options.includes("xhttp_extra"), false);
+  assert.ok(
+    groups
+      .find((group) => group.id === "security")
+      ?.options.some((option) => option.id === "alpn"),
+  );
+  assert.ok(
+    getAvailableParameterGroups([], true)
+      .flatMap((group) => group.options)
+      .some((option) => option.id === "xhttp_extra"),
+  );
 });
 
 test("structured client settings preserve zero, false and least-load arrays", () => {

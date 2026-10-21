@@ -2,10 +2,8 @@ import {
   Controller,
   type ControllerRenderProps,
   useFormContext,
-  useWatch,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Field,
   FieldDescription,
@@ -94,11 +92,6 @@ function ParameterInput({
   field: ParameterValueField;
 }) {
   const { t } = useTranslation();
-  const form = useFormContext<HostFormValues>();
-  const explicitEmpty = useWatch({
-    control: form.control,
-    name: "explicit_empty",
-  });
   const id = `host-parameter-${definition.id}`;
 
   if (definition.kind === "boolean" || definition.kind === "security") {
@@ -149,32 +142,14 @@ function ParameterInput({
     );
   }
 
-  const setExplicitEmpty = (checked: boolean) => {
-    const ids = checked
-      ? [...explicitEmpty, definition.id]
-      : explicitEmpty.filter((value) => value !== definition.id);
-    form.setValue("explicit_empty", ids, { shouldDirty: true });
-    if (checked) field.onChange("");
-  };
-
   return (
-    <>
-      <Input
-        {...field}
-        id={id}
-        value={field.value ?? ""}
-        disabled={pending || explicitEmpty.includes(definition.id)}
-        aria-invalid={invalid}
-      />
-      <label className="flex items-center gap-2 text-sm">
-        <Checkbox
-          checked={explicitEmpty.includes(definition.id)}
-          disabled={pending}
-          onCheckedChange={(checked) => setExplicitEmpty(checked === true)}
-        />
-        {t("hostEditor.explicitEmpty")}
-      </label>
-    </>
+    <Input
+      {...field}
+      id={id}
+      value={field.value ?? ""}
+      disabled={pending}
+      aria-invalid={invalid}
+    />
   );
 }
 

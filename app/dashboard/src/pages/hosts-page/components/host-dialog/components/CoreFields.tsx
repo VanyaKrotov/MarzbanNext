@@ -2,7 +2,6 @@ import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   Field,
-  FieldDescription,
   FieldError,
   FieldGroup,
   FieldLabel,
@@ -20,12 +19,16 @@ import { Switch } from "@/components/ui/switch";
 import type { InboundType } from "@/types/Inbound";
 import type { HostFormValues } from "../lib/form";
 import { VariablesPopover } from "./VariablesPopover";
+import { GroupsField } from "./GroupsField";
+import type { HostGroupType } from "../../../types";
 
 export function CoreFields({
   inbounds,
+  groups,
   pending,
 }: {
   inbounds: InboundType[];
+  groups: HostGroupType[];
   pending: boolean;
 }) {
   const { t } = useTranslation();
@@ -41,12 +44,27 @@ export function CoreFields({
           </FieldLabel>
           <VariablesPopover />
         </div>
-        <Input
-          id="host-remark"
-          disabled={pending}
-          aria-invalid={Boolean(form.formState.errors.remark)}
-          {...form.register("remark")}
-        />
+        <FieldGroup className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <Input
+            id="host-remark"
+            disabled={pending}
+            aria-invalid={Boolean(form.formState.errors.remark)}
+            {...form.register("remark")}
+          />
+          <Controller
+            control={form.control}
+            name="enabled"
+            render={({ field }) => (
+              <Switch
+                id="host-enabled"
+                aria-label={t("hostsPage.enabled")}
+                checked={field.value}
+                onCheckedChange={field.onChange}
+                disabled={pending}
+              />
+            )}
+          />
+        </FieldGroup>
         <FieldError errors={[form.formState.errors.remark]} />
       </Field>
       <Controller
@@ -80,59 +98,50 @@ export function CoreFields({
           </Field>
         )}
       />
-      <Field data-invalid={Boolean(form.formState.errors.address)}>
-        <FieldLabel htmlFor="host-address">{t("nodes.nodeAddress")}</FieldLabel>
-        <Input
-          id="host-address"
-          disabled={pending}
-          aria-invalid={Boolean(form.formState.errors.address)}
-          {...form.register("address")}
+      <GroupsField groups={groups} pending={pending} />
+      <FieldGroup className="grid grid-cols-[minmax(0,1fr)_7rem] items-start gap-3">
+        <Field data-invalid={Boolean(form.formState.errors.address)}>
+          <FieldLabel htmlFor="host-address">
+            {t("nodes.nodeAddress")}
+          </FieldLabel>
+          <Input
+            id="host-address"
+            disabled={pending}
+            aria-invalid={Boolean(form.formState.errors.address)}
+            {...form.register("address")}
+          />
+          <FieldError errors={[form.formState.errors.address]} />
+        </Field>
+        <Controller
+          control={form.control}
+          name="port"
+          render={({ field, fieldState }) => (
+            <Field data-invalid={fieldState.invalid}>
+              <FieldLabel htmlFor="host-port">
+                {t("hostsDialog.port")}
+              </FieldLabel>
+              <Input
+                id="host-port"
+                type="number"
+                min={1}
+                max={65535}
+                disabled={pending}
+                aria-invalid={fieldState.invalid}
+                placeholder={String(inbound?.port ?? "")}
+                value={field.value ?? ""}
+                onChange={(event) =>
+                  field.onChange(
+                    event.target.value === ""
+                      ? null
+                      : event.target.valueAsNumber,
+                  )
+                }
+              />
+              <FieldError errors={[fieldState.error]} />
+            </Field>
+          )}
         />
-        <FieldError errors={[form.formState.errors.address]} />
-      </Field>
-      <Controller
-        control={form.control}
-        name="port"
-        render={({ field, fieldState }) => (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor="host-port">{t("hostsDialog.port")}</FieldLabel>
-            <Input
-              id="host-port"
-              type="number"
-              min={1}
-              max={65535}
-              disabled={pending}
-              aria-invalid={fieldState.invalid}
-              placeholder={String(inbound?.port ?? "")}
-              value={field.value ?? ""}
-              onChange={(event) =>
-                field.onChange(
-                  event.target.value === "" ? null : event.target.valueAsNumber,
-                )
-              }
-            />
-            <FieldDescription>{t("hostEditor.inheritedPort")}</FieldDescription>
-            <FieldError errors={[fieldState.error]} />
-          </Field>
-        )}
-      />
-      <Controller
-        control={form.control}
-        name="enabled"
-        render={({ field }) => (
-          <Field orientation="horizontal">
-            <Switch
-              id="host-enabled"
-              checked={field.value}
-              onCheckedChange={field.onChange}
-              disabled={pending}
-            />
-            <FieldLabel htmlFor="host-enabled">
-              {t("hostsPage.enabled")}
-            </FieldLabel>
-          </Field>
-        )}
-      />
+      </FieldGroup>
     </FieldGroup>
   );
 }

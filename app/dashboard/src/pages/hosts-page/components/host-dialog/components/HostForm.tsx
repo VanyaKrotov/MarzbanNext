@@ -45,7 +45,11 @@ export function HostForm(props: HostFormProps) {
         onSubmit={form.handleSubmit(submit)}
         className="flex flex-col gap-5"
       >
-        <CoreFields inbounds={inbounds} pending={pending} />
+        <CoreFields
+          inbounds={inbounds}
+          groups={props.hostGroups}
+          pending={pending}
+        />
         <HostParameterSections {...props} />
         <div className="flex justify-end gap-2 border-t pt-4">
           <Button

@@ -29,7 +29,6 @@ export const hostFormSchema = z.object({
   show_when_composed: z.boolean(),
   selected: z.array(z.string()),
   parameters: z.record(z.string()),
-  explicit_empty: z.array(z.string()),
   original_overrides: z.record(z.unknown()),
   original_balancer: z.record(z.unknown()).nullable(),
   linked_host_ids: z.array(z.number().int().positive()),
@@ -53,7 +52,6 @@ export function getHostFormValues(
 ): HostFormValues {
   const parameters: Record<string, string> = {};
   const selected: string[] = [];
-  const explicitEmpty: string[] = [];
   for (const definition of hostParameters) {
     const value = getPath(host?.overrides ?? {}, definition.path);
     if (value === undefined) continue;
@@ -62,9 +60,7 @@ export function getHostFormValues(
       definition.kind === "json"
         ? JSON.stringify(value, null, 2)
         : String(value);
-    if (value === "") explicitEmpty.push(definition.id);
   }
-  if (host?.groups.length) selected.push("groups");
   if (host) selected.push("templates");
   if (host?.balancer_settings || host?.linked_host_ids.length)
     selected.push("composition");
@@ -79,7 +75,6 @@ export function getHostFormValues(
     show_when_composed: host?.show_when_composed ?? true,
     selected,
     parameters,
-    explicit_empty: explicitEmpty,
     original_overrides: host?.overrides ?? {},
     original_balancer: host?.balancer_settings ?? null,
     linked_host_ids: host?.linked_host_ids ?? [],

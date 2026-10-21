@@ -1,23 +1,28 @@
-import { X } from "lucide-react";
-import { useMemo, useRef } from "react";
+import { Plus, X } from "lucide-react";
+import { Fragment, useRef } from "react";
 import { useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { FieldGroup } from "@/components/ui/field";
 import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuGroup,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { HostFormValues } from "../lib/form";
-import { hostParameters, specialHostParameters } from "../lib/parameters";
+import {
+  getAvailableParameterGroups,
+  hostParameters,
+  specialHostParameters,
+} from "../lib/parameters";
 import type { HostFormProps } from "../lib/types";
-import { GroupsField } from "./GroupsField";
 import { ParameterField, StandaloneField } from "./ParameterFields";
 import { CompositionFields } from "./CompositionFields";
-import { SubscriptionTemplatesPopover } from "./SubscriptionTemplatesPopover";
+import { SubscriptionTemplateFields } from "./SubscriptionTemplateFields";
 
 const parametersById = new Map(
   hostParameters.map((definition) => [definition.id, definition]),
@@ -30,13 +35,11 @@ export function HostParameterSections(props: HostFormProps) {
   const selected = useWatch({ control: form.control, name: "selected" });
   const inboundId = useWatch({ control: form.control, name: "inbound_id" });
   const addParameterRef = useRef<HTMLButtonElement>(null);
+  const addedParameterRef = useRef<string | null>(null);
   const inbound = inbounds.find((item) => item.id === inboundId);
   const supportsXhttp =
     inbound?.network === "xhttp" || inbound?.network === "splithttp";
-  const candidates = [
-    ...hostParameters.filter((item) => !item.xhttpOnly || supportsXhttp),
-    ...specialHostParameters,
-  ];
+  const groups = getAvailableParameterGroups(selected, supportsXhttp);
 
   const removeParameter = (id: string) => {
     form.setValue(
@@ -46,19 +49,69 @@ export function HostParameterSections(props: HostFormProps) {
     );
     form.clearErrors(`parameters.${id}`);
     if (id === "show_when_composed") form.setValue("show_when_composed", true);
-    if (id === "composition") form.setValue("linked_host_ids", []);
-    if (id === "groups") form.setValue("group_ids", []);
+    if (id === "composition") {
+      form.setValue("linked_host_ids", []);
+      form.setValue("balancer_clients", {});
+      form.clearErrors("balancer_clients");
+    }
     requestAnimationFrame(() => addParameterRef.current?.focus());
   };
 
-  const addParameter = (id: string) => {
-    form.setValue("selected", [...selected, id], { shouldDirty: true });
-    if (parametersById.has(id))
-      requestAnimationFrame(() => form.setFocus(`parameters.${id}`));
-  };
-
   return (
-    <>
+    <FieldGroup className="gap-5">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">{t("hostEditor.additional")}</h3>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button
+              ref={addParameterRef}
+              type="button"
+              variant="outline"
+              size="icon-sm"
+              disabled={pending || !groups.length}
+              aria-label={t("hostEditor.addParameter")}
+            >
+              <Plus />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="end"
+            className="w-72 max-w-[calc(100vw-2rem)]"
+            onCloseAutoFocus={(event) => {
+              const id = addedParameterRef.current;
+              addedParameterRef.current = null;
+              if (id && parametersById.has(id)) {
+                event.preventDefault();
+                requestAnimationFrame(() => form.setFocus(`parameters.${id}`));
+              }
+            }}
+          >
+            {groups.map((group, index) => (
+              <Fragment key={group.id}>
+                {index > 0 && <DropdownMenuSeparator />}
+                <DropdownMenuGroup>
+                  <DropdownMenuLabel>
+                    {t(`hostEditor.parameterGroups.${group.id}`)}
+                  </DropdownMenuLabel>
+                  {group.options.map((item) => (
+                    <DropdownMenuItem
+                      key={item.id}
+                      onSelect={() => {
+                        addedParameterRef.current = item.id;
+                        form.setValue("selected", [...selected, item.id], {
+                          shouldDirty: true,
+                        });
+                      }}
+                    >
+                      {t(item.labelKey)}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuGroup>
+              </Fragment>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
       {selected.map((id) => {
         const definition = parametersById.get(id);
         const labelKey =
@@ -66,14 +119,16 @@ export function HostParameterSections(props: HostFormProps) {
           specialHostParameters.find((item) => item.id === id)?.labelKey;
         if (!labelKey) return null;
         const label = t(labelKey);
-
         return (
-          <section
+          <FieldGroup
             key={id}
-            className="flex flex-col gap-3 rounded-lg border p-4"
+            className="gap-3"
+            aria-labelledby={`host-option-${id}`}
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="text-sm font-medium">{label}</span>
+              <h3 id={`host-option-${id}`} className="text-sm font-medium">
+                {label}
+              </h3>
               <Button
                 type="button"
                 variant="ghost"
@@ -94,29 +149,10 @@ export function HostParameterSections(props: HostFormProps) {
             ) : (
               <SpecialParameter id={id} {...props} />
             )}
-          </section>
+          </FieldGroup>
         );
       })}
-      <Select value="" disabled={pending} onValueChange={addParameter}>
-        <SelectTrigger
-          ref={addParameterRef}
-          aria-label={t("hostEditor.addParameter")}
-        >
-          <SelectValue placeholder={t("hostEditor.addParameter")} />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectGroup>
-            {candidates
-              .filter((item) => !selected.includes(item.id))
-              .map((item) => (
-                <SelectItem key={item.id} value={item.id}>
-                  {t(item.labelKey)}
-                </SelectItem>
-              ))}
-          </SelectGroup>
-        </SelectContent>
-      </Select>
-    </>
+    </FieldGroup>
   );
 }
 
@@ -124,26 +160,19 @@ function SpecialParameter({
   id,
   host,
   hosts,
-  hostGroups,
   templates,
   capabilities,
   pending,
 }: HostFormProps & { id: string }) {
-  const members = useMemo(
-    () => hosts.filter((item) => item.id !== host?.id),
-    [hosts, host?.id],
-  );
   switch (id) {
-    case "groups":
-      return <GroupsField groups={hostGroups} pending={pending} />;
     case "templates":
       return (
-        <SubscriptionTemplatesPopover templates={templates} pending={pending} />
+        <SubscriptionTemplateFields templates={templates} pending={pending} />
       );
     case "composition":
       return (
         <CompositionFields
-          hosts={members}
+          hosts={hosts.filter((item) => item.id !== host?.id)}
           capabilities={capabilities}
           pending={pending}
         />

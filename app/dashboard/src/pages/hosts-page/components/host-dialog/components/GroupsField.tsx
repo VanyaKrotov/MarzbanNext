@@ -1,5 +1,5 @@
 import { ChevronsUpDown, Plus } from "lucide-react";
-import { useState } from "react";
+import { useId, useState } from "react";
 import { Controller, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -25,6 +25,7 @@ export function GroupsField({
 }) {
   const { t } = useTranslation();
   const form = useFormContext<HostFormValues>();
+  const id = useId();
   const groupsById = new Map(groups.map((group) => [group.id, group]));
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
 
@@ -41,12 +42,13 @@ export function GroupsField({
         return (
           <Field>
             <div className="flex items-center justify-between gap-2">
-              <FieldLabel>{t("hostsPage.groups")}</FieldLabel>
+              <FieldLabel htmlFor={id}>{t("hostsPage.groups")}</FieldLabel>
             </div>
             <div className="flex gap-2">
               <Popover>
                 <PopoverTrigger asChild>
                   <Button
+                    id={id}
                     type="button"
                     variant="outline"
                     className="min-h-9 min-w-0 flex-1 justify-between whitespace-normal"

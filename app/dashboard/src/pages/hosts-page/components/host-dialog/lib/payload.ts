@@ -51,7 +51,7 @@ function buildOverrides(values: HostFormValues): JsonObject {
   for (const definition of hostParameters) {
     if (!values.selected.includes(definition.id)) continue;
     const text = values.parameters[definition.id] ?? "";
-    if (text === "" && !values.explicit_empty.includes(definition.id)) {
+    if (text === "" && definition.kind !== "text") {
       if (
         definition.kind === "json" &&
         getPath(values.original_overrides, definition.path) !== undefined
@@ -97,7 +97,7 @@ export function toHostPayload(values: HostFormValues): HostPayload {
         ? null
         : overridePatch(values.original_balancer ?? {}, balancer),
     linked_host_ids: balancer === null ? [] : values.linked_host_ids,
-    group_ids: values.selected.includes("groups") ? values.group_ids : [],
+    group_ids: values.group_ids,
     ...(values.selected.includes("templates")
       ? { subscription_template_ids: values.subscription_template_ids }
       : {}),
