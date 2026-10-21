@@ -2,23 +2,9 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/service/http";
 
-export const subscriptionFormats = [
-  "v2ray",
-  "v2ray-json",
-  "clash",
-  "sing-box",
-  "outline",
-] as const;
-export type SubscriptionFormat = (typeof subscriptionFormats)[number];
-export type TemplateBindings = Partial<Record<SubscriptionFormat, number>>;
-
-export const formatLabelKeys: Record<SubscriptionFormat, string> = {
-  v2ray: "subscriptionTemplates.formats.v2ray",
-  "v2ray-json": "subscriptionTemplates.formats.v2ray-json",
-  clash: "subscriptionTemplates.formats.clash",
-  "sing-box": "subscriptionTemplates.formats.sing-box",
-  outline: "subscriptionTemplates.formats.outline",
-};
+import type { SubscriptionFormat, TemplateBindings } from "./formats";
+export { subscriptionFormats, formatLabelKeys } from "./formats";
+export type { SubscriptionFormat, TemplateBindings } from "./formats";
 
 export type SubscriptionTemplate = {
   id: number;
@@ -35,7 +21,12 @@ export const subscriptionTemplatesQueryKey = [
   "subscription-templates",
 ] as const;
 
-export function useTemplatesQuery(format = "", search = "", offset = 0, limit = 50) {
+export function useTemplatesQuery(
+  format = "",
+  search = "",
+  offset = 0,
+  limit = 50,
+) {
   return useQuery({
     queryKey: [
       ...subscriptionTemplatesQueryKey,

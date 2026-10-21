@@ -7,14 +7,14 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class SubscriptionFormat(str, Enum):
     v2ray = "v2ray"
     v2ray_json = "v2ray-json"
-    clash = "clash"
+    clash_meta = "clash-meta"
     sing_box = "sing-box"
     outline = "outline"
 
 
 FORMAT_ALIASES = {
-    "clash-meta": "clash",
-    "mihomo": "clash",
+    "clash": "clash-meta",
+    "mihomo": "clash-meta",
     "singbox": "sing-box",
     "json": "v2ray-json",
     "xray-json": "v2ray-json",
@@ -26,9 +26,6 @@ def normalize_subscription_format(value: str) -> SubscriptionFormat:
 
 
 def normalize_subscription_client_type(value: str) -> str:
-    """Keep the Mihomo renderer while sharing Clash's template catalog."""
-    if value in ("mihomo", "clash-meta"):
-        return "clash-meta"
     return normalize_subscription_format(value).value
 
 

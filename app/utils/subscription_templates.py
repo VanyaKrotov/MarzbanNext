@@ -28,7 +28,7 @@ def render_subscription_template(content: str, context: dict | None = None) -> s
 
 def parse_subscription_document(format: SubscriptionFormat, rendered: str) -> dict:
     try:
-        document = yaml.safe_load(rendered) if format == SubscriptionFormat.clash else json.loads(rendered)
+        document = yaml.safe_load(rendered) if format == SubscriptionFormat.clash_meta else json.loads(rendered)
     except (json.JSONDecodeError, yaml.YAMLError) as exc:
         raise TemplateValidationError(f"Invalid {format.value} configuration: {exc}") from exc
     if not isinstance(document, dict):
@@ -39,7 +39,7 @@ def parse_subscription_document(format: SubscriptionFormat, rendered: str) -> di
         )
     ):
         raise TemplateValidationError("The template must contain an outbounds array of objects")
-    if format == SubscriptionFormat.clash and not isinstance(document.get("proxies"), list):
+    if format == SubscriptionFormat.clash_meta and not isinstance(document.get("proxies"), list):
         raise TemplateValidationError("Clash templates must contain a proxies array")
     return document
 
@@ -69,7 +69,7 @@ def validate_subscription_template(format: SubscriptionFormat, content: str) -> 
         "remarks": "Example",
     }
     context_keys = {
-        SubscriptionFormat.clash: ("conf", "proxy_remarks"),
+        SubscriptionFormat.clash_meta: ("conf", "proxy_remarks"),
         SubscriptionFormat.v2ray: ("links", "host"),
         SubscriptionFormat.v2ray_json: ("host", "remarks"),
         SubscriptionFormat.outline: ("config",),

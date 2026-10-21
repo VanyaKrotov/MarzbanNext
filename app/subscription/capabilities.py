@@ -2,18 +2,15 @@
 
 STRATEGIES = {
     "v2ray-json": ("least_ping", "least_load", "random", "round_robin"),
-    "clash": ("least_ping", "round_robin"),
-    "mihomo": ("least_ping", "round_robin"),
+    "clash-meta": ("least_ping", "round_robin"),
     "sing-box": ("least_ping",),
 }
 TARGET_FAMILIES = {
-    "v2ray": "v2ray", "v2ray-json": "v2ray-json", "clash": "clash",
-    "mihomo": "clash", "clash-meta": "clash", "sing-box": "sing-box", "outline": "outline",
+    "v2ray": "v2ray", "v2ray-json": "v2ray-json", "clash-meta": "clash-meta", "sing-box": "sing-box", "outline": "outline",
 }
 CLIENT_FIELDS = {
     "v2ray-json": {"strategy", "probe_url", "probe_interval", "enable_concurrency", "strategy_settings"},
-    "clash": {"strategy", "probe_url", "probe_interval", "tolerance", "lazy"},
-    "mihomo": {"strategy", "probe_url", "probe_interval", "tolerance", "lazy"},
+    "clash-meta": {"strategy", "probe_url", "probe_interval", "tolerance", "lazy"},
     "sing-box": {"strategy", "probe_url", "probe_interval", "tolerance", "idle_timeout",
                  "interrupt_existing_connections"},
 }
@@ -43,11 +40,9 @@ def supports_connection(target: str, inbound: dict) -> bool:
     protocol, network = inbound["protocol"], inbound["network"]
     if target == "outline":
         return protocol == "shadowsocks"
-    if target == "clash" and protocol not in {"vmess", "trojan", "shadowsocks"}:
+    if target in {"clash-meta", "sing-box"} and network in {"kcp", "quic"}:
         return False
-    if target in {"clash", "mihomo", "sing-box"} and network in {"kcp", "quic"}:
-        return False
-    if target in {"clash", "sing-box"} and network in {"splithttp", "xhttp"}:
+    if target == "sing-box" and network in {"splithttp", "xhttp"}:
         return False
     return protocol in {"vmess", "vless", "trojan", "shadowsocks", "hysteria"}
 
@@ -56,7 +51,7 @@ def host_capabilities() -> dict:
     from app.models.host import HostOverrides, BalancerSettings
 
     return {
-        "schema_version": 1,
+        "schema_version": 2,
         "overrides_schema": HostOverrides.model_json_schema(),
         "balancer_schema": BalancerSettings.model_json_schema(),
         "strategies": STRATEGIES,

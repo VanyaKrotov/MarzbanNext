@@ -1,4 +1,5 @@
-import type { TemplateBindings } from "@/pages/subscription-templates-page/lib/query";
+import type { BalancerSettings } from "./lib/balancer";
+import type { TemplateBindings } from "@/pages/subscription-templates-page/lib/formats";
 
 export type HostGroupRef = {
   id: string;
@@ -33,7 +34,7 @@ export type HostType = {
   enabled: boolean;
   show_when_composed: boolean;
   overrides: JsonObject;
-  balancer_settings: JsonObject | null;
+  balancer_settings: BalancerSettings | null;
   linked_host_ids: number[];
   member_of: { id: number; remark: string }[];
   groups: HostGroupRef[];

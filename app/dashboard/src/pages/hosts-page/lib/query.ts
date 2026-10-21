@@ -25,7 +25,10 @@ export function useHostsQuery(groupIds: string[] = [], search = "") {
       let total = 1;
       while (items.length < total) {
         params.set("offset", String(items.length));
-        const page = await api.get<{ items: HostsSchema; total: number }>("/hosts", { params, signal });
+        const page = await api.get<{ items: HostsSchema; total: number }>(
+          "/hosts",
+          { params, signal },
+        );
         items.push(...page.items);
         total = page.total;
         if (!page.items.length) break;
@@ -131,7 +134,8 @@ export function useReorderHostsMutation() {
 export function useHostCapabilitiesQuery() {
   return useQuery({
     queryKey: ["host-capabilities"],
-    queryFn: () => api.get<import("../types").HostCapabilities>("/hosts/capabilities"),
+    queryFn: () =>
+      api.get<import("../types").HostCapabilities>("/hosts/capabilities"),
   });
 }
 

@@ -72,7 +72,6 @@ export function HostsPage() {
           <HostsTable
             rows={controller.rows}
             hostsById={controller.hostsById}
-            onMove={controller.moveRow}
             pending={controller.pending}
             reorderDisabled={controller.reorderDisabled}
             dropTarget={controller.dropTarget}
@@ -86,10 +85,8 @@ export function HostsPage() {
             onDelete={controller.removeHostRow}
           />
           <HostsCards
-            reorderDisabled={controller.reorderDisabled}
             rows={controller.rows}
             hostsById={controller.hostsById}
-            onMove={controller.moveRow}
             pending={controller.pending}
             onEdit={controller.openEdit}
             onDuplicate={controller.duplicate}

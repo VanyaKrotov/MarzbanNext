@@ -19,14 +19,14 @@ class TagAllocator:
 
 class OutputValidator:
     def validate(self, document, target):
-        nodes = document.get("proxies", []) + document.get("proxy-groups", []) if target in {
-            "clash", "mihomo"} else document.get("outbounds", [])
-        key = "name" if target in {"clash", "mihomo"} else "tag"
+        nodes = document.get("proxies", []) + document.get("proxy-groups", []
+                                                           ) if target == "clash-meta" else document.get("outbounds", [])
+        key = "name" if target == "clash-meta" else "tag"
         names = [node.get(key) for node in nodes]
         if any(not isinstance(name, str) or not name for name in names) or len(names) != len(set(names)):
             raise SubscriptionError("Generated configuration contains missing or duplicate tags")
         available = set(names) | ({"DIRECT", "REJECT", "GLOBAL", "PASS", "COMPATIBLE"}
-                                  if target in {"clash", "mihomo"} else set())
+                                  if target == "clash-meta" else set())
         for node in nodes:
             for reference in node.get("proxies", []) or node.get("outbounds", []) or []:
                 if reference not in available:

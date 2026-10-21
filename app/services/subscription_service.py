@@ -23,7 +23,6 @@ from app.db.crud import users as user_crud
 client_config = {
     "clash-meta": {"config_format": "clash-meta", "media_type": "text/yaml", "as_base64": False, "reverse": False},
     "sing-box": {"config_format": "sing-box", "media_type": "application/json", "as_base64": False, "reverse": False},
-    "clash": {"config_format": "clash", "media_type": "text/yaml", "as_base64": False, "reverse": False},
     "v2ray": {"config_format": "v2ray", "media_type": "text/plain", "as_base64": True, "reverse": False},
     "outline": {"config_format": "outline", "media_type": "application/json", "as_base64": False, "reverse": False},
     "v2ray-json": {"config_format": "v2ray-json", "media_type": "application/json", "as_base64": False,
@@ -95,14 +94,9 @@ def user_subscription(
     response_headers = get_subscription_response_headers(request, user)
     settings = get_runtime_settings()
 
-    if re.match(r'^([Cc]lash-verge|[Cc]lash[-\.]?[Mm]eta|[Ff][Ll][Cc]lash|[Mm]ihomo)', user_agent):
+    if re.match(r"^(clash|flclash|mihomo|stash)", user_agent, re.IGNORECASE):
         conf = generate_subscription(user=user, config_format="clash-meta",
                                      as_base64=False, reverse=False, template_id=template_id)
-        return _subscription_response(content=conf, media_type="text/yaml", headers=response_headers)
-
-    elif re.match(r'^([Cc]lash|[Ss]tash)', user_agent):
-        conf = generate_subscription(user=user, config_format="clash", as_base64=False,
-                                     reverse=False, template_id=template_id)
         return _subscription_response(content=conf, media_type="text/yaml", headers=response_headers)
 
     elif re.match(r'^(SFA|SFI|SFM|SFT|[Kk]aring|[Hh]iddify[Nn]ext)', user_agent):

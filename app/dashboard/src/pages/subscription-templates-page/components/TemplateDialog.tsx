@@ -252,10 +252,7 @@ function TemplateForm({
             <FieldLabel htmlFor="template-name">
               {t("subscriptionTemplates.name")}
             </FieldLabel>
-            <Input
-              id="template-name"
-              {...form.register("name")}
-            />
+            <Input id="template-name" {...form.register("name")} />
             <FieldError errors={[form.formState.errors.name]} />
           </Field>
           <Field>
@@ -312,7 +309,7 @@ function TemplateForm({
                 value={field.value}
                 onChange={field.onChange}
                 language={
-                  format === "clash"
+                  format === "clash-meta"
                     ? "yaml"
                     : format === "v2ray"
                       ? "text"

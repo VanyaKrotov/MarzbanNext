@@ -141,8 +141,6 @@ def generate_subscription_config(proxies, inbounds, extra_data, config_format, a
     from app.utils.runtime_settings import get_runtime_settings
 
     target = normalize_subscription_client_type(config_format)
-    if target == "clash-meta":
-        target = "mihomo"
     settings = get_runtime_settings()
     with GetDB() as db:
         snapshot = SubscriptionSnapshotLoader().load(db, settings)

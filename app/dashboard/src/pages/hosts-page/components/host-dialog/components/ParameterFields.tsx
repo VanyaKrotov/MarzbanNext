@@ -1,94 +1,203 @@
-import { Controller, useFormContext, useWatch } from "react-hook-form";
+import {
+  Controller,
+  type ControllerRenderProps,
+  useFormContext,
+  useWatch,
+} from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Field, FieldDescription, FieldError, FieldGroup, FieldLabel } from "@/components/ui/field";
+import {
+  Field,
+  FieldDescription,
+  FieldError,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
-import type { InboundType } from "@/types/Inbound";
 import type { HostFormValues } from "../lib/form";
 import type { HostParameterDefinition } from "../lib/parameters";
-import { VariablesPopover } from "./VariablesPopover";
 
-export function CoreFields({ inbounds, pending }: { inbounds: InboundType[]; pending: boolean }) {
+type ParameterFieldProps = {
+  definition: HostParameterDefinition;
+  pending: boolean;
+  incompatible: boolean;
+};
+type ParameterValueField = ControllerRenderProps<
+  HostFormValues,
+  `parameters.${string}`
+>;
+const BOOLEAN_OPTIONS = [
+  ["true", "hostsDialog.enabled"],
+  ["false", "hostsDialog.disabled"],
+] as const;
+const SECURITY_OPTIONS = [
+  ["tls", "TLS"],
+  ["none", "hostEditor.noSecurity"],
+] as const;
+
+export function ParameterField({
+  definition,
+  pending,
+  incompatible,
+}: ParameterFieldProps) {
   const { t } = useTranslation();
-  const form = useFormContext<HostFormValues>();
-  const inboundId = useWatch({ control: form.control, name: "inbound_id" });
-  const inbound = inbounds.find((item) => item.id === inboundId);
-  return <FieldGroup>
-    <Field data-invalid={Boolean(form.formState.errors.remark)}>
-      <div className="flex items-center gap-2"><FieldLabel htmlFor="host-remark">{t("hostEditor.remark")}</FieldLabel><VariablesPopover /></div>
-      <Input id="host-remark" disabled={pending} aria-invalid={Boolean(form.formState.errors.remark)} {...form.register("remark")} />
-      <FieldError errors={[form.formState.errors.remark]} />
-    </Field>
-    <Controller control={form.control} name="inbound_id" render={({ field }) => <Field>
-      <FieldLabel htmlFor="host-inbound">{t("hostsPage.inbound")}</FieldLabel>
-      <Select value={String(field.value)} onValueChange={(value) => field.onChange(Number(value))} disabled={pending}>
-        <SelectTrigger id="host-inbound"><SelectValue /></SelectTrigger><SelectContent><SelectGroup>
-          {inbounds.map((item) => <SelectItem key={item.id} value={String(item.id)}>
-            {item.tag} ({item.protocol}/{item.network}) — {item.nodes.map((node) => node.name).join(", ") || t("hostsPage.unassignedNodes")}
-          </SelectItem>)}
-        </SelectGroup></SelectContent>
-      </Select>
-    </Field>} />
-    <Field data-invalid={Boolean(form.formState.errors.address)}>
-      <FieldLabel htmlFor="host-address">{t("nodes.nodeAddress")}</FieldLabel>
-      <Input id="host-address" disabled={pending} aria-invalid={Boolean(form.formState.errors.address)} {...form.register("address")} />
-      <FieldError errors={[form.formState.errors.address]} />
-    </Field>
-    <Controller control={form.control} name="port" render={({ field, fieldState }) => <Field data-invalid={fieldState.invalid}>
-      <FieldLabel htmlFor="host-port">{t("hostsDialog.port")}</FieldLabel>
-      <Input id="host-port" type="number" min={1} max={65535} disabled={pending} aria-invalid={fieldState.invalid}
-        placeholder={String(inbound?.port ?? "")} value={field.value ?? ""}
-        onChange={(event) => field.onChange(event.target.value === "" ? null : event.target.valueAsNumber)} />
-      <FieldDescription>{t("hostEditor.inheritedPort")}</FieldDescription><FieldError errors={[fieldState.error]} />
-    </Field>} />
-    <Controller control={form.control} name="enabled" render={({ field }) => <Field orientation="horizontal">
-      <Switch id="host-enabled" checked={field.value} onCheckedChange={field.onChange} disabled={pending} />
-      <FieldLabel htmlFor="host-enabled">{t("hostsPage.enabled")}</FieldLabel>
-    </Field>} />
-  </FieldGroup>;
+  const { control } = useFormContext<HostFormValues>();
+  return (
+    <Controller
+      control={control}
+      name={`parameters.${definition.id}`}
+      render={({ field, fieldState }) => (
+        <Field data-invalid={fieldState.invalid || incompatible}>
+          <FieldLabel
+            htmlFor={`host-parameter-${definition.id}`}
+            className="sr-only"
+          >
+            {t(definition.labelKey)}
+          </FieldLabel>
+          <ParameterInput
+            definition={definition}
+            pending={pending}
+            invalid={fieldState.invalid || incompatible}
+            field={field}
+          />
+          {definition.id === "xhttp_extra" && (
+            <FieldDescription>{t("hostEditor.extraHint")}</FieldDescription>
+          )}
+          {incompatible && (
+            <FieldError>{t("hostEditor.incompatibleInbound")}</FieldError>
+          )}
+          <FieldError errors={[fieldState.error]} />
+        </Field>
+      )}
+    />
+  );
 }
 
-export function ParameterField({ definition, pending, incompatible }: {
-  definition: HostParameterDefinition; pending: boolean; incompatible: boolean;
+function ParameterInput({
+  definition,
+  pending,
+  invalid,
+  field,
+}: {
+  definition: HostParameterDefinition;
+  pending: boolean;
+  invalid: boolean;
+  field: ParameterValueField;
 }) {
   const { t } = useTranslation();
   const form = useFormContext<HostFormValues>();
-  const explicitEmpty = useWatch({ control: form.control, name: "explicit_empty" });
-  return <Controller control={form.control} name={`parameters.${definition.id}`} render={({ field, fieldState }) => <Field data-invalid={fieldState.invalid || incompatible}>
-    <FieldLabel htmlFor={`host-parameter-${definition.id}`} className="sr-only">{t(definition.labelKey)}</FieldLabel>
-    {definition.kind === "boolean" || definition.kind === "security" ? <Select disabled={pending} value={field.value || "__inherit__"}
-      onValueChange={(value) => field.onChange(value === "__inherit__" ? "" : value)}>
-      <SelectTrigger ref={field.ref} id={`host-parameter-${definition.id}`} aria-invalid={fieldState.invalid}><SelectValue /></SelectTrigger><SelectContent><SelectGroup>
-        <SelectItem value="__inherit__">{t("hostEditor.inherit")}</SelectItem>
-        {(definition.kind === "boolean" ? [["true", "hostsDialog.enabled"], ["false", "hostsDialog.disabled"]] : [["tls", "TLS"], ["none", "hostEditor.noSecurity"]])
-          .map(([value, label]) => <SelectItem key={value} value={value}>{t(label)}</SelectItem>)}
-      </SelectGroup></SelectContent>
-    </Select> : definition.kind === "json" ? <Textarea {...field} value={field.value ?? ""} disabled={pending}
-      id={`host-parameter-${definition.id}`} aria-invalid={fieldState.invalid} rows={6} className="font-mono text-xs" dir="ltr"
-      placeholder={definition.id === "xhttp_extra" ? '{"scMaxBufferedPosts":0,"xPaddingObfsMode":false,"uplinkHTTPMethod":"PUT"}' : undefined} />
-      : <>
-        <Input {...field} id={`host-parameter-${definition.id}`} value={field.value ?? ""} disabled={pending || explicitEmpty.includes(definition.id)} aria-invalid={fieldState.invalid} />
-        <label className="flex items-center gap-2 text-sm"><Checkbox checked={explicitEmpty.includes(definition.id)} disabled={pending}
-          onCheckedChange={(checked) => {
-            form.setValue("explicit_empty", checked ? [...explicitEmpty, definition.id] : explicitEmpty.filter((id) => id !== definition.id));
-            if (checked) field.onChange("");
-          }} />
-          {t("hostEditor.explicitEmpty")}</label>
-      </>}
-    {definition.id === "xhttp_extra" && <FieldDescription>{t("hostEditor.extraHint")}</FieldDescription>}
-    {incompatible && <FieldError>{t("hostEditor.incompatibleInbound")}</FieldError>}
-    <FieldError errors={[fieldState.error]} />
-  </Field>} />;
+  const explicitEmpty = useWatch({
+    control: form.control,
+    name: "explicit_empty",
+  });
+  const id = `host-parameter-${definition.id}`;
+
+  if (definition.kind === "boolean" || definition.kind === "security") {
+    const options =
+      definition.kind === "boolean" ? BOOLEAN_OPTIONS : SECURITY_OPTIONS;
+    return (
+      <Select
+        disabled={pending}
+        value={field.value || "inherit"}
+        onValueChange={(value) =>
+          field.onChange(value === "inherit" ? "" : value)
+        }
+      >
+        <SelectTrigger ref={field.ref} id={id} aria-invalid={invalid}>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectGroup>
+            <SelectItem value="inherit">{t("hostEditor.inherit")}</SelectItem>
+            {options.map(([value, label]) => (
+              <SelectItem key={value} value={value}>
+                {t(label)}
+              </SelectItem>
+            ))}
+          </SelectGroup>
+        </SelectContent>
+      </Select>
+    );
+  }
+
+  if (definition.kind === "json") {
+    return (
+      <Textarea
+        {...field}
+        id={id}
+        value={field.value ?? ""}
+        disabled={pending}
+        aria-invalid={invalid}
+        rows={6}
+        className="font-mono text-xs"
+        dir="ltr"
+        placeholder={
+          definition.id === "xhttp_extra"
+            ? '{"scMaxBufferedPosts":0,"xPaddingObfsMode":false,"uplinkHTTPMethod":"PUT"}'
+            : undefined
+        }
+      />
+    );
+  }
+
+  const setExplicitEmpty = (checked: boolean) => {
+    const ids = checked
+      ? [...explicitEmpty, definition.id]
+      : explicitEmpty.filter((value) => value !== definition.id);
+    form.setValue("explicit_empty", ids, { shouldDirty: true });
+    if (checked) field.onChange("");
+  };
+
+  return (
+    <>
+      <Input
+        {...field}
+        id={id}
+        value={field.value ?? ""}
+        disabled={pending || explicitEmpty.includes(definition.id)}
+        aria-invalid={invalid}
+      />
+      <label className="flex items-center gap-2 text-sm">
+        <Checkbox
+          checked={explicitEmpty.includes(definition.id)}
+          disabled={pending}
+          onCheckedChange={(checked) => setExplicitEmpty(checked === true)}
+        />
+        {t("hostEditor.explicitEmpty")}
+      </label>
+    </>
+  );
 }
 
 export function StandaloneField({ pending }: { pending: boolean }) {
   const { t } = useTranslation();
-  const form = useFormContext<HostFormValues>();
-  return <Controller control={form.control} name="show_when_composed" render={({ field }) => <Field>
-    <Switch aria-label={t("hostEditor.showWhenComposed")} checked={field.value} onCheckedChange={field.onChange} disabled={pending} />
-    <FieldDescription>{t("hostEditor.showWhenComposedHint")}</FieldDescription>
-  </Field>} />;
+  const { control } = useFormContext<HostFormValues>();
+  return (
+    <Controller
+      control={control}
+      name="show_when_composed"
+      render={({ field }) => (
+        <Field>
+          <Switch
+            aria-label={t("hostEditor.showWhenComposed")}
+            checked={field.value}
+            onCheckedChange={field.onChange}
+            disabled={pending}
+          />
+          <FieldDescription>
+            {t("hostEditor.showWhenComposedHint")}
+          </FieldDescription>
+        </Field>
+      )}
+    />
+  );
 }

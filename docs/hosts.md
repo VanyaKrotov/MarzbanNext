@@ -35,9 +35,9 @@
 | `transport` | `host`, `path`, `use_sni_as_host`, `random_user_agent`, `xhttp.extra` |
 | `mux` | `enabled`, `xray`, `smux`; у smux собственное `enabled` |
 | `stream` | Объекты `sockopt`, `final_mask` для Xray |
-| `clients` | `mihomo.ip_version`, `mihomo.x25519`, `server_description` для Xray/Mihomo |
+| `clients` | `clash-meta.ip_version`, `clash-meta.x25519`, `server_description` для Xray/Clash Meta |
 | `fragment`, `noise` | Прежние строковые форматы фрагментации и шума |
-| `mapper` | Операции `set`, `copy`, `unset` для `xrayJson`, `mihomo`, `singbox`, `base64` |
+| `mapper` | Операции `set`, `copy`, `unset` для `xrayJson`, `clash-meta`, `singbox`, `base64` |
 
 Полная актуальная JSON Schema доступна в `GET /api/hosts/capabilities`.
 Неизвестные ключи отклоняются, кроме содержимого расширенных объектов socket/final mask.
@@ -74,8 +74,8 @@ HTTP-метод обрезается по краям и переводится �
 только для packet-up. Совместимость проверяется и при изменении инбаунда.
 
 Xray получает `xhttpSettings.extra`/`splithttpSettings.extra`; URI — JSON в extra;
-VMess — объект extra внутри Base64 payload. Mihomo преобразует поддержанные ключи
-в `xhttp-opts`. Clash и sing-box исключают неподдерживаемый XHTTP.
+VMess — объект extra внутри Base64 payload. Clash Meta преобразует поддержанные ключи
+в `xhttp-opts`. sing-box исключает неподдерживаемый XHTTP.
 
 ### Mapper
 
@@ -107,7 +107,7 @@ VMess — объект extra внутри Base64 payload. Mihomo преобра�
 | Target | Стратегии | Дополнительные настройки |
 | --- | --- | --- |
 | `v2ray-json` | least_ping, least_load, random, round_robin | enable_concurrency, strategy_settings: expected/max_rtt_ms/failure_tolerance/baselines_ms/costs |
-| `clash`, `mihomo` | least_ping, round_robin | tolerance, lazy |
+| `clash-meta` | least_ping, round_robin | tolerance, lazy |
 | `sing-box` | least_ping | tolerance, idle_timeout, interrupt_existing_connections |
 
 У каждого target также доступны отдельные `strategy`, `probe_url`, `probe_interval`.
@@ -155,7 +155,7 @@ flowchart TD
   Connection --> Plan[ProfilePlan: один или несколько участников]
   Planner --> Plan
   Plan --> Registry[GeneratorRegistry]
-  Registry --> Generators[URI / Xray JSON / Clash / Mihomo / sing-box / Outline]
+  Registry --> Generators[URI / Xray JSON / Clash Meta / sing-box / Outline]
   Generators --> Mapper[HostMapper]
   Mapper --> Validator[OutputValidator]
   Validator --> Result[GenerationResult]
@@ -203,3 +203,30 @@ SQLite upgrade/downgrade/re-upgrade и перенос данных покрыт�
 проверены компиляцией DDL, без интеграционного запуска сервера. Бинарники Xray,
 Mihomo и sing-box в этом окружении не использовались для проверки документов.
 Окончательную совместимость с версиями клиентских ядер следует проверять на стенде выпуска.
+
+## Объединение YAML-форматов
+
+Ревизия `b57c20e91a46` следует за `a319d48e7062` и переименовывает формат каталога
+`clash` в `clash-meta`, сохраняя ID, содержимое, defaults и привязки шаблонов.
+Ключи `overrides.clients`, `overrides.mapper` и `balancer_settings.clients`
+используют `clash-meta`. Старые URL `clash`/`mihomo` разрешаются в тот же генератор.
+Общий `clash_settings` и ключ `clash` внутри глобального mux-шаблона остаются
+настройками низкоуровневого кодировщика, а не отдельным форматом.
+
+Непересекающиеся настройки Clash/Mihomo объединяются. Если значения одного поля
+различаются, миграция останавливается до DDL с ID хоста и именем поля: перед
+обновлением нужно выбрать одно значение. Downgrade восстанавливает старые имена
+формата и клиентских ключей. Проверены SQLite с выключенными и включёнными FK,
+сохранение привязок, конфликт и upgrade/downgrade/re-upgrade.
+
+Форма хранит параметры балансировщика типизированными объектами. JSON используется
+только в редакторах расширенных параметров и массивов least-load. Ошибки массивов
+показываются возле поля. Удаление клиентской опции отправляет PATCH с `null`;
+значения `0` и `false` сохраняются. Стрелки общего порядка из строк и карточек
+удалены; порядок строк на desktop меняется перетаскиванием.
+
+Frontend-проверки формы запускаются из `app/dashboard`:
+
+```powershell
+npm.cmd exec --yes --package=tsx@4.20.5 -- tsx --test tests/host-form.test.ts
+```

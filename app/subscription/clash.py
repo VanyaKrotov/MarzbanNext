@@ -21,7 +21,7 @@ class ClashConfiguration(object):
 
         from app.utils.subscription_template_defaults import default_subscription_content
 
-        self.template = template if template is not None else default_subscription_content("clash")
+        self.template = template if template is not None else default_subscription_content("clash-meta")
         self.data = {
             'proxies': [],
             'proxy-groups': [],
@@ -55,7 +55,7 @@ class ClashConfiguration(object):
         yaml.add_representer(UUID, yml_uuid_representer)
         return yaml.dump(
             parse_subscription_document(
-                SubscriptionFormat.clash,
+                SubscriptionFormat.clash_meta,
                 render_subscription_template(
                     self.template,
                     {"conf": self.data, "proxy_remarks": self.default_proxy_remarks}

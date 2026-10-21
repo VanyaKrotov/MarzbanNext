@@ -3,12 +3,12 @@ import re
 
 import yaml
 
-from app.subscription.clash import ClashConfiguration, ClashMetaConfiguration
+from app.subscription.clash import ClashMetaConfiguration
 from app.subscription.generators.base import apply_resolved_options, builder_arguments, finish, map_node
 from app.subscription.validation import OutputValidator, TagAllocator
 
 
-def mihomo_xhttp(connection):
+def clash_meta_xhttp(connection):
     inbound = connection.inbound
     options = {key: inbound[key] for key in ("path", "host", "mode") if inbound.get(key)}
     extra = inbound.get("_xhttp_extra", {})
@@ -28,9 +28,9 @@ def mihomo_xhttp(connection):
     return options
 
 
-class ClashSubscriptionGenerator:
-    builder_class = ClashConfiguration
-    target = "clash"
+class ClashMetaSubscriptionGenerator:
+    builder_class = ClashMetaConfiguration
+    target = "clash-meta"
 
     def generate(self, data):
         if not data.profiles:
@@ -45,7 +45,7 @@ class ClashSubscriptionGenerator:
         for connection in connections.values():
             name = allocator.allocate(connection.remark, f"h{connection.host_id}")
             arguments = builder_arguments(connection, name)
-            xhttp = self.target == "mihomo" and connection.inbound["network"] in {"xhttp", "splithttp"}
+            xhttp = connection.inbound["network"] in {"xhttp", "splithttp"}
             if xhttp:
                 arguments["inbound"]["network"] = "tcp"
             result = builder.add(**arguments, include_in_default=False)
@@ -53,20 +53,19 @@ class ClashSubscriptionGenerator:
                 continue
             node = builder.data["proxies"][-1]
             if xhttp:
-                node.update({"network": "xhttp", "xhttp-opts": mihomo_xhttp(connection)})
+                node.update({"network": "xhttp", "xhttp-opts": clash_meta_xhttp(connection)})
             apply_resolved_options(node, connection, self.target)
-            if self.target == "mihomo":
-                options = connection.client_options.get("mihomo", {})
-                if "ip_version" in options:
-                    node["ip-version"] = options["ip_version"]
-                if "x25519" in options and "reality-opts" in node:
-                    node["reality-opts"]["support-x25519mlkem768"] = options["x25519"]
-                if connection.mux.get("smux", {}).get("enabled"):
-                    node["smux"] = {key.replace("_", "-"): deepcopy(value)
-                                    for key, value in connection.mux["smux"].items()}
-                if "server_description" in connection.client_options:
-                    node["serverDescription"] = connection.client_options["server_description"]
-                node = map_node(node, connection, "mihomo")
+            options = connection.client_options.get("clash-meta", {})
+            if "ip_version" in options:
+                node["ip-version"] = options["ip_version"]
+            if "x25519" in options and "reality-opts" in node:
+                node["reality-opts"]["support-x25519mlkem768"] = options["x25519"]
+            if connection.mux.get("smux", {}).get("enabled"):
+                node["smux"] = {key.replace("_", "-"): deepcopy(value)
+                                for key, value in connection.mux["smux"].items()}
+            if "server_description" in connection.client_options:
+                node["serverDescription"] = connection.client_options["server_description"]
+            node = map_node(node, connection, "clash-meta")
             builder.data["proxies"][-1] = node
             names[connection.host_id] = node["name"]
         for profile in data.profiles:
@@ -86,8 +85,3 @@ class ClashSubscriptionGenerator:
         rendered = builder.render(reverse=data.reverse)
         OutputValidator().validate(yaml.safe_load(rendered), self.target)
         return finish(rendered, data, "text/yaml")
-
-
-class MihomoSubscriptionGenerator(ClashSubscriptionGenerator):
-    builder_class = ClashMetaConfiguration
-    target = "mihomo"

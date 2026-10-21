@@ -21,7 +21,7 @@ def finish(body, data, media_type):
 
 def map_node(node, connection, target):
     mapped = HostMapper().apply(node, connection.mapper.get(target, []), connection)
-    identity = "name" if target == "mihomo" else "tag"
+    identity = "name" if target == "clash-meta" else "tag"
     if not isinstance(mapped.get(identity), str) or not mapped[identity]:
         raise SubscriptionError("Host mapper removed the connection identity")
     if target == "xrayJson" and mapped[identity] != node[identity]:
@@ -38,7 +38,7 @@ def apply_resolved_options(node, connection, target):
         key = {"ws": "wsSettings", "httpupgrade": "httpupgradeSettings", "grpc": "grpcSettings",
                "xhttp": "xhttpSettings", "splithttp": "splithttpSettings"}.get(network)
         section = stream.setdefault(key, {}) if key else None
-    elif target in {"clash", "mihomo"}:
+    elif target == "clash-meta":
         key = {"ws": "ws-opts", "httpupgrade": "ws-opts", "grpc": "grpc-opts"}.get(network)
         section = node.setdefault(key, {}) if key else None
     else:
@@ -52,8 +52,8 @@ def apply_resolved_options(node, connection, target):
         if "path" in options:
             key = "path"
             if network == "grpc":
-                key = {"v2ray-json": "serviceName", "clash": "grpc-service-name",
-                       "mihomo": "grpc-service-name", "sing-box": "service_name"}[target]
+                key = {"v2ray-json": "serviceName", "clash-meta": "grpc-service-name",
+                       "sing-box": "service_name"}[target]
             section[key] = options["path"]
         if "host" in options:
             if network in {"ws", "httpupgrade"} and target != "v2ray-json":
@@ -71,7 +71,7 @@ def apply_resolved_options(node, connection, target):
     if target == "v2ray-json":
         tls = node["streamSettings"].setdefault(connection.inbound["tls"] + "Settings", {})
         insecure_key = "allowInsecure"
-    elif target in {"clash", "mihomo"}:
+    elif target == "clash-meta":
         tls, insecure_key = node, "skip-cert-verify"
     else:
         tls, insecure_key = node.setdefault("tls", {}), "insecure"
