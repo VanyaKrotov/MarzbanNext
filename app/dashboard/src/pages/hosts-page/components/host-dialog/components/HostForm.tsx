@@ -1,4 +1,5 @@
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useState } from "react";
 import { LoaderCircle } from "lucide-react";
 import { FormProvider, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -17,13 +18,12 @@ import { HostParameterSections } from "./HostParameterSections";
 export function HostForm(props: HostFormProps) {
   const { host, pending, onSubmit, onOpenChange, inbounds, templates } = props;
   const { t } = useTranslation();
+  const [defaultValues] = useState(() =>
+    getHostFormValues(inbounds[0].id, host, defaultBindings(templates)),
+  );
   const form = useForm<HostFormValues>({
     resolver: zodResolver(hostFormSchema),
-    defaultValues: getHostFormValues(
-      inbounds[0].id,
-      host,
-      defaultBindings(templates),
-    ),
+    defaultValues,
   });
 
   const submit = (values: HostFormValues) => {

@@ -1,5 +1,5 @@
 import { useId, useMemo, useState } from "react";
-import { Controller, useFormContext } from "react-hook-form";
+import { useController, useFormContext } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   Combobox,
@@ -42,6 +42,10 @@ export function SubscriptionTemplateFields({
 }) {
   const { t } = useTranslation();
   const { control } = useFormContext<HostFormValues>();
+  const { field, fieldState } = useController({
+    control,
+    name: "subscription_template_ids",
+  });
   const id = useId();
   const anchor = useComboboxAnchor();
   const [search, setSearch] = useState("");
@@ -56,92 +60,83 @@ export function SubscriptionTemplateFields({
     [templates],
   );
 
+  const selected = useMemo(
+    () =>
+      templates.filter(
+        (template) => field.value[template.format] === template.id,
+      ),
+    [templates, field.value],
+  );
+
   return (
-    <Controller
-      control={control}
-      name="subscription_template_ids"
-      render={({ field, fieldState }) => {
-        const selected = templates.filter(
-          (template) => field.value[template.format] === template.id,
-        );
-        return (
-          <Field data-invalid={fieldState.invalid}>
-            <FieldLabel htmlFor={id} className="sr-only">
-              {t("subscriptionTemplates.title")}
-            </FieldLabel>
-            <Combobox<SubscriptionTemplate, true>
-              multiple
-              items={groups}
-              value={selected}
-              inputValue={search}
-              onInputValueChange={setSearch}
-              onOpenChange={(open, details) => {
-                // Keep the picker ready for another format after selecting a search result.
-                if (!open && details.reason === "item-press") details.cancel();
-              }}
-              disabled={pending}
-              itemToStringLabel={templateChipLabel}
-              isItemEqualToValue={(left, right) => left.id === right.id}
-              onValueChange={(values) => {
-                field.onChange(
-                  templateBindingsFromSelection(values, field.value),
-                );
-                setSearch("");
-              }}
-            >
-              <ComboboxChips ref={anchor}>
-                <ComboboxValue>
-                  {(values: SubscriptionTemplate[]) =>
-                    values.map((template) => (
-                      <ComboboxChip
-                        key={template.id}
-                        className="min-w-0 max-w-full"
-                        removeLabel={t("hostEditor.removeParameter", {
-                          name: templateChipLabel(template),
-                        })}
-                      >
-                        <span className="min-w-0 truncate">
-                          {templateChipLabel(template)}
-                        </span>
-                      </ComboboxChip>
-                    ))
-                  }
-                </ComboboxValue>
-                <ComboboxChipsInput
-                  id={id}
-                  ref={field.ref}
-                  disabled={pending}
-                  onBlur={field.onBlur}
-                  aria-invalid={fieldState.invalid}
-                  placeholder={t("subscriptionTemplates.search")}
-                />
-              </ComboboxChips>
-              <ComboboxContent anchor={anchor}>
-                <ComboboxEmpty>
-                  {t("subscriptionTemplates.empty")}
-                </ComboboxEmpty>
-                <ComboboxList>
-                  {(group: TemplateGroup) => (
-                    <ComboboxGroup key={group.value} items={group.items}>
-                      <ComboboxLabel>
-                        {t(formatLabelKeys[group.value])}
-                      </ComboboxLabel>
-                      <ComboboxCollection>
-                        {(template: SubscriptionTemplate) => (
-                          <ComboboxItem key={template.id} value={template}>
-                            {template.name}
-                          </ComboboxItem>
-                        )}
-                      </ComboboxCollection>
-                    </ComboboxGroup>
+    <Field data-invalid={fieldState.invalid}>
+      <FieldLabel htmlFor={id} className="sr-only">
+        {t("subscriptionTemplates.title")}
+      </FieldLabel>
+      <Combobox<SubscriptionTemplate, true>
+        multiple
+        items={groups}
+        value={selected}
+        inputValue={search}
+        onInputValueChange={setSearch}
+        onOpenChange={(open, details) => {
+          // Keep the picker ready for another format after selecting a search result.
+          if (!open && details.reason === "item-press") details.cancel();
+        }}
+        disabled={pending}
+        itemToStringLabel={templateChipLabel}
+        isItemEqualToValue={(left, right) => left.id === right.id}
+        onValueChange={(values) => {
+          field.onChange(templateBindingsFromSelection(values, field.value));
+          setSearch("");
+        }}
+      >
+        <ComboboxChips ref={anchor}>
+          <ComboboxValue>
+            {(values: SubscriptionTemplate[]) =>
+              values.map((template) => (
+                <ComboboxChip
+                  key={template.id}
+                  className="min-w-0 max-w-full"
+                  removeLabel={t("hostEditor.removeParameter", {
+                    name: templateChipLabel(template),
+                  })}
+                >
+                  <span className="min-w-0 truncate">
+                    {templateChipLabel(template)}
+                  </span>
+                </ComboboxChip>
+              ))
+            }
+          </ComboboxValue>
+          <ComboboxChipsInput
+            id={id}
+            ref={field.ref}
+            disabled={pending}
+            onBlur={field.onBlur}
+            aria-invalid={fieldState.invalid}
+            placeholder={t("subscriptionTemplates.search")}
+          />
+        </ComboboxChips>
+        <ComboboxContent anchor={anchor}>
+          <ComboboxEmpty>{t("subscriptionTemplates.empty")}</ComboboxEmpty>
+          <ComboboxList>
+            {(group: TemplateGroup) => (
+              <ComboboxGroup key={group.value} items={group.items}>
+                <ComboboxLabel>{t(formatLabelKeys[group.value])}</ComboboxLabel>
+                <ComboboxCollection>
+                  {(template: SubscriptionTemplate) => (
+                    <ComboboxItem key={template.id} value={template}>
+                      {template.name}
+                    </ComboboxItem>
                   )}
-                </ComboboxList>
-              </ComboboxContent>
-            </Combobox>
-            <FieldError errors={[fieldState.error]} />
-          </Field>
-        );
-      }}
-    />
+                </ComboboxCollection>
+              </ComboboxGroup>
+            )}
+          </ComboboxList>
+        </ComboboxContent>
+      </Combobox>
+      <FieldError errors={[fieldState.error]} />
+    </Field>
   );
 }

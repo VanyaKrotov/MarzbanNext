@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { X } from "lucide-react";
 import { Controller, useFormContext, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
@@ -28,9 +29,14 @@ export function ClientBalancerFields({
 }: ClientBalancerFieldsProps) {
   const { t } = useTranslation();
   const form = useFormContext<HostFormValues>();
-  const clients = useWatch({ control: form.control, name: "balancer_clients" });
+  // Field edits must not redraw every client editor; only membership matters here.
+  const targets = useWatch({
+    control: form.control,
+    name: "balancer_clients",
+    compute: (clients) => balancerTargets.filter((target) => target in clients),
+  });
   const availableTargets = balancerTargets.filter(
-    (target) => !(target in clients) && target in capabilities.strategies,
+    (target) => !targets.includes(target) && target in capabilities.strategies,
   );
 
   const addClient = (value: string) => {
@@ -41,16 +47,14 @@ export function ClientBalancerFields({
 
   return (
     <>
-      {balancerTargets
-        .filter((target) => target in clients)
-        .map((target) => (
-          <ClientBalancerEditor
-            key={target}
-            target={target}
-            capabilities={capabilities}
-            pending={pending}
-          />
-        ))}
+      {targets.map((target) => (
+        <ClientBalancerEditor
+          key={target}
+          target={target}
+          capabilities={capabilities}
+          pending={pending}
+        />
+      ))}
       {availableTargets.length > 0 && (
         <Select value="" disabled={pending} onValueChange={addClient}>
           <SelectTrigger aria-label={t("hostEditor.addClientSettings")}>
@@ -71,21 +75,13 @@ export function ClientBalancerFields({
   );
 }
 
-function ClientBalancerEditor({
+const ClientBalancerEditor = memo(function ClientBalancerEditor({
   target,
   capabilities,
   pending,
 }: ClientBalancerFieldsProps & { target: BalancerTarget }) {
   const { t } = useTranslation();
   const form = useFormContext<HostFormValues>();
-  const generalStrategy = useWatch({
-    control: form.control,
-    name: "balancer_strategy",
-  });
-  const strategy = useWatch({
-    control: form.control,
-    name: `balancer_clients.${target}.strategy`,
-  });
   const name = t(`subscriptionTemplates.formats.${target}`);
 
   return (
@@ -192,10 +188,19 @@ function ClientBalancerEditor({
           />
         </>
       )}
-      {target === "v2ray-json" &&
-        (strategy ?? generalStrategy) === "least_load" && (
-          <LeastLoadFields pending={pending} />
-        )}
+      {target === "v2ray-json" && <XrayLeastLoadFields pending={pending} />}
     </FieldGroup>
   );
+});
+
+function XrayLeastLoadFields({ pending }: { pending: boolean }) {
+  const { control } = useFormContext<HostFormValues>();
+  const leastLoad = useWatch({
+    control,
+    name: ["balancer_clients.v2ray-json.strategy", "balancer_strategy"],
+    exact: true,
+    compute: ([strategy, generalStrategy]) =>
+      (strategy ?? generalStrategy) === "least_load",
+  });
+  return leastLoad ? <LeastLoadFields pending={pending} /> : null;
 }

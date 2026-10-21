@@ -105,6 +105,23 @@ The application also links to same-origin `/docs`.
 Objects sourced from a node Xray template have read-only JSON content and cannot
 be deleted. Their metadata, enabled state and node assignments can still be edited.
 
+### Host form subscriptions
+
+The host form keeps validation subscriptions in individual fields with
+`useFormState({ name, exact: true })` or `useController`. Do not read
+`form.formState.errors` in section containers: this subscribes the form provider
+to errors and redraws unrelated sections when an error changes.
+
+The optional-field menu and selected sections have separate subscriptions.
+Client balancer sections watch a computed list of client keys rather than all
+client settings. Only the Xray least-load fields watch the effective strategy.
+Keep the available-host and selected-template arrays stable while searching.
+
+For performance checks, compare the same edit before and after a change with all
+three client sections open. Typing a client probe URL should update its field
+without rendering other client editors. Correcting an address validation error
+should update `AddressField` without rendering the form container.
+
 ## JSON editor
 
 The shared Monaco editor accepts an optional JSON schema. Feature-specific

@@ -1,4 +1,4 @@
-import { Controller, useFormContext } from "react-hook-form";
+import { Controller, useFormContext, useFormState } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import {
   Field,
@@ -85,26 +85,36 @@ export function CompositionFields({
             {...form.register("balancer_probe_url")}
           />
         </Field>
-        <Field>
-          <FieldLabel htmlFor="balancer-probe-interval">
-            {t("hostEditor.probeInterval")}
-          </FieldLabel>
-          <Input
-            id="balancer-probe-interval"
-            type="number"
-            min={10}
-            max={86400}
-            disabled={pending}
-            {...form.register("balancer_probe_interval", {
-              valueAsNumber: true,
-            })}
-          />
-          <FieldError
-            errors={[form.formState.errors.balancer_probe_interval]}
-          />
-        </Field>
+        <ProbeIntervalField pending={pending} />
       </FieldGroup>
       <ClientBalancerFields capabilities={capabilities} pending={pending} />
     </FieldGroup>
+  );
+}
+
+function ProbeIntervalField({ pending }: { pending: boolean }) {
+  const { t } = useTranslation();
+  const { control, register } = useFormContext<HostFormValues>();
+  const { errors } = useFormState({
+    control,
+    name: "balancer_probe_interval",
+    exact: true,
+  });
+  return (
+    <Field data-invalid={Boolean(errors.balancer_probe_interval)}>
+      <FieldLabel htmlFor="balancer-probe-interval">
+        {t("hostEditor.probeInterval")}
+      </FieldLabel>
+      <Input
+        id="balancer-probe-interval"
+        type="number"
+        min={10}
+        max={86400}
+        disabled={pending}
+        aria-invalid={Boolean(errors.balancer_probe_interval)}
+        {...register("balancer_probe_interval", { valueAsNumber: true })}
+      />
+      <FieldError errors={[errors.balancer_probe_interval]} />
+    </Field>
   );
 }
