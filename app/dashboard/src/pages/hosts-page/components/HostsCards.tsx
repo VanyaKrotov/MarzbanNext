@@ -60,7 +60,7 @@ export function HostsCards({
                 onEdit={onEdit}
               />
               <p className="font-mono text-xs text-muted-foreground">
-                {row.address}:{row.port ?? t("hostEditor.portFromInbound")}
+                {row.address}:{row.port ?? row.inbound_port}
               </p>
             </div>
             <Badge variant="outline">{row.inbound_tag}</Badge>

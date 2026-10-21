@@ -879,7 +879,6 @@
   "hostEditor.failure_tolerance": "Допустимая доля ошибок (0–1)",
   "hostEditor.baselines_ms": "Базовые RTT (мс, JSON-массив)",
   "hostEditor.costs": "Стоимость подключений (JSON-массив)",
-  "hostEditor.portFromInbound": "Порт инбаунда",
   "hostEditor.muxOptions": "Параметры MUX",
   "hostEditor.defaultValue": "По умолчанию"
 }

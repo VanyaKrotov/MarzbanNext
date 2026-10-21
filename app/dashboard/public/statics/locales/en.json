@@ -877,7 +877,6 @@
   "hostEditor.failure_tolerance": "Failure tolerance (0–1)",
   "hostEditor.baselines_ms": "RTT baselines (ms, JSON array)",
   "hostEditor.costs": "Connection costs (JSON array)",
-  "hostEditor.portFromInbound": "Inbound port",
   "hostEditor.muxOptions": "MUX settings",
   "hostEditor.defaultValue": "Default"
 }

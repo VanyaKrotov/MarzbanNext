@@ -27,6 +27,7 @@ export type HostType = {
   id: number;
   inbound_id: number;
   inbound_tag: string;
+  inbound_port: number | string | null;
   position: number;
   remark: string;
   address: string;

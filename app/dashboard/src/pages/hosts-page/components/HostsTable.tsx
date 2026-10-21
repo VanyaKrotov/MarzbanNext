@@ -118,7 +118,7 @@ export function HostsTable({
                 />
               </TableCell>
               <TableCell className="font-mono text-xs">
-                {row.address}:{row.port ?? t("hostEditor.portFromInbound")}
+                {row.address}:{row.port ?? row.inbound_port}
               </TableCell>
               <TableCell>
                 <div

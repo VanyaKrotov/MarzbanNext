@@ -877,7 +877,6 @@
   "hostEditor.failure_tolerance": "失败容差（0–1）",
   "hostEditor.baselines_ms": "RTT 基准（毫秒，JSON 数组）",
   "hostEditor.costs": "连接成本（JSON 数组）",
-  "hostEditor.portFromInbound": "入站端口",
   "hostEditor.muxOptions": "MUX 设置",
   "hostEditor.defaultValue": "默认"
 }

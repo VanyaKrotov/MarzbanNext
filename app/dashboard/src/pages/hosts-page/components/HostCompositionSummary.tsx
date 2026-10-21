@@ -47,7 +47,7 @@ export function HostCompositionSummary({
                   className="h-auto justify-start whitespace-normal p-0 text-xs"
                 >
                   {member
-                    ? `${member.remark} — ${member.address}:${member.port ?? t("hostEditor.portFromInbound")} (${member.inbound_tag})`
+                    ? `${member.remark} — ${member.address}:${member.port ?? member.inbound_port} (${member.inbound_tag})`
                     : String(id)}
                 </Button>
               );

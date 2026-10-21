@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any, Literal
 from urllib.parse import urlparse
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
+from pydantic import AliasPath, BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
 
 from app.models.proxy import FRAGMENT_PATTERN, HTTP_TOKEN_PATTERN, NOISE_PATTERN, HostGroupRef, FormatVariables
 from app.models.subscription_template import normalize_template_bindings
@@ -294,6 +294,7 @@ class HostResponse(BaseModel):
     id: int
     inbound_id: int
     inbound_tag: str
+    inbound_port: int | str | None = Field(default=None, validation_alias=AliasPath("inbound", "content", "port"))
     remark: str
     address: str
     port: int | None
