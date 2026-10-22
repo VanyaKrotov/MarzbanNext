@@ -54,7 +54,7 @@ class SubscriptionTemplateMigrationTests(TestCase):
                 inbound_id=inbound_id, remark='Existing', address='example.com', security='inbound_default',
                 mux_enable=False, random_user_agent=False, use_sni_as_host=False,
             ))
-        self.migrate('upgrade', 'head')
+        self.migrate('upgrade', 'c82a6f0159bd')
         templates = self.table('subscription_templates')
         bindings = self.table('host_subscription_templates')
         settings = self.table('runtime_settings')

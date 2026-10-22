@@ -122,7 +122,7 @@ def convert(snapshot):
                 template["content"] = wrap_template(template["content"], overlay, target)
                 template["content"] = "{% set migrated %}" + template["content"] + (
                     "{% endset %}{{ migrated | migrate_xray_routing(" + json.dumps(
-                        f"mb-auto-{owner['id']}-balancer") + ") | tojson }}")
+                        f"mb-auto-{owner['id']}-balancer") + f", {owner['id']}, host_ids)" + " | tojson }}")
                 result["subscription_templates"].append(template)
                 recipient = deepcopy(owner)
                 recipient.update(id=next_host, balancer_settings=None, show_when_composed=True,
@@ -170,6 +170,10 @@ def convert(snapshot):
             raise RuntimeError(f"{target}: all hosts are hidden; keep one visible recipient before upgrading")
         template = templates[template_id]
         template["content"] = wrap_aggregate(template["content"], entries, target)
+    for template in result["subscription_templates"]:
+        if template["format"] == "clash":
+            template["content"] = ("{% set legacy_clash %}" + template["content"]
+                                   + "{% endset %}{{ legacy_clash | preserve_clash_groups | tojson }}")
     # Persist only the new host contract; archives retain every removed value.
     for host in result["hosts"]:
         host["is_hidden"] = not host.pop("show_when_composed")

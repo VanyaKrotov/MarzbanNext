@@ -14,11 +14,16 @@ from app.utils.subscription_templates import parse_subscription_document, render
 class XrayJsonSubscriptionGenerator:
     def generate(self, data):
         documents, diagnostics = [], []
+        host_ids_by_catalog = {}
         profiles = reversed(data.profiles) if data.reverse else data.profiles
         for profile in profiles:
             first = profile.connections[0]
+            catalog_key = id(profile.sources)
+            if catalog_key not in host_ids_by_catalog:
+                host_ids_by_catalog[catalog_key] = tuple(connection.host_id for connection in profile.sources)
             content = render_subscription_template(profile.template.content, {
                 **first.context, "host": first.template_record(), "remarks": profile.remark,
+                "host_ids": host_ids_by_catalog[catalog_key],
             })
             document = parse_subscription_document(SubscriptionFormat.v2ray_json, content)
             validate_directives(document, "v2ray-json")

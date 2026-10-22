@@ -314,26 +314,6 @@ class ClashConfiguration(object):
             self.default_proxy_remarks.append(proxy_remark)
         return proxy_remark
 
-    def add_balancer(
-        self,
-        name: str,
-        endpoint_tags: list[str],
-        probe_url: str,
-        probe_interval: int,
-        strategy: str,
-    ) -> None:
-        group = {
-            "name": name,
-            "proxies": endpoint_tags,
-            "url": probe_url,
-            "interval": probe_interval,
-        }
-        if strategy == "round_robin":
-            group.update({"type": "load-balance", "strategy": "round-robin"})
-        else:
-            group["type"] = "url-test"
-        self.data["proxy-groups"].append(group)
-
 
 class ClashMetaConfiguration(ClashConfiguration):
     def make_node(self,

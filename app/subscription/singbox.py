@@ -20,7 +20,6 @@ class SingBoxConfiguration:
 
         self.proxy_remarks = []
         self.default_proxy_remarks = []
-        self.managed_balancer_tags = set()
         # Parsed templates must not be interpreted as Jinja a second time.
         self.config = copy.deepcopy(document) if document is not None else json.loads(render_template_content(
             template if template is not None else default_subscription_content("sing-box")))
@@ -64,7 +63,6 @@ class SingBoxConfiguration:
         for outbound in self.config["outbounds"]:
             if (
                 outbound.get("type") == "urltest"
-                and outbound["tag"] not in self.managed_balancer_tags
                 and outbound.get("outbounds") is None
             ):
                 outbound["outbounds"] = urltest_tags
@@ -372,17 +370,3 @@ class SingBoxConfiguration:
         if include_in_default:
             self.default_proxy_remarks.append(remark)
         return remark
-
-    def add_balancer(
-        self, name: str, endpoint_tags: list[str], probe_url: str, probe_interval: int
-    ) -> None:
-        self.add_outbound(
-            {
-                "type": "urltest",
-                "tag": name,
-                "outbounds": endpoint_tags,
-                "url": probe_url,
-                "interval": f"{probe_interval}s",
-            }
-        )
-        self.managed_balancer_tags.add(name)

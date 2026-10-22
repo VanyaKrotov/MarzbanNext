@@ -133,6 +133,28 @@ class TemplateCompositionMigrationTests(TestCase):
         self.assertIn("changed after upgrading", result.stderr)
         self.assertIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
 
+    def test_legacy_explicit_clash_group_does_not_gain_generated_members(self):
+        self.seed()
+        with self.engine.begin() as connection:
+            hosts = sa.Table("hosts", sa.MetaData(), autoload_with=connection)
+            connection.execute(hosts.update().values(balancer_settings=None))
+            connection.exec_driver_sql("DELETE FROM host_links")
+            templates = sa.Table("subscription_templates", sa.MetaData(), autoload_with=connection)
+            connection.execute(templates.update().where(templates.c.format == "clash").values(content=json.dumps({
+                "proxies": [], "proxy-groups": [{"name": "Manual", "type": "select", "proxies": ["DIRECT"]}],
+                "rules": ["MATCH,Manual"]})))
+        self.migrate("upgrade", "head")
+        import yaml
+
+        with Session(self.engine) as db:
+            snapshot = SubscriptionSnapshotLoader().load(db, build_default_runtime_settings())
+            plans, _ = ProfilePlanner().plan(snapshot, "clash",
+                                             {"shadowsocks": {"password": "password", "method": "aes-256-gcm"}},
+                                             {"shadowsocks": ["SS"]}, ResolveContext({}))
+            result = GeneratorRegistry().for_target("clash").generate(RenderInput("clash", plans, snapshot.defaults))
+            self.assertEqual(yaml.safe_load(result.body)["proxy-groups"][0]["proxies"], ["DIRECT"])
+        self.migrate("downgrade", "c82a6f0159bd")
+
     def test_least_load_costs_and_disabled_owner_groups_are_preserved(self):
         ids = self.seed()
         with self.engine.begin() as connection:
@@ -141,7 +163,8 @@ class TemplateCompositionMigrationTests(TestCase):
             settings["clients"]["v2ray-json"] = {
                 "strategy": "least_load", "enable_concurrency": False,
                 "strategy_settings": {"expected": 2, "max_rtt_ms": 500, "failure_tolerance": 0,
-                                      "baselines_ms": [100, 200], "costs": [{"host_id": ids[0], "value": 2}]}}
+                                      "baselines_ms": [100, 200], "costs": [
+                                          {"host_id": ids[0], "value": 2}, {"host_id": ids[1], "value": 3}]}}
             connection.execute(hosts.update().where(hosts.c.id == ids[0]).values(balancer_settings=settings))
         self.migrate("upgrade", "head")
         with Session(self.engine) as db:
@@ -160,6 +183,20 @@ class TemplateCompositionMigrationTests(TestCase):
             self.assertFalse(document["observatory"]["enableConcurrency"])
             from app.db.models.proxies import ProxyHost
 
+            member = db.get(ProxyHost, ids[1])
+            member.enabled = False
+            db.commit()
+            snapshot = SubscriptionSnapshotLoader().load(db, settings)
+            plans, _ = ProfilePlanner().plan(snapshot, "v2ray-json", proxies,
+                                             {"shadowsocks": ["SS"]}, ResolveContext({}))
+            result = GeneratorRegistry().for_target("v2ray-json").generate(
+                RenderInput("v2ray-json", plans, snapshot.defaults))
+            document = next(item for item in json.loads(result.body) if item["remarks"].endswith(" · Auto"))
+            self.assertEqual(document["routing"]["balancers"][0]["strategy"]["settings"]["costs"],
+                             [{"match": f"mb-auto-{ids[0]}-host-{ids[0]}", "regexp": False, "value": 2}])
+            self.assertEqual([node["tag"] for node in document["outbounds"] if node["tag"].startswith("mb-auto-")],
+                             [f"mb-auto-{ids[0]}-host-{ids[0]}"])
+            member.enabled = True
             owner = db.get(ProxyHost, ids[0])
             owner.enabled = False
             db.commit()

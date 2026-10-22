@@ -30,7 +30,7 @@ def merge_config(context, source, additions, format):
             if key not in current:
                 current[key] = value
             elif isinstance(value, list) and isinstance(current[key], list):
-                if key in {"outbounds", "proxy-groups"}:
+                if key in {"outbounds", "proxy-groups", "balancers"}:
                     identity = "name" if key == "proxy-groups" else "tag"
                     existing = {node.get(identity) for node in current[key] if isinstance(node, dict)}
                     incoming = [node.get(identity) for node in value if isinstance(node, dict)]
@@ -59,8 +59,22 @@ def format_variables(context, value):
 template_env.filters["format_variables"] = format_variables
 
 
-def migrate_xray_routing(source, balancer_tag):
+def migrate_xray_routing(source, balancer_tag, owner_id=None, host_ids=None):
     document = parse_subscription_document(SubscriptionFormat.v2ray_json, source)
+    if host_ids is not None:
+        available = set(host_ids)
+        directives = document.get("marzban", {})
+        # Legacy members were optional. Keep the owner's injection mandatory, while
+        # retaining stable per-host tags and costs for available optional members.
+        directives["injectHosts"] = [entry for entry in directives.get("injectHosts", [])
+                                     if any(host_id == owner_id or host_id in available
+                                            for host_id in entry.get("selector", {}).get("values", []))]
+        tags = {entry["tagPrefix"] for entry in directives["injectHosts"]}
+        for balancer in document.get("routing", {}).get("balancers", []):
+            if balancer.get("tag") == balancer_tag:
+                settings = balancer.get("strategy", {}).get("settings", {})
+                if "costs" in settings:
+                    settings["costs"] = [cost for cost in settings["costs"] if cost.get("match") in tags]
     rules = document.setdefault("routing", {}).setdefault("rules", [])
     for rule in rules:
         if rule.get("outboundTag") == "proxy":
@@ -71,6 +85,17 @@ def migrate_xray_routing(source, balancer_tag):
 
 
 template_env.filters["migrate_xray_routing"] = migrate_xray_routing
+
+
+def preserve_clash_groups(source):
+    """Keep legacy explicit membership when adopting template-controlled proxy injection."""
+    document = parse_subscription_document(SubscriptionFormat.clash, source)
+    for group in document.get("proxy-groups", []):
+        group.setdefault("marzban", {"include-proxies": False})
+    return document
+
+
+template_env.filters["preserve_clash_groups"] = preserve_clash_groups
 
 
 class TemplateValidationError(ValueError):
@@ -145,7 +170,7 @@ def validate_subscription_template(format: SubscriptionFormat, content: str, ext
     context_keys = {
         SubscriptionFormat.clash: ("conf", "proxy_remarks", "host_ids"),
         SubscriptionFormat.v2ray: ("links", "host"),
-        SubscriptionFormat.v2ray_json: ("host", "remarks"),
+        SubscriptionFormat.v2ray_json: ("host", "remarks", "host_ids"),
         SubscriptionFormat.outline: ("config",),
         SubscriptionFormat.sing_box: ("host_ids",),
     }
