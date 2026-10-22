@@ -1,5 +1,7 @@
 import { Trash2 } from "lucide-react";
+import { isAxiosError } from "axios";
 import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 
 import {
   AlertDialog,
@@ -70,6 +72,17 @@ function TemplateActionContent({
         onClose();
       },
       onError: (error) => {
+        if (action.type === "delete" && isAxiosError(error)) {
+          const detail = error.response?.data?.detail;
+          if (detail === "Default templates cannot be deleted") {
+            toast.error(t("subscriptionTemplates.deleteDefaultError"));
+            return;
+          }
+          if (detail === "Templates assigned to hosts cannot be deleted") {
+            toast.error(t("subscriptionTemplates.deleteAssignedError"));
+            return;
+          }
+        }
         generateErrorMessage(error);
       },
     });
@@ -93,7 +106,9 @@ function TemplateActionContent({
             { name: action.template.name },
           )}
         </AlertDialogTitle>
-        <AlertDialogDescription>
+        <AlertDialogDescription
+          className={action.type === "delete" ? "sr-only" : undefined}
+        >
           {t(
             action.type === "delete"
               ? "subscriptionTemplates.deleteDescription"

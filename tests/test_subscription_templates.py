@@ -143,7 +143,9 @@ class SubscriptionTemplateTests(TestCase):
         response = self.client.get('/api/subscription-templates', params={'search': 'NAMED', 'offset': 0})
         self.assertEqual(response.json()['total'], 1)
         self.assertEqual(self.client.get('/api/subscription-templates/99999').status_code, 404)
-        self.assertEqual(self.client.delete(f'/api/subscription-templates/{default_id}').status_code, 409)
+        response = self.client.delete(f'/api/subscription-templates/{default_id}')
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['detail'], 'Default templates cannot be deleted')
         self.assertEqual(self.client.delete(f'/api/subscription-templates/{template_id}').status_code, 204)
 
     def test_rename_defaults_preserves_bindings_and_generation(self):
@@ -252,12 +254,23 @@ class SubscriptionTemplateTests(TestCase):
         with self.assertRaises(HTTPException) as error:
             service.delete_template(custom.id, self.db, self.admin)
         self.assertEqual(error.exception.status_code, 409)
+        self.assertEqual(error.exception.detail, "Templates assigned to hosts cannot be deleted")
         with self.assertRaises(HTTPException):
             service.update_template(custom.id, SubscriptionTemplateModify(format='sing-box'), self.db, self.admin)
         self.db.delete(custom)
         with self.assertRaises(IntegrityError):
             self.db.commit()
         self.db.rollback()
+
+    def test_delete_handles_assignment_added_after_usage_check(self):
+        custom = self.create_template()
+        host = self.create_host(subscription_template_ids={'v2ray-json': custom.id})
+        with patch.object(template_crud, 'is_used', return_value=False):
+            response = self.client.delete(f'/api/subscription-templates/{custom.id}')
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(response.json()['detail'], 'Templates assigned to hosts cannot be deleted')
+        self.assertIsNotNone(template_crud.get_template(self.db, custom.id))
+        self.assertEqual(host.subscription_template_ids, {'v2ray-json': custom.id})
 
     def test_all_formats_generate_using_defaults(self):
         self.create_host()

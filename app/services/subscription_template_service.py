@@ -161,10 +161,17 @@ def delete_template(
     template_id: int, db: Session = Depends(get_db), admin: Admin = Depends(Admin.check_sudo_admin),
 ):
     template = _get_template(db, template_id)
-    if template.is_default or crud.is_used(db, template_id):
-        raise HTTPException(status_code=409, detail="Default or assigned templates cannot be deleted")
+    if template.is_default:
+        raise HTTPException(status_code=409, detail="Default templates cannot be deleted")
+    if crud.is_used(db, template_id):
+        raise HTTPException(status_code=409, detail="Templates assigned to hosts cannot be deleted")
     db.delete(template)
-    _commit(db)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        # A host can bind the template between the usage check and the DELETE.
+        raise HTTPException(status_code=409, detail="Templates assigned to hosts cannot be deleted") from exc
     logger.info("Subscription template %s deleted by %s", template_id, admin.username)
 
 
