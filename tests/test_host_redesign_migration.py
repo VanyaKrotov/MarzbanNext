@@ -43,9 +43,10 @@ class HostRedesignMigrationTests(TestCase):
         now = datetime(2024, 1, 2)
         with self.engine.begin() as connection:
             inbound_id = connection.execute(metadata.tables["inbounds"].insert().values(
-                tag="XHTTP", enabled=True, readonly=False, content={"tag": "XHTTP", "protocol": "vless", "port": 443,
-                                                                    "settings": {"clients": []}, "streamSettings": {"network": "xhttp", "security": "none",
-                                                                                                                    "xhttpSettings": {"mode": "packet-up"}}})).inserted_primary_key[0]
+                tag="XHTTP", enabled=True, readonly=False,
+                content={"tag": "XHTTP", "protocol": "vless", "port": 443, "settings": {"clients": []},
+                         "streamSettings": {"network": "xhttp", "security": "none",
+                                            "xhttpSettings": {"mode": "packet-up"}}})).inserted_primary_key[0]
             ids = []
             for index in range(2):
                 ids.append(connection.execute(metadata.tables["hosts"].insert().values(
@@ -77,40 +78,40 @@ class HostRedesignMigrationTests(TestCase):
         self.assertIn("subscription_balancers", sa.inspect(self.engine).get_table_names())
         with self.engine.connect() as connection:
             self.assertEqual(preflight(connection)["errors"], [])
-        self.migrate("upgrade", "c82a6f0159bd")
+        self.migrate("upgrade", "head")
         metadata = sa.MetaData()
         metadata.reflect(self.engine)
         self.assertNotIn("subscription_balancers", metadata.tables)
         with self.engine.connect() as connection:
             hosts = {row["id"]: row for row in connection.execute(metadata.tables["hosts"].select()).mappings()}
             for host_id in ids:
-                self.assertTrue(hosts[host_id]["show_when_composed"])
+                self.assertFalse(hosts[host_id]["is_hidden"])
                 self.assertEqual(hosts[host_id]["overrides"]["transport"]["xhttp"]["extra"],
                                  {"scMaxBufferedPosts": 0, "xPaddingObfsMode": False, "uplinkHTTPMethod": "PUT"})
-            owners = [host for host in hosts.values() if host["id"] not in ids]
-            self.assertEqual(len(owners), 1)
-            owner = owners[0]
-            self.assertFalse(owner["show_when_composed"])
-            self.assertEqual(owner["balancer_settings"]["clients"]["sing-box"]["strategy"], "least_ping")
-            links = list(connection.execute(metadata.tables["host_links"].select()).mappings())
-            self.assertEqual([(link["owner_host_id"], link["member_host_id"])
-                             for link in links], [(owner["id"], ids[1])])
+            recipients = [host for host in hosts.values() if host["id"] not in ids]
+            self.assertEqual(len(recipients), 1)
+            owner = recipients[0]
+            self.assertFalse(owner["is_hidden"])
+            self.assertNotIn("host_links", metadata.tables)
+            self.assertNotIn("balancer_settings", metadata.tables["hosts"].c)
+            self.assertNotIn("show_when_composed", metadata.tables["hosts"].c)
             formats = set(connection.execute(sa.select(metadata.tables["host_subscription_templates"].c.format).where(
                 metadata.tables["host_subscription_templates"].c.host_id == owner["id"])).scalars())
             self.assertEqual(formats, {"v2ray-json"})
             self.assertEqual(list(connection.exec_driver_sql("PRAGMA foreign_key_check")), [])
-        result = self.migrate("downgrade", "f6a82c1d5e90", succeeds=False)
-        self.assertIn("backup restoration", result.stderr)
-        self.assertIn("host_links", sa.inspect(self.engine).get_table_names())
+        self.migrate("downgrade", "f6a82c1d5e90")
+        with self.engine.connect() as connection:
+            self.assertEqual(connection.exec_driver_sql("SELECT COUNT(*) FROM subscription_balancers").scalar(), 1)
+            self.assertEqual(connection.exec_driver_sql("SELECT COUNT(*) FROM subscription_balancer_hosts").scalar(), 2)
 
     def test_ordinary_hosts_upgrade_downgrade_and_upgrade(self):
         ids = self.seed()
         with self.engine.begin() as connection:
             connection.exec_driver_sql("DELETE FROM subscription_balancer_hosts")
             connection.exec_driver_sql("DELETE FROM subscription_balancers")
-        self.migrate("upgrade", "c82a6f0159bd")
+        self.migrate("upgrade", "head")
         self.migrate("downgrade", "f6a82c1d5e90")
-        self.migrate("upgrade", "c82a6f0159bd")
+        self.migrate("upgrade", "head")
         with self.engine.connect() as connection:
             self.assertEqual(connection.exec_driver_sql("SELECT id FROM hosts ORDER BY id").scalars().all(), ids)
 
@@ -119,7 +120,7 @@ class HostRedesignMigrationTests(TestCase):
         with self.engine.connect() as connection:
             report = preflight(connection)
             self.assertEqual(report["errors"][0]["reason"], "empty_balancer_requires_source_host")
-        self.migrate("upgrade", "c82a6f0159bd", succeeds=False)
+        self.migrate("upgrade", "head", succeeds=False)
         inspector = sa.inspect(self.engine)
         self.assertNotIn("host_links", inspector.get_table_names())
         self.assertIn("sc_max_buffered_posts", {column["name"] for column in inspector.get_columns("hosts")})

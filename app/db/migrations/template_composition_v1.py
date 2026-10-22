@@ -1,12 +1,14 @@
 """Frozen conversion of host composition into native template configuration."""
 
 from copy import deepcopy
+from datetime import UTC, datetime
 import json
 
 import sqlalchemy as sa
 
 
-TABLES = ("hosts", "host_links", "subscription_templates", "host_subscription_templates", "host_group_hosts")
+TABLES = ("hosts", "subscription_templates", "host_subscription_templates", "host_group_hosts")
+LEGACY_TABLES = (*TABLES, "inbounds", "subscription_balancers", "subscription_balancer_hosts")
 
 
 def read_snapshot(connection, names=TABLES):
@@ -21,13 +23,6 @@ def encode_snapshot(snapshot):
     return json.loads(json.dumps(snapshot, default=lambda value: value.isoformat()))
 
 
-def options_for(settings, target):
-    result = {"strategy": "least_ping", "probe_url": "https://www.gstatic.com/generate_204", "probe_interval": 300}
-    result.update(deepcopy(settings or {}))
-    result.update(result.pop("clients", {}).get(target, {}))
-    return result
-
-
 def wrap_template(source, overlay, target):
     # Capture the original source, retaining Jinja expressions and user-defined sections verbatim.
     return ("{% set original_config %}" + source + "{% endset %}\n"
@@ -36,10 +31,11 @@ def wrap_template(source, overlay, target):
 
 
 def wrap_aggregate(source, entries, target):
-    # Keep an old disabled/forbidden owner's group dormant; members cannot grant owner access.
+    # Disabled balancers retain their native configuration but never enter the response.
     parts = ["{% set composition_nodes = [] %}"]
-    for owner_id, node in entries:
-        parts.append("{% if " + str(owner_id) + " in host_ids %}{% set composition_nodes = composition_nodes + ["
+    for member_ids, node in entries:
+        parts.append("{% if " + repr(member_ids) + " | select('in', host_ids) | list %}"
+                     "{% set composition_nodes = composition_nodes + ["
                      + repr(node) + "] %}{% endif %}")
     if target == "clash":
         parts.append("{% set proxy_remarks = proxy_remarks + (composition_nodes | map(attribute='name')"
@@ -51,25 +47,10 @@ def wrap_aggregate(source, entries, target):
     return "".join(parts)
 
 
-def xray_overlay(owner, members, options):
-    prefix = f"mb-auto-{owner['id']}-"
+def xray_overlay(balancer, members):
+    prefix = f"mb-auto-{balancer['id']}-"
     strategy = {"type": {"least_ping": "leastPing", "least_load": "leastLoad", "random": "random",
-                         "round_robin": "roundRobin"}[options["strategy"]]}
-    settings = {}
-    for key, value in options.get("strategy_settings", {}).items():
-        if key == "max_rtt_ms":
-            settings["maxRTT"] = f"{value}ms"
-        elif key == "failure_tolerance":
-            settings["tolerance"] = value
-        elif key == "baselines_ms":
-            settings["baselines"] = [f"{item}ms" for item in value]
-        elif key == "costs":
-            settings[key] = [{"regexp": False, "match": f"{prefix}host-{item['host_id']}", "value": item["value"]}
-                             for item in value]
-        else:
-            settings[key] = value
-    if settings:
-        strategy["settings"] = settings
+                         "round_robin": "roundRobin"}[balancer["strategy"]]}
     overlay = {
         "marzban": {"addVirtualHostAsOutbound": False, "injectHosts": [
             {"selector": {"type": "ids", "values": [host_id]}, "selectFrom": "ALL",
@@ -77,106 +58,136 @@ def xray_overlay(owner, members, options):
         "routing": {"balancers": [{"tag": prefix + "balancer", "selector": [prefix + "host-"],
                                    "strategy": strategy}]},
     }
-    if options["strategy"] in {"least_ping", "least_load"}:
-        overlay["observatory"] = {"subjectSelector": [prefix + "host-"], "probeUrl": options["probe_url"],
-                                  "probeInterval": f"{options['probe_interval']}s",
-                                  "enableConcurrency": options.get("enable_concurrency", True)}
+    if balancer["strategy"] in {"least_ping", "least_load"}:
+        overlay["observatory"] = {"subjectSelector": [prefix + "host-"], "probeUrl": balancer["probe_url"],
+                                  "probeInterval": f"{balancer['probe_interval']}s",
+                                  "enableConcurrency": True}
     return overlay
 
 
+def aggregate_node(balancer, members, target):
+    selection = {"selector": {"type": "ids", "values": members}, "selectFrom": "ALL"}
+    node = {"name" if target == "clash" else "tag": balancer["name"]}
+    if target == "clash":
+        round_robin = balancer["strategy"] == "round_robin"
+        node.update(type="load-balance" if round_robin else "url-test", url=balancer["probe_url"],
+                    interval=balancer["probe_interval"], proxies=[],
+                    marzban=dict(selection, **{"include-proxies": True}))
+        if round_robin:
+            node["strategy"] = "round-robin"
+    else:
+        node.update(type="urltest", url=balancer["probe_url"], interval=f"{balancer['probe_interval']}s",
+                    outbounds=[], marzban=dict(selection, includeProxies=True))
+    return node
+
+
 def convert(snapshot):
-    """Prepare every transformation before the migration performs its first DDL statement."""
-    result = deepcopy(snapshot)
+    """Convert master rows straight to the final schema, without synthetic composition owners."""
+    from app.db.migrations.host_redesign_v1 import COMPOSITE_FORMATS, legacy_overrides, supports_family
+
+    result = {name: deepcopy(snapshot[name]) for name in TABLES}
     hosts = {host["id"]: host for host in result["hosts"]}
-    templates = {template["id"]: template for template in result["subscription_templates"]}
+    inbounds = {row["id"]: row for row in snapshot["inbounds"]}
+    templates = {row["id"]: row for row in result["subscription_templates"]}
     bindings = {(row["host_id"], row["format"]): row["template_id"]
                 for row in result["host_subscription_templates"]}
-    links = {}
-    for link in sorted(result["host_links"], key=lambda row: row["position"]):
-        links.setdefault(link["owner_host_id"], []).append(link["member_host_id"])
-    owners = [host for host in hosts.values() if host["balancer_settings"] is not None or host["id"] in links]
+    now = datetime.now(UTC).replace(tzinfo=None)
+    for host in hosts.values():
+        overrides = legacy_overrides(host, inbounds[host["inbound_id"]])
+        normalized = {key: host[key] for key in ("id", "remark", "address", "inbound_id", "position")}
+        normalized.update(port=host["port"] or None, enabled=not bool(host["is_disabled"]), is_hidden=False,
+                          overrides=overrides, created_at=now, updated_at=now)
+        host.clear()
+        host.update(normalized)
     next_host = max(hosts, default=0) + 1
     next_template = max(templates, default=0) + 1
+    position = max((host["position"] for host in hosts.values()), default=-1) + 1
     overlays = {}
-    for owner in owners:
-        members = [owner["id"], *links.get(owner["id"], [])]
-        for target in ("v2ray-json", "clash", "sing-box"):
-            template_id = bindings.get((owner["id"], target))
-            if template_id is None:
+    for balancer in sorted(snapshot["subscription_balancers"], key=lambda row: (row["position"], row["id"])):
+        if balancer["strategy"] not in {"least_ping", "least_load", "random", "round_robin"}:
+            raise RuntimeError(f"Balancer {balancer['id']}: unsupported strategy {balancer['strategy']}")
+        member_ids = {row["host_id"] for row in snapshot["subscription_balancer_hosts"]
+                      if row["balancer_id"] == balancer["id"]}
+        for target in COMPOSITE_FORMATS:
+            members = sorted((hosts[host_id] for host_id in member_ids
+                              if (host_id, target) in bindings
+                              and supports_family(target, inbounds[hosts[host_id]["inbound_id"]])),
+                             key=lambda host: (not host["enabled"], host["position"], host["id"]))
+            if not members:
                 continue
-            options = options_for(owner["balancer_settings"], target)
-            strategies = {"v2ray-json": {"least_ping", "least_load", "random", "round_robin"},
-                          "clash": {"least_ping", "round_robin"}, "sing-box": {"least_ping"}}
-            if options["strategy"] not in strategies[target]:
-                raise RuntimeError(f"Host {owner['id']}: unsupported legacy strategy for {target}")
-            if target == "v2ray-json":
-                template = deepcopy(templates[template_id])
-                overlay = xray_overlay(owner, members, options)
-                # Rewriting proxy routing is explicit and checked; native user rules retain their order.
-                template["id"] = next_template
-                template["name"] = f"Migrated Xray host {owner['id']} ({next_template})"
-                used_names = {row["name"] for row in result["subscription_templates"] if row["format"] == target}
-                while template["name"] in used_names:
-                    template["name"] += "_"
-                template["default_marker"] = None
-                template["content"] = wrap_template(template["content"], overlay, target)
-                template["content"] = "{% set migrated %}" + template["content"] + (
-                    "{% endset %}{{ migrated | migrate_xray_routing(" + json.dumps(
-                        f"mb-auto-{owner['id']}-balancer") + f", {owner['id']}, host_ids)" + " | tojson }}")
-                result["subscription_templates"].append(template)
-                recipient = deepcopy(owner)
-                recipient.update(id=next_host, balancer_settings=None, show_when_composed=True,
-                                 remark=options.get("remark") or owner["remark"] + " · Auto")
-                if len(recipient["remark"]) > 256:
-                    raise RuntimeError(f"Host {owner['id']}: shorten the composite remark to at most 256 characters")
-                result["hosts"].append(recipient)
-                result["host_subscription_templates"].append({"host_id": next_host, "format": target,
-                                                              "template_id": next_template})
-                for group in snapshot["host_group_hosts"]:
-                    if group["host_id"] == owner["id"]:
-                        result["host_group_hosts"].append(dict(group, host_id=next_host))
-                next_host += 1
-                next_template += 1
-            else:
-                node = {"name" if target == "clash" else "tag":
-                        options.get("remark") or owner["remark"] + " · Auto"}
-                selection = {"selector": {"type": "ids", "values": members}, "selectFrom": "ALL"}
-                if target == "clash":
-                    node.update(type="url-test" if options["strategy"] == "least_ping" else "load-balance",
-                                url=options["probe_url"], interval=options["probe_interval"], proxies=[],
-                                marzban=dict(selection, **{"include-proxies": True}))
-                    if options["strategy"] == "round_robin":
-                        node["strategy"] = "round-robin"
-                    node.update({key: options[key] for key in ("tolerance", "lazy") if key in options})
-                else:
-                    node.update(type="urltest", url=options["probe_url"], interval=f"{options['probe_interval']}s",
-                                outbounds=[], marzban=dict(selection, includeProxies=True))
-                    if "tolerance" in options:
-                        node["tolerance"] = options["tolerance"]
-                    if "idle_timeout" in options:
-                        node["idle_timeout"] = f"{options['idle_timeout']}s"
-                    if "interrupt_existing_connections" in options:
-                        node["interrupt_exist_connections"] = options["interrupt_existing_connections"]
-                # Only one common template per aggregate response; source templates remain separate.
-                overlays.setdefault((target, template_id), []).append((owner["id"], node))
+            source = members[0]
+            selected_ids = [host["id"] for host in members]
+            template_id = bindings[source["id"], target]
+            if target != "v2ray-json":
+                node = aggregate_node(balancer, selected_ids, target)
+                overlays.setdefault((target, template_id), []).append(
+                    (selected_ids if balancer["enabled"] else [], node))
+                continue
+            template = deepcopy(templates[template_id])
+            template.update(id=next_template, default_marker=None,
+                            name=f"Migrated Xray balancer {balancer['id']} ({next_template})")
+            used_names = {row["name"] for row in result["subscription_templates"] if row["format"] == target}
+            while template["name"] in used_names:
+                template["name"] += "_"
+            # Balancer IDs form their own namespace; no temporary host IDs enter selectors.
+            overlay = xray_overlay(balancer, selected_ids)
+            template["content"] = wrap_template(template["content"], overlay, target)
+            template["content"] = "{% set migrated %}" + template["content"] + (
+                "{% endset %}{{ migrated | migrate_xray_routing(" + json.dumps(
+                    f"mb-auto-{balancer['id']}-balancer") + ", none, host_ids) | tojson }}")
+            result["subscription_templates"].append(template)
+            recipient = deepcopy(source)
+            recipient.update(id=next_host, remark=balancer["name"], enabled=bool(balancer["enabled"]),
+                             position=position, created_at=balancer["created_at"], updated_at=balancer["updated_at"])
+            result["hosts"].append(recipient)
+            result["host_subscription_templates"].append({"host_id": next_host, "format": target,
+                                                          "template_id": next_template})
+            groups = {row["group_id"] for row in snapshot["host_group_hosts"] if row["host_id"] in member_ids}
+            result["host_group_hosts"].extend({"host_id": next_host, "group_id": group_id}
+                                              for group_id in sorted(groups))
+            next_host += 1
+            next_template += 1
+            position += 1
     for (target, template_id), entries in overlays.items():
         used = {row["template_id"] for row in result["host_subscription_templates"] if row["format"] == target
-                and hosts.get(row["host_id"], {}).get("enabled", False)
-                and hosts[row["host_id"]]["show_when_composed"]}
+                and hosts.get(row["host_id"], {}).get("enabled", False)}
         if used - {template_id}:
             raise RuntimeError(f"{target}: incompatible aggregate templates {sorted(used | {template_id})}; "
                                "assign one shared template before upgrading")
-        if not used and any(hosts[owner_id]["enabled"] for owner_id, _ in entries):
-            raise RuntimeError(f"{target}: all hosts are hidden; keep one visible recipient before upgrading")
         template = templates[template_id]
         template["content"] = wrap_aggregate(template["content"], entries, target)
     for template in result["subscription_templates"]:
         if template["format"] == "clash":
             template["content"] = ("{% set legacy_clash %}" + template["content"]
                                    + "{% endset %}{{ legacy_clash | preserve_clash_groups | tojson }}")
-    # Persist only the new host contract; archives retain every removed value.
-    for host in result["hosts"]:
-        host["is_hidden"] = not host.pop("show_when_composed")
-        host.pop("balancer_settings")
-    result.pop("host_links")
     return result
+
+
+def validate_conversion(original, converted):
+    from app.models.subscription_template import SubscriptionFormat
+    from app.utils.subscription_templates import validate_subscription_template
+
+    before = {row["id"]: row["content"] for row in original["subscription_templates"]}
+    context = {"host_ids": [row["id"] for row in original["hosts"]]}
+    for template in converted["subscription_templates"]:
+        if before.get(template["id"]) != template["content"]:
+            try:
+                validate_subscription_template(SubscriptionFormat(template["format"]), template["content"], context)
+            except ValueError as exc:
+                raise RuntimeError(f"Template {template['id']} cannot be migrated safely: {exc}") from exc
+
+
+def prepare(connection):
+    """Build and validate one complete transfer plan for both CLI and Alembic."""
+    from app.db.migrations.host_redesign_v1 import inspect_legacy
+
+    original = read_snapshot(connection, LEGACY_TABLES)
+    report = inspect_legacy(original)
+    converted = None
+    if not report["errors"]:
+        try:
+            converted = convert(original)
+            validate_conversion(original, converted)
+        except (ValueError, RuntimeError) as exc:
+            report["errors"].append({"reason": str(exc)})
+    return original, converted, report

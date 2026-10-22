@@ -8,12 +8,14 @@ import tempfile
 from unittest import TestCase
 
 import sqlalchemy as sa
+from alembic.config import Config
+from alembic.script import ScriptDirectory
 from sqlalchemy.dialects import mysql
 from sqlalchemy.dialects.mysql.mariadb import MariaDBDialect
 from sqlalchemy.orm import Session
 from sqlalchemy.schema import CreateTable
 
-from app.db.migrations.template_composition_v1 import convert, encode_snapshot, read_snapshot
+from app.db.migrations.template_composition_v1 import LEGACY_TABLES, encode_snapshot, read_snapshot
 from app.subscription.contracts import RenderInput
 from app.subscription.generators import GeneratorRegistry
 from app.subscription.loader import SubscriptionSnapshotLoader
@@ -27,7 +29,7 @@ class TemplateCompositionMigrationTests(TestCase):
         self.directory = tempfile.TemporaryDirectory(prefix="template-composition-")
         self.url = "sqlite:///" + (Path(self.directory.name) / "test.db").as_posix()
         self.engine = sa.create_engine(self.url)
-        self.migrate("upgrade", "c82a6f0159bd")
+        self.migrate("upgrade", "f6a82c1d5e90")
 
     def tearDown(self):
         self.engine.dispose()
@@ -58,87 +60,126 @@ class TemplateCompositionMigrationTests(TestCase):
             for index in range(2):
                 host_id = connection.execute(metadata.tables["hosts"].insert().values(
                     remark=f"Host {index}", address=f"host-{index}.example.com", inbound_id=inbound,
-                    enabled=True, position=index, show_when_composed=True,
-                    overrides={"security": {"allow_insecure": False, "alpn": []}},
-                    balancer_settings={"strategy": "round_robin", "probe_url": "https://example.com/204",
-                                       "probe_interval": 60, "clients": {
-                                           "sing-box": {"strategy": "least_ping", "tolerance": 0,
-                                                        "interrupt_existing_connections": False},
-                                           "clash": {"lazy": False, "tolerance": 0}}} if index == 0 else None,
-                    created_at=datetime(2024, 1, 2), updated_at=datetime(2024, 1, 2))).inserted_primary_key[0]
+                    position=index, security="inbound_default", mux_enable=False, random_user_agent=False,
+                    use_sni_as_host=False, is_disabled=False)).inserted_primary_key[0]
                 host_ids.append(host_id)
                 for template in templates:
                     connection.execute(metadata.tables["host_subscription_templates"].insert().values(
                         host_id=host_id, format=template["format"], template_id=template["id"]))
-            connection.execute(metadata.tables["host_links"].insert().values(
-                owner_host_id=host_ids[0], member_host_id=host_ids[1], position=0))
+            balancer_id = connection.execute(metadata.tables["subscription_balancers"].insert().values(
+                name="Automatic", enabled=True, strategy="round_robin", probe_url="https://example.com/204",
+                probe_interval=60, position=0, created_at=datetime(2024, 1, 2),
+                updated_at=datetime(2024, 1, 2))).inserted_primary_key[0]
+            for host_id in host_ids:
+                connection.execute(metadata.tables["subscription_balancer_hosts"].insert().values(
+                    balancer_id=balancer_id, host_id=host_id))
+                group_id = f"group-{host_id}"
+                connection.execute(metadata.tables["host_groups"].insert().values(
+                    id=group_id, name=group_id, created_at=datetime(2024, 1, 2), tags=[]))
+                connection.execute(metadata.tables["host_group_hosts"].insert().values(
+                    host_id=host_id, group_id=group_id))
         return host_ids
 
     def test_preserve_settings_generate_every_format_downgrade_and_reupgrade_with_foreign_keys(self):
         ids = self.seed()
+        original_schema = self.schema()
         with self.engine.connect() as connection:
-            original = encode_snapshot(read_snapshot(connection))
+            original = encode_snapshot(read_snapshot(connection, LEGACY_TABLES))
         self.migrate("upgrade", "head")
         self.assertNotIn("host_links", sa.inspect(self.engine).get_table_names())
         with Session(self.engine) as db:
             settings = build_default_runtime_settings()
             snapshot = SubscriptionSnapshotLoader().load(db, settings)
             self.assertEqual(len(snapshot.hosts), 3)
-            self.assertEqual(snapshot.hosts[0].overrides, {"security": {"allow_insecure": False, "alpn": []}})
+            self.assertEqual(snapshot.hosts[0].overrides, {})
             recipient = next(host for host in snapshot.hosts if host.id not in ids)
             self.assertEqual(set(recipient.subscription_template_ids), {"v2ray-json"})
+            group_bindings = sa.Table("host_group_hosts", sa.MetaData(), autoload_with=self.engine)
+            self.assertEqual(set(db.execute(sa.select(group_bindings.c.group_id).where(
+                group_bindings.c.host_id == recipient.id)).scalars()), {f"group-{host_id}" for host_id in ids})
+            templates = sa.Table("subscription_templates", sa.MetaData(), autoload_with=self.engine)
+            current = {row["id"]: row for row in db.execute(templates.select()).mappings()}
+            for template in original["subscription_templates"]:
+                migrated = current[template["id"]]
+                self.assertIn(template["content"], migrated["content"])
+                self.assertEqual(migrated["format"], template["format"])
+                self.assertEqual(migrated["name"], template["name"])
+                self.assertEqual(migrated["default_marker"], template["default_marker"])
+                self.assertEqual(migrated["updated_at"].isoformat(), template["updated_at"])
             for target in ("v2ray", "v2ray-json", "clash", "sing-box", "outline"):
                 with self.subTest(target=target):
                     plans, _ = ProfilePlanner().plan(snapshot, target,
-                                                     {"shadowsocks": {"password": "test-password", "method": "aes-256-gcm"}},
+                                                     {"shadowsocks": {"password": "test-password",
+                                                                      "method": "aes-256-gcm"}},
                                                      {"shadowsocks": ["SS"]}, ResolveContext({}))
-                    result = GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults))
+                    result = GeneratorRegistry().for_target(target).generate(
+                        RenderInput(target, plans, snapshot.defaults))
                     self.assertTrue(result.body)
                     if target == "v2ray-json":
-                        document = next(item for item in json.loads(result.body) if item["remarks"].endswith(" · Auto"))
+                        document = next(item for item in json.loads(result.body) if item["remarks"] == "Automatic")
                         self.assertEqual(document["routing"]["balancers"][0]["strategy"]["type"], "roundRobin")
                         self.assertEqual(len([item for item in document["outbounds"]
                                          if item["tag"].startswith("mb-auto-")]), 2)
                     if target == "sing-box":
                         group = next(node for node in json.loads(result.body)[
-                                     "outbounds"] if node["tag"] == "Host 0 · Auto")
-                        self.assertEqual(group["tolerance"], 0)
-                        self.assertFalse(group["interrupt_exist_connections"])
-        self.migrate("downgrade", "c82a6f0159bd")
+                                     "outbounds"] if node["tag"] == "Automatic")
+                        self.assertEqual(group["type"], "urltest")
+                        self.assertEqual(group["interval"], "60s")
+        self.migrate("downgrade", "f6a82c1d5e90")
+        self.assertEqual(self.schema(), original_schema)
         with self.engine.connect() as connection:
-            self.assertEqual(encode_snapshot(read_snapshot(connection)), original)
+            self.assertEqual(encode_snapshot(read_snapshot(connection, LEGACY_TABLES)), original)
             self.assertEqual(connection.exec_driver_sql("PRAGMA foreign_key_check").all(), [])
         self.migrate("upgrade", "head", foreign_keys=False)
+        self.migrate("downgrade", "f6a82c1d5e90", foreign_keys=False)
+        self.assertEqual(self.schema(), original_schema)
+
+    def schema(self):
+        inspector = sa.inspect(self.engine)
+        return {name: {
+            "columns": {column["name"]: (str(column["type"]), column["nullable"], column["default"])
+                        for column in inspector.get_columns(name)},
+            "foreign_keys": inspector.get_foreign_keys(name),
+            "indexes": inspector.get_indexes(name),
+            "unique": inspector.get_unique_constraints(name),
+            "checks": inspector.get_check_constraints(name),
+        } for name in LEGACY_TABLES}
+
+    def test_single_direct_revision_after_master(self):
+        scripts = ScriptDirectory.from_config(Config("alembic.ini"))
+        self.assertEqual(scripts.get_heads(), ["e5c14a9d72b0"])
+        changes = list(scripts.iterate_revisions("head", "f6a82c1d5e90"))
+        self.assertEqual([revision.revision for revision in changes], ["e5c14a9d72b0"])
+        self.assertEqual(changes[0].down_revision, "f6a82c1d5e90")
 
     def test_conflicting_observatory_fails_before_ddl(self):
         self.seed()
         with self.engine.begin() as connection:
-            hosts = sa.Table("hosts", sa.MetaData(), autoload_with=connection)
-            connection.execute(hosts.update().where(hosts.c.id == 1).values(balancer_settings={
-                "strategy": "least_ping", "probe_url": "https://example.com", "probe_interval": 30}))
+            balancers = sa.Table("subscription_balancers", sa.MetaData(), autoload_with=connection)
+            connection.execute(balancers.update().values(
+                strategy="least_ping", probe_url="https://example.com", probe_interval=30))
             templates = sa.Table("subscription_templates", sa.MetaData(), autoload_with=connection)
             connection.execute(templates.update().where(templates.c.format == "v2ray-json").values(
                 content='{"outbounds": [], "observatory": {"probeUrl": "https://other.example.com"}}'))
         result = self.migrate("upgrade", "head", success=False)
         self.assertIn("cannot be migrated safely", result.stderr)
         self.assertNotIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
-        self.assertIn("host_links", sa.inspect(self.engine).get_table_names())
+        self.assertIn("subscription_balancers", sa.inspect(self.engine).get_table_names())
 
     def test_downgrade_refuses_to_overwrite_new_settings(self):
         self.seed()
         self.migrate("upgrade", "head")
         with self.engine.begin() as connection:
             connection.exec_driver_sql("UPDATE hosts SET remark='Edited' WHERE id=1")
-        result = self.migrate("downgrade", "c82a6f0159bd", success=False)
+        result = self.migrate("downgrade", "f6a82c1d5e90", success=False)
         self.assertIn("changed after upgrading", result.stderr)
         self.assertIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
 
     def test_legacy_explicit_clash_group_does_not_gain_generated_members(self):
         self.seed()
         with self.engine.begin() as connection:
-            hosts = sa.Table("hosts", sa.MetaData(), autoload_with=connection)
-            connection.execute(hosts.update().values(balancer_settings=None))
-            connection.exec_driver_sql("DELETE FROM host_links")
+            connection.exec_driver_sql("DELETE FROM subscription_balancer_hosts")
+            connection.exec_driver_sql("DELETE FROM subscription_balancers")
             templates = sa.Table("subscription_templates", sa.MetaData(), autoload_with=connection)
             connection.execute(templates.update().where(templates.c.format == "clash").values(content=json.dumps({
                 "proxies": [], "proxy-groups": [{"name": "Manual", "type": "select", "proxies": ["DIRECT"]}],
@@ -153,58 +194,97 @@ class TemplateCompositionMigrationTests(TestCase):
                                              {"shadowsocks": ["SS"]}, ResolveContext({}))
             result = GeneratorRegistry().for_target("clash").generate(RenderInput("clash", plans, snapshot.defaults))
             self.assertEqual(yaml.safe_load(result.body)["proxy-groups"][0]["proxies"], ["DIRECT"])
-        self.migrate("downgrade", "c82a6f0159bd")
+        self.migrate("downgrade", "f6a82c1d5e90")
 
-    def test_least_load_costs_and_disabled_owner_groups_are_preserved(self):
-        ids = self.seed()
+    def test_all_legacy_strategies_and_disabled_balancers(self):
+        self.seed()
         with self.engine.begin() as connection:
-            hosts = sa.Table("hosts", sa.MetaData(), autoload_with=connection)
-            settings = connection.execute(sa.select(hosts.c.balancer_settings).where(hosts.c.id == ids[0])).scalar()
-            settings["clients"]["v2ray-json"] = {
-                "strategy": "least_load", "enable_concurrency": False,
-                "strategy_settings": {"expected": 2, "max_rtt_ms": 500, "failure_tolerance": 0,
-                                      "baselines_ms": [100, 200], "costs": [
-                                          {"host_id": ids[0], "value": 2}, {"host_id": ids[1], "value": 3}]}}
-            connection.execute(hosts.update().where(hosts.c.id == ids[0]).values(balancer_settings=settings))
+            table = sa.Table("subscription_balancers", sa.MetaData(), autoload_with=connection)
+            links = sa.Table("subscription_balancer_hosts", sa.MetaData(), autoload_with=connection)
+            base = dict(connection.execute(table.select()).mappings().one())
+            for index, strategy in enumerate(("least_ping", "least_load", "random", "round_robin"), start=2):
+                connection.execute(table.insert().values(dict(base, id=index, strategy=strategy, name=strategy,
+                                                              enabled=index != 5, position=index)))
+                connection.execute(links.insert(), [{"balancer_id": index, "host_id": host_id} for host_id in (1, 2)])
         self.migrate("upgrade", "head")
         with Session(self.engine) as db:
-            settings = build_default_runtime_settings()
-            snapshot = SubscriptionSnapshotLoader().load(db, settings)
+            snapshot = SubscriptionSnapshotLoader().load(db, build_default_runtime_settings())
             proxies = {"shadowsocks": {"password": "password", "method": "aes-256-gcm"}}
-            plans, _ = ProfilePlanner().plan(snapshot, "v2ray-json", proxies,
-                                             {"shadowsocks": ["SS"]}, ResolveContext({}))
-            result = GeneratorRegistry().for_target("v2ray-json").generate(RenderInput("v2ray-json", plans, snapshot.defaults))
-            document = next(item for item in json.loads(result.body) if item["remarks"].endswith(" · Auto"))
-            strategy = document["routing"]["balancers"][0]["strategy"]
-            self.assertEqual(strategy["type"], "leastLoad")
-            self.assertEqual(strategy["settings"]["tolerance"], 0)
-            self.assertEqual(strategy["settings"]["maxRTT"], "500ms")
-            self.assertEqual(strategy["settings"]["costs"][0]["match"], f"mb-auto-{ids[0]}-host-{ids[0]}")
-            self.assertFalse(document["observatory"]["enableConcurrency"])
-            from app.db.models.proxies import ProxyHost
+            for target in ("v2ray-json", "clash", "sing-box"):
+                plans, _ = ProfilePlanner().plan(snapshot, target, proxies, {"shadowsocks": ["SS"]}, ResolveContext({}))
+                result = GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults))
+                self.assertNotIn('"round_robin"', result.body)
+                if target == "v2ray-json":
+                    documents = {item["remarks"]: item for item in json.loads(result.body)}
+                    for name, kind in (("least_ping", "leastPing"), ("least_load", "leastLoad"), ("random", "random")):
+                        self.assertEqual(documents[name]["routing"]["balancers"][0]["strategy"]["type"], kind)
+                    self.assertNotIn("round_robin", documents)
+                else:
+                    import yaml
 
-            member = db.get(ProxyHost, ids[1])
-            member.enabled = False
-            db.commit()
-            snapshot = SubscriptionSnapshotLoader().load(db, settings)
-            plans, _ = ProfilePlanner().plan(snapshot, "v2ray-json", proxies,
+                    document = yaml.safe_load(result.body)
+                    nodes = document["proxy-groups" if target == "clash" else "outbounds"]
+                    names = {node["name" if target == "clash" else "tag"] for node in nodes}
+                    self.assertTrue({"Automatic", "least_ping", "least_load", "random"}.issubset(names))
+                    self.assertNotIn("round_robin", names)
+        self.migrate("downgrade", "f6a82c1d5e90")
+
+    def test_excluded_format_is_not_enabled_for_a_source(self):
+        ids = self.seed()
+        with self.engine.begin() as connection:
+            table = sa.Table("host_subscription_templates", sa.MetaData(), autoload_with=connection)
+            connection.execute(table.delete().where(table.c.host_id == ids[1], table.c.format == "v2ray-json"))
+        self.migrate("upgrade", "head")
+        with Session(self.engine) as db:
+            snapshot = SubscriptionSnapshotLoader().load(db, build_default_runtime_settings())
+            plans, _ = ProfilePlanner().plan(snapshot, "v2ray-json",
+                                             {"shadowsocks": {"password": "password", "method": "aes-256-gcm"}},
                                              {"shadowsocks": ["SS"]}, ResolveContext({}))
             result = GeneratorRegistry().for_target("v2ray-json").generate(
                 RenderInput("v2ray-json", plans, snapshot.defaults))
-            document = next(item for item in json.loads(result.body) if item["remarks"].endswith(" · Auto"))
-            self.assertEqual(document["routing"]["balancers"][0]["strategy"]["settings"]["costs"],
-                             [{"match": f"mb-auto-{ids[0]}-host-{ids[0]}", "regexp": False, "value": 2}])
-            self.assertEqual([node["tag"] for node in document["outbounds"] if node["tag"].startswith("mb-auto-")],
-                             [f"mb-auto-{ids[0]}-host-{ids[0]}"])
-            member.enabled = True
-            owner = db.get(ProxyHost, ids[0])
-            owner.enabled = False
-            db.commit()
-            snapshot = SubscriptionSnapshotLoader().load(db, settings)
-            for target in ("sing-box", "clash"):
-                plans, _ = ProfilePlanner().plan(snapshot, target, proxies, {"shadowsocks": ["SS"]}, ResolveContext({}))
+            document = next(item for item in json.loads(result.body) if item["remarks"] == "Automatic")
+            injected = [node for node in document["outbounds"] if node["tag"].startswith("mb-auto-")]
+            self.assertEqual(len(injected), 1)
+            self.assertIn(f"host-{ids[0]}", injected[0]["tag"])
+
+    def test_unavailable_first_member_does_not_remove_remaining_sources(self):
+        ids = self.seed()
+        self.migrate("upgrade", "head")
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("UPDATE hosts SET enabled=0 WHERE id=?", (ids[0],))
+        with Session(self.engine) as db:
+            snapshot = SubscriptionSnapshotLoader().load(db, build_default_runtime_settings())
+            for target in ("v2ray-json", "clash", "sing-box"):
+                plans, _ = ProfilePlanner().plan(snapshot, target,
+                                                 {"shadowsocks": {"password": "password", "method": "aes-256-gcm"}},
+                                                 {"shadowsocks": ["SS"]}, ResolveContext({}))
                 result = GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults))
-                self.assertNotIn("Host 0 · Auto", result.body)
+                self.assertTrue(result.body)
+                if target == "v2ray-json":
+                    document = next(item for item in json.loads(result.body) if item["remarks"] == "Automatic")
+                    tags = [node["tag"] for node in document["outbounds"] if node["tag"].startswith("mb-auto-")]
+                    self.assertEqual(tags, [f"mb-auto-1-host-{ids[1]}"])
+                else:
+                    import yaml
+
+                    document = yaml.safe_load(result.body)
+                    node = next(node for node in document["proxy-groups" if target == "clash" else "outbounds"]
+                                if node["name" if target == "clash" else "tag"] == "Automatic")
+                    self.assertEqual(node["proxies" if target == "clash" else "outbounds"], ["Host 1"])
+
+    def test_incompatible_aggregate_templates_fail_before_ddl(self):
+        self.seed()
+        with self.engine.begin() as connection:
+            templates = sa.Table("subscription_templates", sa.MetaData(), autoload_with=connection)
+            base = dict(connection.execute(templates.select().where(templates.c.format == "clash")).mappings().one())
+            base.update(id=20, name="Other", default_marker=None)
+            connection.execute(templates.insert().values(**base))
+            bindings = sa.Table("host_subscription_templates", sa.MetaData(), autoload_with=connection)
+            connection.execute(bindings.update().where(bindings.c.host_id == 2, bindings.c.format == "clash").values(
+                template_id=20))
+        result = self.migrate("upgrade", "head", success=False)
+        self.assertIn("incompatible aggregate templates", result.stderr)
+        self.assertNotIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
 
     def test_mysql_and_mariadb_runtime_schema_compiles(self):
         from app.db.base import Base
