@@ -136,8 +136,8 @@ def validate_directives(document, target):
 
     def check_remaining(value):
         if isinstance(value, dict):
-            if "marzban" in value or "remnawave" in value:
-                raise SubscriptionError("Unsupported template directive location or namespace")
+            if "marzban" in value:
+                raise SubscriptionError("Unsupported marzban directive location")
             for item in value.values():
                 check_remaining(item)
         elif isinstance(value, list):

@@ -7,7 +7,7 @@ type DirectiveSchema = MonacoJsonSchema & {
 };
 
 const noDirectives: MonacoJsonSchema = {
-  not: { anyOf: [{ required: ["marzban"] }, { required: ["remnawave"] }] },
+  not: { required: ["marzban"] },
 };
 const stringList: MonacoJsonSchema = { type: "array", items: { type: "string" } };
 
@@ -24,7 +24,6 @@ function xrayTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
     ...xrayCoreSchema,
     title: "Xray subscription template",
     description: "Client configuration with native routing and marzban source injection.",
-    not: { required: ["remnawave"] },
     properties: {
       ...properties,
       remarks: { type: "string" },
@@ -69,7 +68,6 @@ function singboxTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
         type: "array",
         items: {
           type: "object",
-          not: { required: ["remnawave"] },
           properties: {
             type: { type: "string", examples: ["selector", "urltest", "direct", "block"] },
             tag: { type: "string", minLength: 1 },
@@ -106,7 +104,6 @@ function clashTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
         type: "array",
         items: {
           type: "object",
-          not: { required: ["remnawave"] },
           properties: {
             name: { type: "string" },
             type: { type: "string", examples: ["select", "url-test", "load-balance", "fallback"] },
@@ -125,7 +122,6 @@ function clashTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
         type: "object",
         additionalProperties: {
           type: "object",
-          not: { required: ["remnawave"] },
           properties: {
             type: { type: "string", examples: ["inline", "http", "file"] },
             payload: { type: "array", items: { type: "object", ...noDirectives } },
