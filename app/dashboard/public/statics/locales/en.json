@@ -282,8 +282,8 @@
   "nodesPage.panelCertificate": "Panel certificate",
   "nodesPage.copyCertificate": "Copy certificate",
   "nodesPage.certificatesDescription": "Issue and manage TLS certificates for this node.",
-  "nodesPage.deleteCertificateTitle": "Delete certificate?",
-  "nodesPage.deleteCertificateDescription": "Certificate for {{domain}} will be permanently deleted.",
+  "nodesPage.deleteCertificateTitle": "Delete certificate",
+  "nodesPage.deleteCertificateDescription": "Delete the certificate for “{{domain}}”? This cannot be undone.",
   "nodesPage.deleteNode": "Delete node",
   "nodesPage.updateSuccess": "Node {{name}} updated",
   "nodesPage.connectionError": "The node could not establish a connection.",
@@ -372,8 +372,8 @@
   "settingsPage.balancers.create": "Create balancer",
   "settingsPage.balancers.edit": "Edit balancer",
   "settingsPage.balancers.delete": "Delete balancer",
-  "settingsPage.balancers.deleteTitle": "Delete balancer?",
-  "settingsPage.balancers.deleteDescription": "Balancer {{name}} will be deleted.",
+  "settingsPage.balancers.deleteTitle": "Delete balancer",
+  "settingsPage.balancers.deleteDescription": "Delete balancer “{{name}}”?",
   "settingsPage.balancers.deleted": "Balancer deleted",
   "settingsPage.balancers.saved": "Balancer saved",
   "settingsPage.balancers.name": "Name",
@@ -477,8 +477,8 @@
   "inboundsPage.content": "Inbound JSON",
   "inboundsPage.saved": "Inbound saved",
   "inboundsPage.deleted": "Inbound deleted",
-  "inboundsPage.deleteTitle": "Delete inbound?",
-  "inboundsPage.deleteDescription": "Inbound {{tag}} will be permanently deleted.",
+  "inboundsPage.deleteTitle": "Delete inbound",
+  "inboundsPage.deleteDescription": "Delete inbound “{{tag}}”? This cannot be undone.",
   "inboundsPage.emptyTitle": "No inbounds",
   "inboundsPage.emptyDescription": "Create an inbound.",
   "inboundsPage.loadErrorTitle": "Could not load inbounds",
@@ -508,8 +508,8 @@
   "outboundsPage.content": "Xray outbound JSON",
   "outboundsPage.saved": "Outbound saved",
   "outboundsPage.deleted": "Outbound deleted",
-  "outboundsPage.deleteTitle": "Delete outbound?",
-  "outboundsPage.deleteDescription": "Outbound {{tag}} will be permanently deleted.",
+  "outboundsPage.deleteTitle": "Delete outbound",
+  "outboundsPage.deleteDescription": "Delete outbound “{{tag}}”? This cannot be undone.",
   "outboundsPage.emptyTitle": "No outbounds",
   "outboundsPage.emptyDescription": "Create an outbound.",
   "outboundsPage.loadErrorTitle": "Failed to load outbounds",
@@ -533,8 +533,8 @@
   "routingPage.content": "Xray routing rule JSON",
   "routingPage.saved": "Routing rule saved",
   "routingPage.deleted": "Routing rule deleted",
-  "routingPage.deleteTitle": "Delete routing rule?",
-  "routingPage.deleteDescription": "Routing rule {{name}} will be permanently deleted.",
+  "routingPage.deleteTitle": "Delete routing rule",
+  "routingPage.deleteDescription": "Delete routing rule “{{name}}”? This cannot be undone.",
   "routingPage.emptyTitle": "No routing rules",
   "routingPage.emptyDescription": "Create a routing rule.",
   "routingPage.loadErrorTitle": "Failed to load routing rules",
@@ -582,8 +582,8 @@
   "hostsPage.groupCreateError": "Failed to create host group",
   "hostsPage.groupUpdateError": "Failed to update host group",
   "hostsPage.noTags": "No tags",
-  "hostsPage.deleteGroupTitle": "Delete host group?",
-  "hostsPage.deleteGroupDescription": "Group {{name}} will be deleted and detached from all hosts.",
+  "hostsPage.deleteGroupTitle": "Delete host group",
+  "hostsPage.deleteGroupDescription": "Delete group “{{name}}”? It will be detached from all hosts.",
   "hostsPage.copy": "Copy host",
   "hostsPage.copySuffix": "copy",
   "hostsPage.copied": "Host copied",
@@ -595,8 +595,8 @@
   "hostsPage.variablesHint": "These variables can be used in the name and address fields:",
   "hostsPage.create": "Create host",
   "hostsPage.save": "Save",
-  "hostsPage.deleteTitle": "Delete host?",
-  "hostsPage.deleteDescription": "Host {{name}} will be permanently deleted.",
+  "hostsPage.deleteTitle": "Delete host",
+  "hostsPage.deleteDescription": "Delete host “{{name}}”? This cannot be undone.",
   "hostsPage.emptyTitle": "No hosts",
   "hostsPage.emptyDescription": "Create a host for one of the available inbounds.",
   "hostsPage.loadErrorTitle": "Failed to load hosts",
@@ -687,8 +687,8 @@
   ,"geoResources.actions": "Actions"
   ,"geoResources.editTitle": "Edit geo file"
   ,"geoResources.editDescription": "Rename the file or change its automatic update settings."
-  ,"geoResources.deleteTitle": "Delete geo files?"
-  ,"geoResources.deleteDescription": "Files to permanently delete from this node: {{count}}."
+  ,"geoResources.deleteTitle": "Delete geo files"
+  ,"geoResources.deleteDescription": "Delete the selected files from this node ({{count}})? This cannot be undone."
   ,"geoResources.overwriteTitle": "Replace existing file?"
   ,"geoResources.overwriteDescription": "A file with this name already exists on the node."
   ,"geoResources.overwrite": "Replace"
@@ -699,10 +699,10 @@
   ,"geoResources.dropOrSelect": "Drag a file here or click to select"
   ,"geoResources.selectedFile": "Click or drop another file to replace the selection"
   ,"geoResources.save": "Save"
-  ,"geoResources.deleteSingleTitle": "Delete geo file?"
-  ,"geoResources.deleteSingleDescription": "The file {{filename}} will be permanently deleted from the node."
-  ,"geoResources.deleteMultipleTitle": "Delete geo files?"
-  ,"geoResources.deleteMultipleDescription": "Files to permanently delete from this node: {{count}}."
+  ,"geoResources.deleteSingleTitle": "Delete geo file"
+  ,"geoResources.deleteSingleDescription": "Delete file “{{filename}}” from this node? This cannot be undone."
+  ,"geoResources.deleteMultipleTitle": "Delete geo files"
+  ,"geoResources.deleteMultipleDescription": "Delete the selected files from this node ({{count}})? This cannot be undone."
   ,"nodes.logging": "Logging"
   ,"nodes.accessLog": "Access log"
   ,"nodes.errorLog": "Error log"
@@ -720,9 +720,11 @@
   ,"staticLogs.disabled": "File logging is disabled"
   ,"staticLogs.configure": "Configure"
   ,"staticLogs.loadError": "Could not load log files"
-  ,"staticLogs.deleteTitle": "Delete log file?"
-  ,"staticLogs.deleteDescription": "The file {{filename}} will be permanently deleted from the node."
-  ,"staticLogs.clearDescription": "The active file {{filename}} will be cleared on the node."
+  ,"staticLogs.deleteTitle": "Delete log file"
+  ,"staticLogs.deleteDescription": "Delete log file “{{filename}}” from this node? This cannot be undone."
+  ,"staticLogs.clearDescription": "Clear the active log file “{{filename}}” on this node?"
+  ,"staticLogs.clearTitle": "Clear log file"
+  ,"staticLogs.clear": "Clear"
   ,"nodeLoggingSettings.title": "Logging settings"
   ,"nodeLoggingSettings.saveSuccess": "Logging settings for {{name}} saved",
   "subscriptionTemplates.title": "Subscription templates",
@@ -741,8 +743,8 @@
   "subscriptionTemplates.copySuffix": "copy",
   "subscriptionTemplates.setDefault": "Set as default",
   "subscriptionTemplates.delete": "Delete",
-  "subscriptionTemplates.deleteTitle": "Delete template “{{name}}”?",
-  "subscriptionTemplates.deleteDescription": "This template will be deleted.",
+  "subscriptionTemplates.deleteTitle": "Delete template",
+  "subscriptionTemplates.deleteDescription": "Delete template “{{name}}”?",
   "subscriptionTemplates.deleteDefaultError": "The default template cannot be deleted. Choose another default first.",
   "subscriptionTemplates.deleteAssignedError": "This template is assigned to hosts. Change the template assignments in the host settings before deleting it.",
   "subscriptionTemplates.defaultTitle": "Use “{{name}}” by default?",

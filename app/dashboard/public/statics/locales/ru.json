@@ -20,10 +20,10 @@
   "delete": "Удалить",
   "deleteNode.deleteSuccess": "Нода {{name}} удалена",
   "deleteNode.prompt": "Удалить ноду <b>{{name}}</b>?",
-  "deleteNode.title": "Удалить ноду",
+  "deleteNode.title": "Удаление ноды",
   "deleteUser.deleteSuccess": "Пользователь {{username}} удалён",
   "deleteUser.prompt": "Удалить пользователя <b>{{username}}</b>?",
-  "deleteUser.title": "Удалить пользователя",
+  "deleteUser.title": "Удаление пользователя",
   "disabled": "Отключён",
   "edit": "Редактировать",
   "enabled": "Включено",
@@ -282,8 +282,8 @@
   "nodesPage.panelCertificate": "Сертификат панели",
   "nodesPage.copyCertificate": "Скопировать сертификат",
   "nodesPage.certificatesDescription": "Выпуск и управление TLS-сертификатами ноды.",
-  "nodesPage.deleteCertificateTitle": "Удалить сертификат?",
-  "nodesPage.deleteCertificateDescription": "Сертификат для {{domain}} будет безвозвратно удалён.",
+  "nodesPage.deleteCertificateTitle": "Удаление сертификата",
+  "nodesPage.deleteCertificateDescription": "Удалить сертификат для «{{domain}}»? Восстановить его нельзя.",
   "nodesPage.deleteNode": "Удалить ноду",
   "nodesPage.updateSuccess": "Нода {{name}} обновлена",
   "nodesPage.connectionError": "Ноде не удалось установить соединение.",
@@ -372,8 +372,8 @@
   "settingsPage.balancers.create": "Создать балансировщик",
   "settingsPage.balancers.edit": "Изменить балансировщик",
   "settingsPage.balancers.delete": "Удалить балансировщик",
-  "settingsPage.balancers.deleteTitle": "Удалить балансировщик?",
-  "settingsPage.balancers.deleteDescription": "Балансировщик {{name}} будет удалён.",
+  "settingsPage.balancers.deleteTitle": "Удаление балансировщика",
+  "settingsPage.balancers.deleteDescription": "Удалить балансировщик «{{name}}»?",
   "settingsPage.balancers.deleted": "Балансировщик удалён",
   "settingsPage.balancers.saved": "Балансировщик сохранён",
   "settingsPage.balancers.name": "Название",
@@ -479,8 +479,8 @@
   "inboundsPage.content": "JSON инбаунда",
   "inboundsPage.saved": "Инбаунд сохранён",
   "inboundsPage.deleted": "Инбаунд удалён",
-  "inboundsPage.deleteTitle": "Удалить инбаунд?",
-  "inboundsPage.deleteDescription": "Инбаунд {{tag}} будет удалён без возможности восстановления.",
+  "inboundsPage.deleteTitle": "Удаление инбаунда",
+  "inboundsPage.deleteDescription": "Удалить инбаунд «{{tag}}»? Восстановить его нельзя.",
   "inboundsPage.emptyTitle": "Нет инбаундов",
   "inboundsPage.emptyDescription": "Создайте инбаунд.",
   "inboundsPage.loadErrorTitle": "Не удалось загрузить инбаунды",
@@ -510,8 +510,8 @@
   "outboundsPage.content": "JSON аутбаунда Xray",
   "outboundsPage.saved": "Аутбаунд сохранён",
   "outboundsPage.deleted": "Аутбаунд удалён",
-  "outboundsPage.deleteTitle": "Удалить аутбаунд?",
-  "outboundsPage.deleteDescription": "Аутбаунд {{tag}} будет безвозвратно удалён.",
+  "outboundsPage.deleteTitle": "Удаление аутбаунда",
+  "outboundsPage.deleteDescription": "Удалить аутбаунд «{{tag}}»? Восстановить его нельзя.",
   "outboundsPage.emptyTitle": "Нет аутбаундов",
   "outboundsPage.emptyDescription": "Создайте аутбаунд.",
   "outboundsPage.loadErrorTitle": "Не удалось загрузить аутбаунды",
@@ -535,8 +535,8 @@
   "routingPage.content": "JSON правила маршрутизации Xray",
   "routingPage.saved": "Правило маршрутизации сохранено",
   "routingPage.deleted": "Правило маршрутизации удалено",
-  "routingPage.deleteTitle": "Удалить правило маршрутизации?",
-  "routingPage.deleteDescription": "Правило {{name}} будет безвозвратно удалено.",
+  "routingPage.deleteTitle": "Удаление правила маршрутизации",
+  "routingPage.deleteDescription": "Удалить правило маршрутизации «{{name}}»? Восстановить его нельзя.",
   "routingPage.emptyTitle": "Нет правил маршрутизации",
   "routingPage.emptyDescription": "Создайте правило маршрутизации.",
   "routingPage.loadErrorTitle": "Не удалось загрузить правила маршрутизации",
@@ -584,8 +584,8 @@
   "hostsPage.groupCreateError": "Не удалось создать группу хостов",
   "hostsPage.groupUpdateError": "Не удалось обновить группу хостов",
   "hostsPage.noTags": "Нет тегов",
-  "hostsPage.deleteGroupTitle": "Удалить группу хостов?",
-  "hostsPage.deleteGroupDescription": "Группа {{name}} будет удалена и отвязана от всех хостов.",
+  "hostsPage.deleteGroupTitle": "Удаление группы хостов",
+  "hostsPage.deleteGroupDescription": "Удалить группу «{{name}}»? Она будет отвязана от всех хостов.",
   "hostsPage.copy": "Копировать хост",
   "hostsPage.copySuffix": "копия",
   "hostsPage.copied": "Хост скопирован",
@@ -597,8 +597,8 @@
   "hostsPage.variablesHint": "В названии и адресе можно использовать переменные:",
   "hostsPage.create": "Создать хост",
   "hostsPage.save": "Сохранить",
-  "hostsPage.deleteTitle": "Удалить хост?",
-  "hostsPage.deleteDescription": "Хост {{name}} будет безвозвратно удалён.",
+  "hostsPage.deleteTitle": "Удаление хоста",
+  "hostsPage.deleteDescription": "Удалить хост «{{name}}»? Восстановить его нельзя.",
   "hostsPage.emptyTitle": "Нет хостов",
   "hostsPage.emptyDescription": "Создайте хост для одного из доступных инбаундов.",
   "hostsPage.loadErrorTitle": "Не удалось загрузить хосты",
@@ -689,8 +689,8 @@
   ,"geoResources.actions": "Действия"
   ,"geoResources.editTitle": "Изменить геофайл"
   ,"geoResources.editDescription": "Переименуйте файл или измените параметры автообновления."
-  ,"geoResources.deleteTitle": "Удалить геофайлы?"
-  ,"geoResources.deleteDescription": "Будут удалены файлы с ноды: {{count}}. Восстановить их нельзя."
+  ,"geoResources.deleteTitle": "Удаление геофайлов"
+  ,"geoResources.deleteDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя."
   ,"geoResources.overwriteTitle": "Заменить существующий файл?"
   ,"geoResources.overwriteDescription": "Файл с таким названием уже существует на ноде."
   ,"geoResources.overwrite": "Заменить"
@@ -701,10 +701,10 @@
   ,"geoResources.dropOrSelect": "Перетащите файл или нажмите для выбора"
   ,"geoResources.selectedFile": "Нажмите или перетащите другой файл, чтобы заменить выбранный"
   ,"geoResources.save": "Сохранить"
-  ,"geoResources.deleteSingleTitle": "Удалить геофайл?"
-  ,"geoResources.deleteSingleDescription": "Файл {{filename}} будет удалён с ноды без возможности восстановления."
-  ,"geoResources.deleteMultipleTitle": "Удалить геофайлы?"
-  ,"geoResources.deleteMultipleDescription": "Будут удалены файлы с ноды: {{count}}. Восстановить их нельзя."
+  ,"geoResources.deleteSingleTitle": "Удаление геофайла"
+  ,"geoResources.deleteSingleDescription": "Удалить файл «{{filename}}» с ноды? Восстановить его нельзя."
+  ,"geoResources.deleteMultipleTitle": "Удаление геофайлов"
+  ,"geoResources.deleteMultipleDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя."
   ,"nodes.logging": "Логирование"
   ,"nodes.accessLog": "Лог доступа"
   ,"nodes.errorLog": "Лог ошибок"
@@ -722,9 +722,11 @@
   ,"staticLogs.disabled": "Запись логов в файлы отключена"
   ,"staticLogs.configure": "Настроить"
   ,"staticLogs.loadError": "Не удалось загрузить файлы логов"
-  ,"staticLogs.deleteTitle": "Удалить файл лога?"
-  ,"staticLogs.deleteDescription": "Файл {{filename}} будет удален с ноды без возможности восстановления."
-  ,"staticLogs.clearDescription": "Активный файл {{filename}} будет очищен на ноде."
+  ,"staticLogs.deleteTitle": "Удаление файла лога"
+  ,"staticLogs.deleteDescription": "Удалить файл лога «{{filename}}» с ноды? Восстановить его нельзя."
+  ,"staticLogs.clearDescription": "Очистить активный файл лога «{{filename}}» на ноде?"
+  ,"staticLogs.clearTitle": "Очистка файла лога"
+  ,"staticLogs.clear": "Очистить"
   ,"nodeLoggingSettings.title": "Настройки логирования"
   ,"nodeLoggingSettings.saveSuccess": "Настройки логирования для {{name}} сохранены",
   "subscriptionTemplates.title": "Шаблоны подписок",
@@ -743,8 +745,8 @@
   "subscriptionTemplates.copySuffix": "копия",
   "subscriptionTemplates.setDefault": "Использовать по умолчанию",
   "subscriptionTemplates.delete": "Удалить",
-  "subscriptionTemplates.deleteTitle": "Удалить шаблон «{{name}}»?",
-  "subscriptionTemplates.deleteDescription": "Шаблон будет удалён.",
+  "subscriptionTemplates.deleteTitle": "Удаление шаблона",
+  "subscriptionTemplates.deleteDescription": "Удалить шаблон «{{name}}»?",
   "subscriptionTemplates.deleteDefaultError": "Нельзя удалить шаблон по умолчанию. Сначала выберите другой шаблон по умолчанию.",
   "subscriptionTemplates.deleteAssignedError": "Шаблон привязан к хостам. Перед удалением измените привязки в настройках хостов.",
   "subscriptionTemplates.defaultTitle": "Использовать «{{name}}» по умолчанию?",

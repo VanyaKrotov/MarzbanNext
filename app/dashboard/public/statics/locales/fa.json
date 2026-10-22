@@ -283,8 +283,8 @@
   "nodesPage.panelCertificate": "گواهی پنل",
   "nodesPage.copyCertificate": "کپی گواهی",
   "nodesPage.certificatesDescription": "صدور و مدیریت گواهی‌های TLS این نود.",
-  "nodesPage.deleteCertificateTitle": "گواهی حذف شود؟",
-  "nodesPage.deleteCertificateDescription": "گواهی دامنه {{domain}} برای همیشه حذف می‌شود.",
+  "nodesPage.deleteCertificateTitle": "حذف گواهی",
+  "nodesPage.deleteCertificateDescription": "گواهی «{{domain}}» حذف شود؟ این کار قابل بازگشت نیست.",
   "nodesPage.deleteNode": "حذف نود",
   "nodesPage.updateSuccess": "نود {{name}} به‌روزرسانی شد",
   "nodesPage.connectionError": "نود نتوانست اتصال برقرار کند.",
@@ -373,8 +373,8 @@
   "settingsPage.balancers.create": "ایجاد متعادل‌کننده",
   "settingsPage.balancers.edit": "ویرایش متعادل‌کننده",
   "settingsPage.balancers.delete": "حذف متعادل‌کننده",
-  "settingsPage.balancers.deleteTitle": "متعادل‌کننده حذف شود؟",
-  "settingsPage.balancers.deleteDescription": "متعادل‌کننده {{name}} حذف می‌شود.",
+  "settingsPage.balancers.deleteTitle": "حذف متعادل‌کننده",
+  "settingsPage.balancers.deleteDescription": "متعادل‌کننده «{{name}}» حذف شود؟",
   "settingsPage.balancers.deleted": "متعادل‌کننده حذف شد",
   "settingsPage.balancers.saved": "متعادل‌کننده ذخیره شد",
   "settingsPage.balancers.name": "نام",
@@ -478,8 +478,8 @@
   "inboundsPage.content": "JSON ورودی",
   "inboundsPage.saved": "ورودی ذخیره شد",
   "inboundsPage.deleted": "ورودی حذف شد",
-  "inboundsPage.deleteTitle": "ورودی حذف شود؟",
-  "inboundsPage.deleteDescription": "ورودی {{tag}} برای همیشه حذف می‌شود.",
+  "inboundsPage.deleteTitle": "حذف ورودی",
+  "inboundsPage.deleteDescription": "ورودی «{{tag}}» حذف شود؟ این کار قابل بازگشت نیست.",
   "inboundsPage.emptyTitle": "ورودی‌ای وجود ندارد",
   "inboundsPage.emptyDescription": "یک ورودی ایجاد کنید.",
   "inboundsPage.loadErrorTitle": "ورودی‌ها بارگذاری نشدند",
@@ -509,8 +509,8 @@
   "outboundsPage.content": "JSON خروجی Xray",
   "outboundsPage.saved": "خروجی ذخیره شد",
   "outboundsPage.deleted": "خروجی حذف شد",
-  "outboundsPage.deleteTitle": "خروجی حذف شود؟",
-  "outboundsPage.deleteDescription": "خروجی {{tag}} برای همیشه حذف خواهد شد.",
+  "outboundsPage.deleteTitle": "حذف خروجی",
+  "outboundsPage.deleteDescription": "خروجی «{{tag}}» حذف شود؟ این کار قابل بازگشت نیست.",
   "outboundsPage.emptyTitle": "خروجی‌ای وجود ندارد",
   "outboundsPage.emptyDescription": "یک خروجی ایجاد کنید.",
   "outboundsPage.loadErrorTitle": "بارگذاری خروجی‌ها ناموفق بود",
@@ -534,8 +534,8 @@
   "routingPage.content": "JSON قانون مسیریابی Xray",
   "routingPage.saved": "قانون مسیریابی ذخیره شد",
   "routingPage.deleted": "قانون مسیریابی حذف شد",
-  "routingPage.deleteTitle": "قانون مسیریابی حذف شود؟",
-  "routingPage.deleteDescription": "قانون {{name}} برای همیشه حذف خواهد شد.",
+  "routingPage.deleteTitle": "حذف قانون مسیریابی",
+  "routingPage.deleteDescription": "قانون مسیریابی «{{name}}» حذف شود؟ این کار قابل بازگشت نیست.",
   "routingPage.emptyTitle": "قانون مسیریابی وجود ندارد",
   "routingPage.emptyDescription": "یک قانون مسیریابی ایجاد کنید.",
   "routingPage.loadErrorTitle": "بارگذاری قوانین مسیریابی ناموفق بود",
@@ -583,8 +583,8 @@
   "hostsPage.groupCreateError": "ایجاد گروه هاست ناموفق بود",
   "hostsPage.groupUpdateError": "به‌روزرسانی گروه هاست ناموفق بود",
   "hostsPage.noTags": "بدون تگ",
-  "hostsPage.deleteGroupTitle": "گروه هاست حذف شود؟",
-  "hostsPage.deleteGroupDescription": "گروه {{name}} حذف شده و از همه هاست‌ها جدا می‌شود.",
+  "hostsPage.deleteGroupTitle": "حذف گروه هاست",
+  "hostsPage.deleteGroupDescription": "گروه «{{name}}» حذف شود؟ این گروه از همه هاست‌ها جدا می‌شود.",
   "hostsPage.copy": "کپی هاست",
   "hostsPage.copySuffix": "کپی",
   "hostsPage.copied": "هاست کپی شد",
@@ -596,8 +596,8 @@
   "hostsPage.variablesHint": "این متغیرها در نام و آدرس قابل استفاده هستند:",
   "hostsPage.create": "ایجاد هاست",
   "hostsPage.save": "ذخیره",
-  "hostsPage.deleteTitle": "هاست حذف شود؟",
-  "hostsPage.deleteDescription": "هاست {{name}} برای همیشه حذف می‌شود.",
+  "hostsPage.deleteTitle": "حذف هاست",
+  "hostsPage.deleteDescription": "هاست «{{name}}» حذف شود؟ این کار قابل بازگشت نیست.",
   "hostsPage.emptyTitle": "هاستی وجود ندارد",
   "hostsPage.emptyDescription": "برای یکی از ورودی‌های موجود یک هاست ایجاد کنید.",
   "hostsPage.loadErrorTitle": "بارگیری هاست‌ها ناموفق بود",
@@ -688,8 +688,8 @@
   ,"geoResources.actions": "عملیات"
   ,"geoResources.editTitle": "ویرایش فایل جغرافیایی"
   ,"geoResources.editDescription": "نام فایل یا تنظیمات به‌روزرسانی خودکار را تغییر دهید."
-  ,"geoResources.deleteTitle": "فایل‌های جغرافیایی حذف شوند؟"
-  ,"geoResources.deleteDescription": "تعداد فایل‌هایی که برای همیشه از نود حذف می‌شوند: {{count}}."
+  ,"geoResources.deleteTitle": "حذف فایل‌های جغرافیایی"
+  ,"geoResources.deleteDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست."
   ,"geoResources.overwriteTitle": "فایل موجود جایگزین شود؟"
   ,"geoResources.overwriteDescription": "فایلی با این نام در نود وجود دارد."
   ,"geoResources.overwrite": "جایگزینی"
@@ -700,10 +700,10 @@
   ,"geoResources.dropOrSelect": "فایل را اینجا رها کنید یا برای انتخاب کلیک کنید"
   ,"geoResources.selectedFile": "برای جایگزینی، فایل دیگری را انتخاب یا رها کنید"
   ,"geoResources.save": "ذخیره"
-  ,"geoResources.deleteSingleTitle": "فایل جغرافیایی حذف شود؟"
-  ,"geoResources.deleteSingleDescription": "فایل {{filename}} برای همیشه از نود حذف می‌شود."
-  ,"geoResources.deleteMultipleTitle": "فایل‌های جغرافیایی حذف شوند؟"
-  ,"geoResources.deleteMultipleDescription": "تعداد فایل‌هایی که برای همیشه از نود حذف می‌شوند: {{count}}."
+  ,"geoResources.deleteSingleTitle": "حذف فایل جغرافیایی"
+  ,"geoResources.deleteSingleDescription": "فایل «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست."
+  ,"geoResources.deleteMultipleTitle": "حذف فایل‌های جغرافیایی"
+  ,"geoResources.deleteMultipleDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست."
   ,"nodes.logging": "ثبت رخداد"
   ,"nodes.accessLog": "رخداد دسترسی"
   ,"nodes.errorLog": "رخداد خطا"
@@ -721,9 +721,11 @@
   ,"staticLogs.disabled": "ثبت لاگ در فایل غیرفعال است"
   ,"staticLogs.configure": "پیکربندی"
   ,"staticLogs.loadError": "فایل‌های لاگ بارگذاری نشدند"
-  ,"staticLogs.deleteTitle": "فایل رخداد حذف شود؟"
-  ,"staticLogs.deleteDescription": "فایل {{filename}} برای همیشه از نود حذف می شود."
-  ,"staticLogs.clearDescription": "فایل فعال {{filename}} در نود پاک می شود."
+  ,"staticLogs.deleteTitle": "حذف فایل رخداد"
+  ,"staticLogs.deleteDescription": "فایل رخداد «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست."
+  ,"staticLogs.clearDescription": "فایل رخداد فعال «{{filename}}» در نود پاک‌سازی شود؟"
+  ,"staticLogs.clearTitle": "پاک‌سازی فایل رخداد"
+  ,"staticLogs.clear": "پاک‌سازی"
   ,"nodeLoggingSettings.title": "تنظیمات ثبت رخداد"
   ,"nodeLoggingSettings.saveSuccess": "تنظیمات ثبت رخداد برای {{name}} ذخیره شد",
   "subscriptionTemplates.title": "قالب‌های اشتراک",
@@ -742,8 +744,8 @@
   "subscriptionTemplates.copySuffix": "کپی",
   "subscriptionTemplates.setDefault": "انتخاب به‌عنوان پیش‌فرض",
   "subscriptionTemplates.delete": "حذف",
-  "subscriptionTemplates.deleteTitle": "قالب «{{name}}» حذف شود؟",
-  "subscriptionTemplates.deleteDescription": "این قالب حذف می‌شود.",
+  "subscriptionTemplates.deleteTitle": "حذف قالب",
+  "subscriptionTemplates.deleteDescription": "قالب «{{name}}» حذف شود؟",
   "subscriptionTemplates.deleteDefaultError": "قالب پیش‌فرض قابل حذف نیست. ابتدا قالب دیگری را به‌عنوان پیش‌فرض انتخاب کنید.",
   "subscriptionTemplates.deleteAssignedError": "این قالب به هاست‌ها متصل است. پیش از حذف، اتصال قالب را در تنظیمات هاست‌ها تغییر دهید.",
   "subscriptionTemplates.defaultTitle": "«{{name}}» پیش‌فرض شود؟",

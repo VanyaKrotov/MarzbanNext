@@ -230,7 +230,13 @@ export function StaticLogsCard({ node }: { node: NodeType & { id: number } }) {
       >
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>{t("staticLogs.deleteTitle")}</AlertDialogTitle>
+            <AlertDialogTitle>
+              {t(
+                pendingDelete?.active
+                  ? "staticLogs.clearTitle"
+                  : "staticLogs.deleteTitle",
+              )}
+            </AlertDialogTitle>
             <AlertDialogDescription>
               {t(
                 pendingDelete?.active
@@ -252,7 +258,7 @@ export function StaticLogsCard({ node }: { node: NodeType & { id: number } }) {
               onClick={confirmDelete}
             >
               {remove.isPending && <LoaderCircle className="animate-spin" />}
-              {t("delete")}
+              {t(pendingDelete?.active ? "staticLogs.clear" : "delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

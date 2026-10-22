@@ -282,8 +282,8 @@
   "nodesPage.panelCertificate": "面板证书",
   "nodesPage.copyCertificate": "复制证书",
   "nodesPage.certificatesDescription": "签发和管理此节点的 TLS 证书。",
-  "nodesPage.deleteCertificateTitle": "删除证书？",
-  "nodesPage.deleteCertificateDescription": "{{domain}} 的证书将被永久删除。",
+  "nodesPage.deleteCertificateTitle": "删除证书",
+  "nodesPage.deleteCertificateDescription": "删除“{{domain}}”的证书？此操作无法撤销。",
   "nodesPage.deleteNode": "删除节点",
   "nodesPage.updateSuccess": "节点 {{name}} 已成功更新",
   "nodesPage.connectionError": "节点无法建立连接。",
@@ -372,8 +372,8 @@
   "settingsPage.balancers.create": "创建负载均衡",
   "settingsPage.balancers.edit": "编辑负载均衡",
   "settingsPage.balancers.delete": "删除负载均衡",
-  "settingsPage.balancers.deleteTitle": "删除负载均衡？",
-  "settingsPage.balancers.deleteDescription": "将删除负载均衡 {{name}}。",
+  "settingsPage.balancers.deleteTitle": "删除负载均衡",
+  "settingsPage.balancers.deleteDescription": "删除负载均衡“{{name}}”？",
   "settingsPage.balancers.deleted": "已删除负载均衡",
   "settingsPage.balancers.saved": "已保存负载均衡",
   "settingsPage.balancers.name": "名称",
@@ -477,8 +477,8 @@
   "inboundsPage.content": "入站 JSON",
   "inboundsPage.saved": "已保存入站",
   "inboundsPage.deleted": "已删除入站",
-  "inboundsPage.deleteTitle": "删除入站？",
-  "inboundsPage.deleteDescription": "将永久删除入站 {{tag}}。",
+  "inboundsPage.deleteTitle": "删除入站",
+  "inboundsPage.deleteDescription": "删除入站“{{tag}}”？此操作无法撤销。",
   "inboundsPage.emptyTitle": "暂无入站",
   "inboundsPage.emptyDescription": "创建一个入站。",
   "inboundsPage.loadErrorTitle": "无法加载入站",
@@ -508,8 +508,8 @@
   "outboundsPage.content": "Xray 出站 JSON",
   "outboundsPage.saved": "已保存出站",
   "outboundsPage.deleted": "已删除出站",
-  "outboundsPage.deleteTitle": "删除出站？",
-  "outboundsPage.deleteDescription": "出站 {{tag}} 将被永久删除。",
+  "outboundsPage.deleteTitle": "删除出站",
+  "outboundsPage.deleteDescription": "删除出站“{{tag}}”？此操作无法撤销。",
   "outboundsPage.emptyTitle": "暂无出站",
   "outboundsPage.emptyDescription": "创建一个出站。",
   "outboundsPage.loadErrorTitle": "加载出站失败",
@@ -533,8 +533,8 @@
   "routingPage.content": "Xray 路由规则 JSON",
   "routingPage.saved": "路由规则保存成功",
   "routingPage.deleted": "路由规则删除成功",
-  "routingPage.deleteTitle": "删除路由规则？",
-  "routingPage.deleteDescription": "路由规则 {{name}} 将被永久删除。",
+  "routingPage.deleteTitle": "删除路由规则",
+  "routingPage.deleteDescription": "删除路由规则“{{name}}”？此操作无法撤销。",
   "routingPage.emptyTitle": "暂无路由规则",
   "routingPage.emptyDescription": "创建一条路由规则。",
   "routingPage.loadErrorTitle": "加载路由规则失败",
@@ -582,8 +582,8 @@
   "hostsPage.groupCreateError": "创建主机分组失败",
   "hostsPage.groupUpdateError": "更新主机分组失败",
   "hostsPage.noTags": "无标签",
-  "hostsPage.deleteGroupTitle": "删除主机分组？",
-  "hostsPage.deleteGroupDescription": "分组 {{name}} 将被删除并从所有主机中移除。",
+  "hostsPage.deleteGroupTitle": "删除主机分组",
+  "hostsPage.deleteGroupDescription": "删除分组“{{name}}”？该分组将从所有主机中移除。",
   "hostsPage.copy": "复制主机",
   "hostsPage.copySuffix": "副本",
   "hostsPage.copied": "主机已复制",
@@ -595,8 +595,8 @@
   "hostsPage.variablesHint": "名称和地址字段可使用以下变量：",
   "hostsPage.create": "创建主机",
   "hostsPage.save": "保存",
-  "hostsPage.deleteTitle": "删除主机？",
-  "hostsPage.deleteDescription": "主机 {{name}} 将被永久删除。",
+  "hostsPage.deleteTitle": "删除主机",
+  "hostsPage.deleteDescription": "删除主机“{{name}}”？此操作无法撤销。",
   "hostsPage.emptyTitle": "暂无主机",
   "hostsPage.emptyDescription": "为可用入站创建一个主机。",
   "hostsPage.loadErrorTitle": "无法加载主机",
@@ -687,8 +687,8 @@
   ,"geoResources.actions": "操作"
   ,"geoResources.editTitle": "编辑地理数据文件"
   ,"geoResources.editDescription": "修改文件名或自动更新设置。"
-  ,"geoResources.deleteTitle": "删除地理数据文件？"
-  ,"geoResources.deleteDescription": "将从此节点永久删除 {{count}} 个文件。"
+  ,"geoResources.deleteTitle": "删除地理数据文件"
+  ,"geoResources.deleteDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。"
   ,"geoResources.overwriteTitle": "替换现有文件？"
   ,"geoResources.overwriteDescription": "节点上已存在同名文件。"
   ,"geoResources.overwrite": "替换"
@@ -699,10 +699,10 @@
   ,"geoResources.dropOrSelect": "拖入文件或点击选择"
   ,"geoResources.selectedFile": "点击或拖入其他文件以替换"
   ,"geoResources.save": "保存"
-  ,"geoResources.deleteSingleTitle": "删除地理数据文件？"
-  ,"geoResources.deleteSingleDescription": "将从节点永久删除文件 {{filename}}。"
-  ,"geoResources.deleteMultipleTitle": "删除地理数据文件？"
-  ,"geoResources.deleteMultipleDescription": "将从此节点永久删除 {{count}} 个文件。"
+  ,"geoResources.deleteSingleTitle": "删除地理数据文件"
+  ,"geoResources.deleteSingleDescription": "从此节点删除文件“{{filename}}”？此操作无法撤销。"
+  ,"geoResources.deleteMultipleTitle": "删除地理数据文件"
+  ,"geoResources.deleteMultipleDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。"
   ,"nodes.logging": "日志记录"
   ,"nodes.accessLog": "访问日志"
   ,"nodes.errorLog": "错误日志"
@@ -720,9 +720,11 @@
   ,"staticLogs.disabled": "未启用文件日志"
   ,"staticLogs.configure": "配置"
   ,"staticLogs.loadError": "无法加载日志文件"
-  ,"staticLogs.deleteTitle": "删除日志文件？"
-  ,"staticLogs.deleteDescription": "文件 {{filename}} 将从节点永久删除。"
-  ,"staticLogs.clearDescription": "活动文件 {{filename}} 将在节点上被清空。"
+  ,"staticLogs.deleteTitle": "删除日志文件"
+  ,"staticLogs.deleteDescription": "从此节点删除日志文件“{{filename}}”？此操作无法撤销。"
+  ,"staticLogs.clearDescription": "清空此节点上的活动日志文件“{{filename}}”？"
+  ,"staticLogs.clearTitle": "清空日志文件"
+  ,"staticLogs.clear": "清空"
   ,"nodeLoggingSettings.title": "日志设置"
   ,"nodeLoggingSettings.saveSuccess": "{{name}} 的日志设置已保存",
   "subscriptionTemplates.title": "订阅模板",
@@ -741,8 +743,8 @@
   "subscriptionTemplates.copySuffix": "副本",
   "subscriptionTemplates.setDefault": "设为默认",
   "subscriptionTemplates.delete": "删除",
-  "subscriptionTemplates.deleteTitle": "删除模板“{{name}}”？",
-  "subscriptionTemplates.deleteDescription": "将删除此模板。",
+  "subscriptionTemplates.deleteTitle": "删除模板",
+  "subscriptionTemplates.deleteDescription": "删除模板“{{name}}”？",
   "subscriptionTemplates.deleteDefaultError": "无法删除默认模板。请先选择其他默认模板。",
   "subscriptionTemplates.deleteAssignedError": "此模板已分配给主机。删除前，请在主机设置中更改模板分配。",
   "subscriptionTemplates.defaultTitle": "将“{{name}}”设为默认模板？",

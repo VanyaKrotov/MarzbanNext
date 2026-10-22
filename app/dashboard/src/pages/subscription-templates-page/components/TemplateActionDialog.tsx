@@ -106,13 +106,12 @@ function TemplateActionContent({
             { name: action.template.name },
           )}
         </AlertDialogTitle>
-        <AlertDialogDescription
-          className={action.type === "delete" ? "sr-only" : undefined}
-        >
+        <AlertDialogDescription>
           {t(
             action.type === "delete"
               ? "subscriptionTemplates.deleteDescription"
               : "subscriptionTemplates.defaultDescription",
+            { name: action.template.name },
           )}
         </AlertDialogDescription>
       </AlertDialogHeader>
