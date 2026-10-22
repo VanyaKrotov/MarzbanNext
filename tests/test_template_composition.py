@@ -262,39 +262,29 @@ class TemplateCompositionTests(TestCase):
                 else:
                     self.assertEqual(json.loads(result.body)["password"], "own-ss-password")
 
-    def test_template_preview_is_sudo_only_read_only_and_matches_all_renderers(self):
+    def test_directive_schema_is_sudo_only_and_preview_routes_are_removed(self):
         from fastapi import FastAPI
         from fastapi.testclient import TestClient
-        from app.db import get_db
-        from app.db.models.proxies import Proxy
-        from app.db.models.users import User
         from app.models.admin import Admin
-        from app.models.proxy import ProxyTypes
         from app.routers.subscription_templates import router
-        from unittest.mock import patch
+        from app.subscription.template_directives import XrayDirectives, IncludeProxies
 
-        self.host("A")
-        user = User(username="preview", proxies=[Proxy(type=ProxyTypes.Shadowsocks,
-                    settings={"password": "preview-password", "method": "aes-256-gcm"})])
-        self.db.add(user)
-        self.db.commit()
         application = FastAPI()
         application.include_router(router)
-        application.dependency_overrides[get_db] = lambda: self.db
+        paths = {route.path for route in application.routes}
+        self.assertNotIn("/api/subscription-templates/preview", paths)
+        self.assertNotIn("/api/subscription-templates/preview-users", paths)
         with TestClient(application) as client:
-            self.assertEqual(client.post("/api/subscription-templates/preview", json={}).status_code, 401)
-            self.assertEqual(client.get("/api/subscription-templates/preview-users").status_code, 401)
+            self.assertEqual(client.get("/api/subscription-templates/capabilities").status_code, 401)
             application.dependency_overrides[Admin.check_sudo_admin] = lambda: object()
-            self.assertEqual(client.get("/api/subscription-templates/preview-users").json(),
-                             [{"id": user.id, "username": "preview"}])
-            for target in ("v2ray", "v2ray-json", "clash", "sing-box", "outline"):
-                with self.subTest(target=target), patch("app.utils.runtime_settings.get_runtime_settings",
-                                                        return_value=self.settings):
-                    template = next(row for row in self.db.query(SubscriptionTemplate) if row.format == target)
-                    response = client.post("/api/subscription-templates/preview", json={"format": target,
-                                                                                        "content": template.content, "user_id": user.id})
-                    self.assertEqual(response.status_code, 200, response.text)
-                    self.assertTrue(response.json()["body"])
-            self.assertEqual(client.post("/api/subscription-templates/preview", json={"format": "v2ray-json",
-                                                                                      "content": '{"outbounds": []}', "user_id": 99999}).status_code, 404)
-        self.assertEqual(self.db.query(SubscriptionTemplate).count(), 5)
+            response = client.get("/api/subscription-templates/capabilities")
+            self.assertEqual(response.status_code, 200, response.text)
+            schemas = response.json()
+            self.assertEqual(schemas["v2ray-json"], XrayDirectives.model_json_schema())
+            self.assertEqual(schemas["v2ray-json"]["$defs"]["InjectHosts"]
+                             ["properties"]["selectFrom"]["default"], "HIDDEN")
+            self.assertEqual(schemas["sing-box"]["$defs"]["Selector"]["properties"]["type"]["enum"], ["ids", "groups"])
+            self.assertIn("include-proxies", schemas["clash"]["properties"])
+            self.assertNotIn("includeProxies", schemas["clash"]["properties"])
+            self.assertEqual(schemas["sing-box"]["$defs"]["Selector"]["allOf"],
+                             IncludeProxies.model_json_schema()["$defs"]["Selector"]["allOf"])

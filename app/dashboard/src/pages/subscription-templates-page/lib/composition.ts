@@ -1,140 +1,169 @@
 import type { MonacoJsonSchema } from "@/components/MonacoJsonEditor";
+import { xrayCoreSchema } from "@/lib/xray-schemas/core";
 import type { SubscriptionFormat } from "./formats";
 
-export type SourceSelection =
-  { type: "ids"; values: number[] } | { type: "groups"; values: string[] };
+type DirectiveSchema = MonacoJsonSchema & {
+  $defs?: Record<string, MonacoJsonSchema>;
+};
 
-export function compositionExample(
-  format: SubscriptionFormat,
-  selector: SourceSelection,
-): string {
-  const selection = { selector, selectFrom: "ALL" };
-  if (format === "v2ray-json") {
-    return JSON.stringify(
-      {
-        marzban: {
-          addVirtualHostAsOutbound: false,
-          injectHosts: [{ ...selection, tagPrefix: "pool" }],
-        },
-        outbounds: [],
-        observatory: {
-          subjectSelector: ["pool"],
-          probeUrl: "https://www.gstatic.com/generate_204",
-          probeInterval: "300s",
-        },
-        routing: {
-          balancers: [
-            {
-              tag: "best",
-              selector: ["pool"],
-              strategy: { type: "leastPing" },
-            },
-          ],
-          rules: [{ type: "field", network: "tcp,udp", balancerTag: "best" }],
+const noDirectives: MonacoJsonSchema = {
+  not: { anyOf: [{ required: ["marzban"] }, { required: ["remnawave"] }] },
+};
+const stringList: MonacoJsonSchema = { type: "array", items: { type: "string" } };
+
+function xrayTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
+  const properties = xrayCoreSchema.properties!;
+  const routing = properties.routing as MonacoJsonSchema;
+  const rules = routing.properties!.rules as MonacoJsonSchema;
+  const rule = rules.items as MonacoJsonSchema;
+  const inboundList = properties.inbounds as MonacoJsonSchema;
+  const inbound = inboundList.items as MonacoJsonSchema;
+  const outboundList = properties.outbounds as MonacoJsonSchema;
+  const outbound = outboundList.items as MonacoJsonSchema;
+  return {
+    ...xrayCoreSchema,
+    title: "Xray subscription template",
+    description: "Client configuration with native routing and marzban source injection.",
+    not: { required: ["remnawave"] },
+    properties: {
+      ...properties,
+      remarks: { type: "string" },
+      marzban: {
+        ...directive,
+        defaultSnippets: [{
+          label: "marzban",
+          body: { addVirtualHostAsOutbound: true, injectHosts: [] },
+        }],
+      },
+      routing: {
+        ...routing,
+        properties: {
+          ...routing.properties,
+          // Client rules do not require the managed ruleTag used by server entities.
+          rules: { ...rules, items: { ...rule, required: ["type"] } },
         },
       },
-      null,
-      2,
-    );
-  }
-  if (format === "sing-box") {
-    return JSON.stringify(
-      {
-        outbounds: [
-          { type: "selector", tag: "proxy", outbounds: ["best"] },
-          {
-            type: "urltest",
-            tag: "best",
-            outbounds: [],
-            url: "https://www.gstatic.com/generate_204",
-            interval: "300s",
-            tolerance: 50,
-            marzban: { includeProxies: true, ...selection },
-          },
-        ],
-        route: { final: "proxy" },
+      inbounds: {
+        ...inboundList,
+        description: "Client listeners.",
+        items: { ...inbound, ...noDirectives },
       },
-      null,
-      2,
-    );
-  }
-  if (format === "clash") {
-    return `proxies: []\nproxy-groups:\n  - name: proxy\n    type: select\n    proxies: [best]\n    marzban:\n      include-proxies: false\n  - name: best\n    type: url-test\n    proxies: []\n    url: https://www.gstatic.com/generate_204\n    interval: 300\n    marzban:\n      include-proxies: true\n      selectFrom: ALL\n      selector:\n        type: ${selector.type}\n        values: ${JSON.stringify(selector.values)}\nrules:\n  - MATCH,proxy\n`;
-  }
-  throw new Error("This format does not support composition");
+      outbounds: {
+        ...outboundList,
+        items: { ...outbound, ...noDirectives, required: ["protocol"] },
+      },
+    },
+  };
 }
 
-const selectorSchema: MonacoJsonSchema = {
-  type: "object",
-  additionalProperties: false,
-  required: ["type"],
-  properties: {
-    type: { enum: ["ids", "groups", "sameGroupsAsRecipient"] },
-    values: { type: "array", items: { type: ["integer", "string"] } },
-  },
-};
-const selectionProperties = {
-  selector: selectorSchema,
-  selectFrom: { enum: ["ALL", "HIDDEN", "VISIBLE"] },
+function singboxTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
+  return {
+    type: "object",
+    ...noDirectives,
+    properties: {
+      log: { type: "object" },
+      dns: { type: "object" },
+      inbounds: { type: "array", items: { type: "object", ...noDirectives } },
+      route: { type: "object", properties: { final: { type: "string" }, rules: { type: "array" } } },
+      outbounds: {
+        type: "array",
+        items: {
+          type: "object",
+          not: { required: ["remnawave"] },
+          properties: {
+            type: { type: "string", examples: ["selector", "urltest", "direct", "block"] },
+            tag: { type: "string", minLength: 1 },
+            outbounds: stringList,
+            default: { type: "string" },
+            url: { type: "string" },
+            interval: { type: "string", examples: ["300s"] },
+            tolerance: { type: "integer", minimum: 0 },
+            idle_timeout: { type: "string" },
+            interrupt_exist_connections: { type: "boolean" },
+            marzban: {
+              ...directive,
+              defaultSnippets: [{
+                label: "marzban",
+                body: { includeProxies: true, selectFrom: "VISIBLE" },
+              }],
+            },
+          },
+          if: { required: ["marzban"] },
+          then: { required: ["type"], properties: { type: { enum: ["selector", "urltest"] } } },
+        },
+      },
+    },
+  };
+}
+
+function clashTemplateSchema(directive: MonacoJsonSchema): MonacoJsonSchema {
+  return {
+    type: "object",
+    ...noDirectives,
+    properties: {
+      proxies: { type: "array", items: { type: "object", ...noDirectives } },
+      "proxy-groups": {
+        type: "array",
+        items: {
+          type: "object",
+          not: { required: ["remnawave"] },
+          properties: {
+            name: { type: "string" },
+            type: { type: "string", examples: ["select", "url-test", "load-balance", "fallback"] },
+            proxies: stringList,
+            use: stringList,
+            url: { type: "string" },
+            interval: { type: "integer", minimum: 0 },
+            tolerance: { type: "integer", minimum: 0 },
+            lazy: { type: "boolean" },
+            strategy: { type: "string", examples: ["round-robin", "consistent-hashing"] },
+            marzban: directive,
+          },
+        },
+      },
+      "proxy-providers": {
+        type: "object",
+        additionalProperties: {
+          type: "object",
+          not: { required: ["remnawave"] },
+          properties: {
+            type: { type: "string", examples: ["inline", "http", "file"] },
+            payload: { type: "array", items: { type: "object", ...noDirectives } },
+            marzban: directive,
+          },
+          if: { required: ["marzban"] },
+          then: { required: ["type"], properties: { type: { const: "inline" } } },
+        },
+      },
+      rules: stringList,
+    },
+  };
+}
+
+const schemaBuilders = {
+  "v2ray-json": xrayTemplateSchema,
+  "sing-box": singboxTemplateSchema,
+  clash: clashTemplateSchema,
 };
 
 export function compositionSchema(
   format: SubscriptionFormat,
+  capabilities?: DirectiveSchema,
 ): MonacoJsonSchema | undefined {
-  if (format === "v2ray-json")
-    return {
-      type: "object",
-      properties: {
-        marzban: {
-          type: "object",
-          additionalProperties: false,
-          properties: {
-            addVirtualHostAsOutbound: { type: "boolean", default: true },
-            injectHosts: {
-              type: "array",
-              items: {
-                type: "object",
-                additionalProperties: false,
-                required: ["tagPrefix"],
-                properties: {
-                  ...selectionProperties,
-                  tagPrefix: { type: "string", minLength: 1 },
-                },
-              },
-            },
-          },
-        },
-        outbounds: { type: "array", items: { type: "object" } },
-      },
-    };
-  if (format === "sing-box")
-    return {
-      type: "object",
-      properties: {
-        outbounds: {
-          type: "array",
-          items: {
-            type: "object",
-            properties: {
-              marzban: {
-                type: "object",
-                additionalProperties: false,
-                properties: {
-                  ...selectionProperties,
-                  selector: {
-                    ...selectorSchema,
-                    properties: {
-                      ...selectorSchema.properties,
-                      type: { enum: ["ids", "groups"] },
-                    },
-                  },
-                  includeProxies: { type: "boolean", default: true },
-                },
-              },
-            },
-          },
-        },
-      },
-    };
-  return undefined;
+  if (format !== "v2ray-json" && format !== "sing-box" && format !== "clash") return;
+  const { $defs: definitions, ...directive } = capabilities ?? { type: "object" };
+  const document = schemaBuilders[format](directive);
+  // Hoist shared Pydantic definitions so nested directives resolve references at the document root.
+  return JSON.parse(JSON.stringify({
+    $schema: "http://json-schema.org/draft-07/schema#",
+    ...document,
+    definitions,
+  }, (key, value) => key === "$ref" && typeof value === "string"
+    ? value.replace(/^#\/\$defs\//, "#/definitions/") : value));
+}
+
+export function templateLanguage(format: SubscriptionFormat, content: string): "json" | "yaml" | "text" {
+  if (format === "v2ray") return "text";
+  if (format === "clash" && !/^\{\s*(?:"|}|$)/.test(content.trimStart())) return "yaml";
+  return "json";
 }

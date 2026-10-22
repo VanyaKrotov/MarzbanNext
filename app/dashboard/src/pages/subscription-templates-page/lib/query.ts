@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/service/http";
+import type { MonacoJsonSchema } from "@/components/MonacoJsonEditor";
 
 import type { SubscriptionFormat, TemplateBindings } from "./formats";
 export { subscriptionFormats, formatLabelKeys } from "./formats";
@@ -16,6 +17,9 @@ export type SubscriptionTemplate = {
 };
 export type TemplateDocument = SubscriptionTemplate & { content: string };
 type TemplateList = { items: SubscriptionTemplate[]; total: number };
+export type TemplateCapabilities = Partial<
+  Record<SubscriptionFormat, MonacoJsonSchema>
+>;
 
 export const subscriptionTemplatesQueryKey = [
   "subscription-templates",
@@ -77,6 +81,16 @@ export function useTemplateQuery(id?: number) {
       api.get<TemplateDocument>(`/subscription-templates/${id}`, { signal }),
     enabled: id !== undefined,
     refetchOnMount: "always",
+  });
+}
+
+export function useTemplateCapabilitiesQuery(enabled: boolean) {
+  return useQuery({
+    queryKey: [...subscriptionTemplatesQueryKey, "capabilities"],
+    queryFn: ({ signal }) =>
+      api.get<TemplateCapabilities>("/subscription-templates/capabilities", { signal }),
+    enabled,
+    staleTime: Infinity,
   });
 }
 

@@ -1,6 +1,6 @@
 import { isAxiosError } from "axios";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
@@ -47,20 +47,13 @@ import {
   subscriptionFormats,
   useTemplateMutation,
   useTemplateQuery,
+  useTemplateCapabilitiesQuery,
   type SubscriptionTemplate,
   type TemplateDocument,
   type SubscriptionFormat,
 } from "../lib/query";
 
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
-import { CompositionHelper } from "./CompositionHelper";
-import { TemplatePreview } from "./TemplatePreview";
-import { compositionSchema } from "../lib/composition";
+import { compositionSchema, templateLanguage } from "../lib/composition";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(128),
@@ -235,6 +228,12 @@ function TemplateForm({
     onStatus(form.formState.isDirty, mutation.isPending);
   }, [form.formState.isDirty, mutation.isPending, onStatus]);
   const format = form.watch("format");
+  const supportsComposition = ["v2ray-json", "clash", "sing-box"].includes(format);
+  const capabilities = useTemplateCapabilitiesQuery(supportsComposition);
+  const editorSchema = useMemo(
+    () => compositionSchema(format, capabilities.data?.[format]),
+    [format, capabilities.data],
+  );
   const submit = form.handleSubmit((values) =>
     mutation.mutate(values, {
       onSuccess: () => {
@@ -326,58 +325,31 @@ function TemplateForm({
             render={({ field }) => (
               <MonacoJsonEditor
                 id="template-content"
-                schema={compositionSchema(format)}
+                schema={editorSchema}
                 value={field.value}
                 onChange={field.onChange}
-                language={
-                  format === "clash"
-                    ? "yaml"
-                    : format === "v2ray"
-                      ? "text"
-                      : "json"
-                }
+                language={templateLanguage(format, field.value)}
                 disabled={mutation.isPending}
                 className="h-[50svh] min-h-64"
               />
             )}
           />
           <FieldError errors={[form.formState.errors.content]} />
-        </Field>
-        <Accordion type="multiple">
-          {["v2ray-json", "clash", "sing-box"].includes(format) && (
-            <AccordionItem value="composition">
-              <AccordionTrigger>
-                {t("templateComposition.title")}
-              </AccordionTrigger>
-              <AccordionContent className="h-auto">
-                <CompositionHelper
-                  key={format}
-                  format={format}
-                  disabled={mutation.isPending}
-                  onInsert={(content) =>
-                    form.setValue("content", content, {
-                      shouldDirty: true,
-                      shouldValidate: true,
-                    })
-                  }
-                />
-              </AccordionContent>
-            </AccordionItem>
+          {supportsComposition && capabilities.isError && (
+            <p role="alert" className="text-sm text-destructive">
+              {t("subscriptionTemplates.schemaLoadError")}{" "}
+              <Button
+                type="button"
+                variant="link"
+                size="sm"
+                disabled={capabilities.isFetching}
+                onClick={() => void capabilities.refetch()}
+              >
+                {t("subscriptionTemplates.refresh")}
+              </Button>
+            </p>
           )}
-          <AccordionItem value="preview">
-            <AccordionTrigger>
-              {t("templateComposition.preview")}
-            </AccordionTrigger>
-            <AccordionContent className="h-auto">
-              <TemplatePreview
-                key={format}
-                format={format}
-                disabled={mutation.isPending}
-                getContent={() => form.getValues("content")}
-              />
-            </AccordionContent>
-          </AccordionItem>
-        </Accordion>
+        </Field>
         <p className="text-sm text-muted-foreground">
           {t("subscriptionTemplates.variables")}
         </p>

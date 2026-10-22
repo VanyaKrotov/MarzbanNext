@@ -11,7 +11,6 @@ from app.models.subscription_template import (
     SubscriptionTemplateClone,
     SubscriptionTemplateCreate,
     SubscriptionTemplateModify,
-    SubscriptionTemplatePreview,
 )
 from app.utils.subscription_templates import validate_subscription_template
 
@@ -25,57 +24,6 @@ def get_capabilities(admin: Admin = Depends(Admin.check_sudo_admin)):
     clash = deepcopy(include)
     clash["properties"]["include-proxies"] = clash["properties"].pop("includeProxies")
     return {"v2ray-json": XrayDirectives.model_json_schema(), "clash": clash, "sing-box": include}
-
-
-def preview_users(search: str = "", limit: int = Query(50, ge=1, le=100),
-                  db: Session = Depends(get_db), admin: Admin = Depends(Admin.check_sudo_admin)):
-    from app.db.models.users import User
-
-    query = db.query(User.id, User.username)
-    if search.strip():
-        query = query.filter(User.username.contains(search.strip(), autoescape=True))
-    return [{"id": row.id, "username": row.username} for row in query.order_by(User.username).limit(limit)]
-
-
-def preview_template(payload: SubscriptionTemplatePreview, db: Session = Depends(get_db),
-                     admin: Admin = Depends(Admin.check_sudo_admin)):
-    from dataclasses import replace
-
-    from app.db.models.users import User
-    from app.subscription.contracts import RenderInput, SubscriptionError, TemplateSnapshot
-    from app.subscription.generators import GeneratorRegistry
-    from app.subscription.loader import SubscriptionSnapshotLoader
-    from app.subscription.planning import ProfilePlanner
-    from app.subscription.resolver import ResolveContext
-    from app.subscription.share import setup_format_variables
-
-    user = db.get(User, payload.user_id)
-    if user is None:
-        raise HTTPException(status_code=404, detail="User not found")
-    _validate(payload.format, payload.content)
-    snapshot = SubscriptionSnapshotLoader().load(db)
-    if payload.recipient_host_id is not None and not any(
-        host.id == payload.recipient_host_id for host in snapshot.hosts
-    ):
-        raise HTTPException(status_code=404, detail="Recipient host not found")
-    snapshot = replace(snapshot, templates={**snapshot.templates,
-                       -1: TemplateSnapshot(-1, payload.format.value, payload.content)})
-    proxies = {proxy.type.value: proxy.settings for proxy in user.proxies}
-    context = setup_format_variables({"username": user.username, "used_traffic": user.used_traffic,
-                                      "data_limit": user.data_limit, "expire": user.expire, "status": user.status})
-    try:
-        plans, diagnostics = ProfilePlanner().plan(
-            snapshot, payload.format.value, proxies, user.inbounds, ResolveContext(context),
-            root_ids={payload.recipient_host_id} if payload.recipient_host_id is not None else None, template_id=-1,
-        )
-        result = GeneratorRegistry().for_target(payload.format.value).generate(
-            RenderInput(payload.format.value, plans, snapshot.defaults, snapshot.external_config))
-        return {"body": result.body, "media_type": result.media_type,
-                "recipient_host_ids": [plan.owner.id for plan in plans],
-                "diagnostics": [*diagnostics, *result.diagnostics]}
-    except ValueError as exc:
-        raise HTTPException(status_code=exc.status_code if isinstance(exc, SubscriptionError) else 422,
-                            detail=str(exc)) from exc
 
 
 def _get_template(db: Session, template_id: int) -> SubscriptionTemplate:

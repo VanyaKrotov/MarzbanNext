@@ -9,9 +9,18 @@ from app.subscription.contracts import SubscriptionError
 
 
 class Selector(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-    type: Literal["ids", "groups", "sameGroupsAsRecipient"]
-    values: list[StrictInt | str] = Field(default_factory=list)
+    model_config = ConfigDict(extra="forbid", json_schema_extra={"allOf": [
+        {"if": {"properties": {"type": {"const": "ids"}}, "required": ["type"]},
+         "then": {"properties": {"values": {"items": {"type": "integer", "minimum": 1}}}}},
+        {"if": {"properties": {"type": {"const": "groups"}}, "required": ["type"]},
+         "then": {"properties": {"values": {"items": {"type": "string", "minLength": 1}}}}},
+        {"if": {"properties": {"type": {"const": "sameGroupsAsRecipient"}}, "required": ["type"]},
+         "then": {"properties": {"values": {"maxItems": 0}}}},
+    ]})
+    type: Literal["ids", "groups", "sameGroupsAsRecipient"] = Field(
+        description="Select hosts by positive integer IDs, group IDs, or the Xray recipient's groups.")
+    values: list[StrictInt | str] = Field(
+        default_factory=list, description="Host IDs or group IDs. Omit for sameGroupsAsRecipient.")
 
     @model_validator(mode="after")
     def validate_values(self):
@@ -26,23 +35,31 @@ class Selector(BaseModel):
 
 class Selection(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    selector: Selector | None = None
-    selectFrom: Literal["ALL", "HIDDEN", "VISIBLE"] = "VISIBLE"
+    selector: Selector | None = Field(None, description="Restrict the authorized source pool to these hosts or groups.")
+    selectFrom: Literal["ALL", "HIDDEN", "VISIBLE"] = Field(
+        "VISIBLE", description=("Filter sources by host visibility. "
+                                "Disabled hosts and excluded formats remain unavailable."))
 
 
 class InjectHosts(Selection):
-    selectFrom: Literal["ALL", "HIDDEN", "VISIBLE"] = "HIDDEN"
-    tagPrefix: str = Field(min_length=1, max_length=256)
+    selectFrom: Literal["ALL", "HIDDEN", "VISIBLE"] = Field(
+        "HIDDEN", description="Inject hidden, visible, or all authorized sources. The recipient itself is excluded.")
+    tagPrefix: str = Field(
+        min_length=1, max_length=256,
+        description="Stable unique prefix for generated outbound tags and balancer selectors.")
 
 
 class XrayDirectives(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    addVirtualHostAsOutbound: StrictBool = True
-    injectHosts: list[InjectHosts] = Field(default_factory=list)
+    addVirtualHostAsOutbound: StrictBool = Field(
+        True, description="Include the recipient's own connection as an outbound.")
+    injectHosts: list[InjectHosts] = Field(
+        default_factory=list, description="Add connections from selected hosts to this Xray configuration.")
 
 
 class IncludeProxies(Selection):
-    includeProxies: StrictBool = True
+    includeProxies: StrictBool = Field(
+        True, description="Fill this group or inline provider from the selected source pool.")
 
 
 def parse_directive(schema, value):

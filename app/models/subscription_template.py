@@ -57,13 +57,6 @@ class SubscriptionTemplateClone(BaseModel):
     _strip_name = field_validator("name")(SubscriptionTemplateCreate.strip_name.__func__)
 
 
-class SubscriptionTemplatePreview(BaseModel):
-    format: SubscriptionFormat
-    content: str = Field(min_length=1)
-    user_id: int = Field(gt=0)
-    recipient_host_id: int | None = Field(None, gt=0)
-
-
 class SubscriptionTemplateSummary(BaseModel):
     id: int
     name: str
