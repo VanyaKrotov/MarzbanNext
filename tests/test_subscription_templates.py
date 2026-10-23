@@ -244,7 +244,7 @@ class SubscriptionTemplateTests(TestCase):
             with self.assertRaises(ValidationError):
                 ProxyHostCreate(inbound_id=1, remark='Invalid',
                                 address='example.com', subscription_template_ids=bindings)
-        for alias in ('clash-meta', 'mihomo'):
+        for alias in ('json', 'xray-json', 'singbox', 'clash-meta', 'mihomo'):
             with self.subTest(alias=alias), self.assertRaises(ValidationError):
                 ProxyHostCreate(inbound_id=1, remark='Alias', address='example.com',
                                 subscription_template_ids={alias: self.defaults['clash']})
@@ -291,6 +291,51 @@ class SubscriptionTemplateTests(TestCase):
                     self.assertTrue(any(outbound.get('server') ==
                                     'first.example.com' for outbound in json.loads(result)['outbounds']))
 
+    def test_public_urls_accept_only_catalog_format_names(self):
+        self.create_host()
+        self.client.app.dependency_overrides[get_validated_sub] = self.subscription_user
+        with patch('app.db.GetDB', return_value=nullcontext(self.db)):
+            for format in SubscriptionFormat:
+                with self.subTest(format=format.value):
+                    response = self.client.get(f'{public_router.prefix}/test/{format.value}')
+                    self.assertEqual(response.status_code, 200, response.text)
+                    expected = self.generate(format)
+                    if format == SubscriptionFormat.v2ray:
+                        self.assertEqual(base64.b64decode(response.text).decode(), expected)
+                    else:
+                        self.assertEqual(response.text, expected)
+            for alias in ('json', 'xray-json', 'singbox', 'clash-meta', 'mihomo', 'base64', 'xray', 'stash'):
+                with self.subTest(alias=alias):
+                    response = self.client.get(f'{public_router.prefix}/test/{alias}')
+                    self.assertEqual(response.status_code, 422, response.text)
+                    self.assertEqual(response.json()['detail'][0]['loc'], ['path', 'client_type'])
+
+    def test_template_api_rejects_aliases_in_filters_create_and_update(self):
+        for alias in ('json', 'xray-json', 'singbox', 'clash-meta', 'mihomo'):
+            requests = (
+                self.client.get('/api/subscription-templates', params={'format': alias}),
+                self.client.post('/api/subscription-templates', json={
+                    'name': 'Invalid alias', 'format': alias, 'content': default_subscription_content('v2ray-json'),
+                }),
+                self.client.patch(f'/api/subscription-templates/{self.defaults["v2ray-json"]}', json={'format': alias}),
+            )
+            for response in requests:
+                with self.subTest(alias=alias, request=response.request.method):
+                    self.assertEqual(response.status_code, 422, response.text)
+                    self.assertEqual(response.json()['detail'][0]['loc'][-1], 'format')
+
+    def test_binding_updates_and_generation_reject_aliases_without_changing_saved_formats(self):
+        host = self.create_host()
+        for alias in ('json', 'xray-json', 'singbox', 'clash-meta', 'mihomo'):
+            with self.subTest(alias=alias):
+                with self.assertRaises(ValidationError):
+                    self.update_host(host, subscription_template_ids={alias: self.defaults['v2ray-json']})
+                self.assertEqual(host.subscription_template_ids, self.defaults)
+                with self.assertRaises(ValueError):
+                    self.generate(alias)
+        clone = host_crud.clone_host(self.db, host, 'Copy')
+        self.assertEqual(clone.subscription_template_ids, self.defaults)
+
     def test_disabled_formats_stay_disabled_with_explicit_template(self):
         host = self.create_host(subscription_template_ids={})
         for format in SubscriptionFormat:
@@ -314,10 +359,10 @@ class SubscriptionTemplateTests(TestCase):
             response = self.client.get(f'{public_router.prefix}/test', headers={'User-Agent': 'unknown-client'})
             self.assertEqual(response.status_code, 200, response.text)
             self.assertTrue(base64.b64decode(response.text).startswith(b'ss://'))
-            for format in ('json', 'xray-json', 'clash', 'singbox'):
+            for format in ('v2ray-json', 'clash', 'sing-box'):
                 response = self.client.get(f'{public_router.prefix}/test/{format}')
                 self.assertEqual(response.status_code, 204, response.text)
-            for format in ('clash-meta', 'mihomo'):
+            for format in ('json', 'xray-json', 'singbox', 'clash-meta', 'mihomo'):
                 response = self.client.get(f'{public_router.prefix}/test/{format}')
                 self.assertEqual(response.status_code, 422, response.text)
                 response = self.client.get('/api/subscription-templates', params={'format': format})

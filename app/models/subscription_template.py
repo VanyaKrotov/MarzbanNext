@@ -12,21 +12,6 @@ class SubscriptionFormat(str, Enum):
     outline = "outline"
 
 
-FORMAT_ALIASES = {
-    "singbox": "sing-box",
-    "json": "v2ray-json",
-    "xray-json": "v2ray-json",
-}
-
-
-def normalize_subscription_format(value: str) -> SubscriptionFormat:
-    return SubscriptionFormat(FORMAT_ALIASES.get(value, value))
-
-
-def normalize_subscription_client_type(value: str) -> str:
-    return normalize_subscription_format(value).value
-
-
 class SubscriptionTemplateCreate(BaseModel):
     name: str = Field(min_length=1, max_length=128)
     format: SubscriptionFormat
@@ -79,9 +64,7 @@ class SubscriptionTemplateList(BaseModel):
 def normalize_template_bindings(value: dict) -> dict[SubscriptionFormat, int]:
     result = {}
     for key, template_id in value.items():
-        format = normalize_subscription_format(key)
-        if format in result:
-            raise ValueError(f"Duplicate template assignment for {format.value}")
+        format = SubscriptionFormat(key)
         if isinstance(template_id, bool) or not isinstance(template_id, int) or template_id <= 0:
             raise ValueError("Template IDs must be positive integers")
         result[format] = template_id

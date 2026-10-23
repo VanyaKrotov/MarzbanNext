@@ -7,7 +7,7 @@ from functools import lru_cache
 from jdatetime import date as jd
 from fastapi import HTTPException
 
-from app.models.subscription_template import normalize_subscription_client_type
+from app.models.subscription_template import SubscriptionFormat
 from app.subscription.client_metadata import supports_server_description
 from app.subscription.contracts import RenderInput, SubscriptionError
 from app.subscription.generators import GeneratorRegistry
@@ -142,7 +142,7 @@ def generate_subscription_config(proxies, inbounds, extra_data, config_format, a
     from app.db import GetDB
     from app.utils.runtime_settings import get_runtime_settings
 
-    target = normalize_subscription_client_type(config_format)
+    target = SubscriptionFormat(config_format).value
     settings = get_runtime_settings()
     with GetDB() as db:
         snapshot = SubscriptionSnapshotLoader().load(db, settings)

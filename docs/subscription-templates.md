@@ -24,9 +24,9 @@ API возвращает вычисляемое поле `is_default`, а не `
 Повторяющиеся названия внутри формата отклоняются.
 
 `clash` — единый формат шаблонов и генерации для Clash Meta (Mihomo).
-`clash-meta` и `mihomo` не принимаются как имена формата или URL подписки; отдельного
-Mihomo target нет.
-`singbox` — псевдоним `sing-box`; `json` и `xray-json` — `v2ray-json`.
+В URL, API и привязках хостов принимаются только имена из каталога выше.
+Алиасы `json`, `xray-json`, `singbox`, `clash-meta` и `mihomo` возвращают HTTP 422.
+Для Xray JSON используйте `v2ray-json`, для sing-box — `sing-box`, для YAML — `clash`.
 Base64 — кодирование результата `v2ray`, а не отдельный формат шаблона.
 
 Параметры генераторов хранятся отдельными полями `runtime_settings`:

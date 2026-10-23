@@ -315,7 +315,6 @@ class UnifiedHostTests(TestCase):
                 self.assertEqual(tls["alpn"], [])
 
     def test_clash_is_the_only_yaml_target_and_accepts_client_overrides(self):
-        from app.models.subscription_template import normalize_subscription_client_type
         from app.subscription.capabilities import host_capabilities
         import yaml
 
@@ -323,10 +322,7 @@ class UnifiedHostTests(TestCase):
                                   "mapper": {"clash": [{"op": "set", "to": "udp", "value": False}]}})
         self.assertEqual(set(GeneratorRegistry.generators), {"v2ray", "v2ray-json", "clash", "sing-box", "outline"})
         self.assertNotIn("strategies", host_capabilities())
-        self.assertEqual(normalize_subscription_client_type("clash"), "clash")
         for alias in ("clash-meta", "mihomo"):
-            with self.subTest(alias=alias), self.assertRaises(ValueError):
-                normalize_subscription_client_type(alias)
             with self.assertRaises(ValidationError):
                 HostCreate(inbound_id=self.inbound.id, remark="Invalid", address="example.com",
                            overrides={"clients": {alias: {"ip_version": "ipv4"}}})

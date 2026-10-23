@@ -4,6 +4,8 @@
 [`010b365ab1fabea01192b5e6ade4e98e66ee1dbd`](https://github.com/remnawave/backend/tree/010b365ab1fabea01192b5e6ade4e98e66ee1dbd)
 от 2026-10-06. Анализ выполнен 2026-10-16–2026-10-17. Это спецификация существующей реализации,
 а не обещание совместимости с любой версией клиентских ядер и не описание текущего генератора MarzbanNext.
+Имена форматов и URL MarzbanNext описаны в [актуальном контракте](../subscription-templates.md).
+В панели принимаются только `v2ray`, `v2ray-json`, `clash`, `sing-box`, `outline`, без алиасов.
 
 ## Документы
 

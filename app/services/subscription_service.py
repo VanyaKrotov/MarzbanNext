@@ -2,13 +2,13 @@ import re
 from distutils.version import LooseVersion
 from typing import Annotated, Union
 
-from fastapi import Depends, Header, Path, Query, Request, Response, HTTPException
+from fastapi import Depends, Header, Path, Query, Request, Response
 from fastapi.responses import HTMLResponse
 
 from app.db import Session, get_db
 from app.dependencies import get_validated_sub, validate_dates
 from app.models.user import UserResponse
-from app.models.subscription_template import normalize_subscription_client_type
+from app.models.subscription_template import SubscriptionFormat
 from app.subscription.share import (
     encode_title,
     generate_subscription,
@@ -192,8 +192,7 @@ def user_get_usage(
 def user_subscription_with_client_type(
     request: Request,
     dbuser: UserResponse = Depends(get_validated_sub),
-    client_type: str = Path(...,
-                            pattern="^(sing-box|singbox|clash|outline|v2ray|v2ray-json|xray-json|json)$"),
+    client_type: SubscriptionFormat = Path(...),
     groups: Union[str, None] = Query(None),
     db: Session = Depends(get_db),
     user_agent: str = Header(default=""),
@@ -204,10 +203,7 @@ def user_subscription_with_client_type(
 
     response_headers = get_subscription_response_headers(request, user)
 
-    client_type = normalize_subscription_client_type(client_type)
-    config = client_config.get(client_type)
-    if config is None:
-        raise HTTPException(status_code=422, detail="Unsupported subscription format")
+    config = client_config[client_type.value]
     hosts = host_crud.list_hosts(db, group_ids=parse_groups_query(groups)).all()
     conf = generate_subscription_from_hosts(
         user=user,

@@ -20,6 +20,8 @@
 Группы и привязки шаблонов остаются отдельными отношениями. Таблицы `host_links`,
 полей `show_when_composed` и `balancer_settings` больше нет.
 API возвращает также `inbound_tag`, `inbound_port`, `groups`, `subscription_template_ids`.
+Ключи `subscription_template_ids` — только `v2ray`, `v2ray-json`, `clash`, `sing-box`, `outline`.
+Псевдонимы форматов не принимаются.
 В таблице показывается `port ?? inbound_port`; наследуемый `port` остаётся `null`.
 
 В форме группы находятся под инбаундом, адрес и порт — в одной строке,
