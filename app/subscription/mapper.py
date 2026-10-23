@@ -22,6 +22,57 @@ def _get(source, parts):
     return value
 
 
+def _array_position(part):
+    if not part.isdigit():
+        return None
+    position = int(part)
+    if position >= 1024:
+        raise ValueError("Mapper array index must be smaller than 1024")
+    return position
+
+
+def _child_container(parent, part, next_part, create):
+    """Walk one path segment, creating objects/arrays only for set and copy operations."""
+    empty = [] if next_part.isdigit() else {}
+    if isinstance(parent, dict):
+        if part not in parent and create:
+            parent[part] = empty
+        return parent.get(part)
+    if not isinstance(parent, list):
+        return None
+    position = _array_position(part)
+    if position is None:
+        return None
+    if position >= len(parent) and create:
+        parent.extend([None] * (position + 1 - len(parent)))
+    if position >= len(parent):
+        return None
+    if parent[position] is None and create:
+        parent[position] = empty
+    return parent[position]
+
+
+def _assign(parent, part, value, remove):
+    if isinstance(parent, dict):
+        if remove:
+            parent.pop(part, None)
+        else:
+            parent[part] = deepcopy(value)
+        return
+    if not isinstance(parent, list):
+        return
+    position = _array_position(part)
+    if position is None:
+        return
+    if position >= len(parent) and not remove:
+        parent.extend([None] * (position + 1 - len(parent)))
+    if position < len(parent):
+        if remove:
+            parent.pop(position)
+        else:
+            parent[position] = deepcopy(value)
+
+
 class HostMapper:
     def apply(self, node, operations, connection, flat=False):
         result = deepcopy(node)
@@ -43,41 +94,10 @@ class HostMapper:
                 if value is MISSING:
                     continue
             parent = result
+            remove = operation["op"] == "unset"
             for index, part in enumerate(parts[:-1]):
-                if isinstance(parent, dict):
-                    if part not in parent and operation["op"] != "unset":
-                        parent[part] = [] if parts[index + 1].isdigit() else {}
-                    parent = parent.get(part)
-                elif isinstance(parent, list) and part.isdigit():
-                    position = int(part)
-                    if position >= 1024:
-                        raise ValueError("Mapper array index must be smaller than 1024")
-                    if position >= len(parent) and operation["op"] != "unset":
-                        parent.extend([None] * (position + 1 - len(parent)))
-                    if position < len(parent):
-                        if parent[position] is None and operation["op"] != "unset":
-                            parent[position] = [] if parts[index + 1].isdigit() else {}
-                        parent = parent[position]
-                    else:
-                        parent = None
-                else:
-                    parent = None
+                parent = _child_container(parent, part, parts[index + 1], create=not remove)
+                if parent is None:
                     break
-            last = parts[-1]
-            if isinstance(parent, dict):
-                if operation["op"] == "unset":
-                    parent.pop(last, None)
-                else:
-                    parent[last] = deepcopy(value)
-            elif isinstance(parent, list) and last.isdigit():
-                position = int(last)
-                if position >= 1024:
-                    raise ValueError("Mapper array index must be smaller than 1024")
-                if position >= len(parent) and operation["op"] != "unset":
-                    parent.extend([None] * (position + 1 - len(parent)))
-                if position < len(parent):
-                    if operation["op"] == "unset":
-                        parent.pop(position)
-                    else:
-                        parent[position] = deepcopy(value)
+            _assign(parent, parts[-1], value, remove)
         return result

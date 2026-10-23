@@ -10,38 +10,47 @@ import type {
   HostsSchema,
 } from "../types";
 import { api } from "service/http";
+import { fetchAllPages } from "@/service/pagination";
+import type { HostOverridesSchema } from "../components/host-dialog/lib/json-parameters";
 
 export const hostsQueryKey = ["hosts", "unified"] as const;
 export const hostGroupsQueryKey = ["host-groups"] as const;
 
+export function useHostCapabilitiesQuery() {
+  return useQuery({
+    queryKey: ["hosts", "capabilities"],
+    queryFn: ({ signal }) =>
+      api.get<{ overrides_schema: HostOverridesSchema }>(
+        "/hosts/capabilities",
+        { signal },
+      ),
+    staleTime: Infinity,
+  });
+}
+
 export function useHostsQuery(groupIds: string[] = [], search = "") {
   return useQuery({
     queryKey: [...hostsQueryKey, groupIds, search],
-    queryFn: async ({ signal }) => {
-      const params = new URLSearchParams({ limit: "1000" });
-      if (groupIds.length) params.set("groups", groupIds.join(","));
-      if (search.trim()) params.set("search", search.trim());
-      const items: HostsSchema = [];
-      let total = 1;
-      while (items.length < total) {
-        params.set("offset", String(items.length));
-        const page = await api.get<{ items: HostsSchema; total: number }>(
-          "/hosts",
-          { params, signal },
-        );
-        items.push(...page.items);
-        total = page.total;
-        if (!page.items.length) break;
-      }
-      return items;
-    },
+    queryFn: ({ signal }) =>
+      fetchAllPages((offset) =>
+        api.get<{ items: HostsSchema; total: number }>("/hosts", {
+          signal,
+          params: {
+            limit: 1000,
+            offset,
+            groups: groupIds.length ? groupIds.join(",") : undefined,
+            search: search.trim() || undefined,
+          },
+        }),
+      ),
   });
 }
 
 export function useHostGroupsQuery() {
   return useQuery({
     queryKey: hostGroupsQueryKey,
-    queryFn: () => api.get<HostGroupType[]>("/host-groups"),
+    queryFn: ({ signal }) =>
+      api.get<HostGroupType[]>("/host-groups", { signal }),
   });
 }
 

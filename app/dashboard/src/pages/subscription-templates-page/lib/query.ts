@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { api } from "@/service/http";
+import { fetchAllPages } from "@/service/pagination";
 import type { MonacoJsonSchema } from "@/components/MonacoJsonEditor";
 
 import type { SubscriptionFormat, TemplateBindings } from "./formats";
@@ -57,20 +58,13 @@ export function useAllTemplatesQuery() {
   return useQuery({
     queryKey: [...subscriptionTemplatesQueryKey, "all"],
     refetchOnMount: "always",
-    queryFn: async ({ signal }) => {
-      const items: SubscriptionTemplate[] = [];
-      let total = 1;
-      while (items.length < total) {
-        const page = await api.get<TemplateList>("/subscription-templates", {
+    queryFn: ({ signal }) =>
+      fetchAllPages((offset) =>
+        api.get<TemplateList>("/subscription-templates", {
           signal,
-          params: { offset: items.length, limit: 1000 },
-        });
-        items.push(...page.items);
-        total = page.total;
-        if (!page.items.length) break;
-      }
-      return items;
-    },
+          params: { offset, limit: 1000 },
+        }),
+      ),
   });
 }
 
@@ -88,7 +82,9 @@ export function useTemplateCapabilitiesQuery(enabled: boolean) {
   return useQuery({
     queryKey: [...subscriptionTemplatesQueryKey, "capabilities"],
     queryFn: ({ signal }) =>
-      api.get<TemplateCapabilities>("/subscription-templates/capabilities", { signal }),
+      api.get<TemplateCapabilities>("/subscription-templates/capabilities", {
+        signal,
+      }),
     enabled,
     staleTime: Infinity,
   });

@@ -1,7 +1,6 @@
 """Administrative host operations, without transport or client-generation details."""
 
 from fastapi import Depends, HTTPException
-from pydantic import ValidationError
 from sqlalchemy.exc import IntegrityError
 
 from app import logger
@@ -26,7 +25,7 @@ def _mutate(db, action):
     except IntegrityError as exc:
         db.rollback()
         raise HTTPException(status_code=409, detail="Host configuration conflicts with existing data") from exc
-    except (ValueError, ValidationError) as exc:
+    except ValueError as exc:
         db.rollback()
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -34,8 +33,6 @@ def _mutate(db, action):
 def list_hosts(search: str | None = None, groups: str | None = None, inbound_id: int | None = None,
                enabled: bool | None = None, offset: int = 0, limit: int = 100,
                db: Session = Depends(get_db), admin: Admin = Depends(Admin.check_sudo_admin)):
-    from fastapi import HTTPException
-
     if offset < 0 or not 1 <= limit <= 1000:
         raise HTTPException(status_code=422, detail="Invalid pagination")
     query = crud.list_hosts(db, group_ids=groups.split(",") if groups else [], search=search,

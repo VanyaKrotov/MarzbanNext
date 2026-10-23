@@ -1,20 +1,16 @@
 import Editor, { loader, type OnMount } from "@monaco-editor/react";
 import * as monaco from "monaco-editor/esm/vs/editor/editor.api.js";
-import "monaco-editor/esm/vs/basic-languages/yaml/yaml.contribution.js";
-import EditorWorker from "monaco-editor/esm/vs/editor/editor.worker?worker";
-import { jsonDefaults } from "monaco-editor/esm/vs/language/json/monaco.contribution.js";
-import JsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 import { useEffect, useState } from "react";
 
 import type { MonacoJsonMarker, MonacoJsonSchema } from "./MonacoJsonEditor";
+import { registerSchema } from "./monaco-language-services";
+import {
+  containsTemplateExpression,
+  registerTemplateSupport,
+  type TemplateVariable,
+} from "./monaco-template-support";
 
 loader.config({ monaco });
-
-self.MonacoEnvironment = {
-  getWorker(_moduleId, label) {
-    return label === "json" ? new JsonWorker() : new EditorWorker();
-  },
-};
 
 type MonacoJsonEditorImplProps = {
   value: string;
@@ -25,22 +21,7 @@ type MonacoJsonEditorImplProps = {
   schemaUri?: string;
   onValidate?: (markers: MonacoJsonMarker[]) => void;
   language: "json" | "yaml" | "text";
-};
-
-const schemaRegistry = new Map<
-  string,
-  { uri: string; fileMatch: string[]; schema: MonacoJsonSchema }
->();
-
-const applySchemas = () => {
-  jsonDefaults.setDiagnosticsOptions({
-    validate: true,
-    allowComments: false,
-    enableSchemaRequest: false,
-    schemaValidation: "error",
-    trailingCommas: "error",
-    schemas: [...schemaRegistry.values()],
-  });
+  templateVariables?: readonly TemplateVariable[];
 };
 
 const getSystemTheme = () =>
@@ -72,26 +53,33 @@ export function MonacoJsonEditorImpl({
   schemaUri,
   onValidate,
   language,
+  templateVariables,
 }: MonacoJsonEditorImplProps) {
   const theme = useSystemEditorTheme();
+  const hasJinja = Boolean(
+    templateVariables && containsTemplateExpression(value),
+  );
 
   useEffect(() => {
-    if (!schema || language !== "json") return;
+    if (!schema || language === "text") return;
 
-    schemaRegistry.set(modelPath, {
-      uri: schemaUri ?? `${modelPath}.schema.json`,
-      fileMatch: [modelPath],
-      schema,
-    });
-    applySchemas();
-
-    return () => {
-      schemaRegistry.delete(modelPath);
-      applySchemas();
-    };
+    return registerSchema(modelPath, language, schema, schemaUri);
   }, [language, modelPath, schema, schemaUri]);
 
+  useEffect(() => {
+    if (!templateVariables) return;
+    const support = registerTemplateSupport(
+      monaco,
+      modelPath,
+      language === "text" ? "plaintext" : language,
+      templateVariables,
+    );
+    return () => support.dispose();
+  }, [language, modelPath, templateVariables]);
+
   const handleMount: OnMount = (editor) => {
+    if (templateVariables && containsTemplateExpression(editor.getValue()))
+      return;
     editor.getAction("editor.action.formatDocument")?.run();
   };
 
@@ -104,7 +92,7 @@ export function MonacoJsonEditorImpl({
       value={value}
       onChange={(nextValue) => onChange(nextValue ?? "")}
       onMount={handleMount}
-      onValidate={onValidate}
+      onValidate={hasJinja ? () => onValidate?.([]) : onValidate}
       loading={<div className="h-full w-full animate-pulse bg-muted/50" />}
       options={{
         automaticLayout: true,
@@ -115,8 +103,8 @@ export function MonacoJsonEditorImpl({
         fontFamily:
           'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace',
         fontSize: 12,
-        formatOnPaste: true,
-        formatOnType: true,
+        formatOnPaste: !hasJinja,
+        formatOnType: !hasJinja,
         glyphMargin: false,
         lineDecorationsWidth: 8,
         lineNumbersMinChars: 3,

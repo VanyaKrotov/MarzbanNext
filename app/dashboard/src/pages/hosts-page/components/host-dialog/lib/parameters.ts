@@ -1,36 +1,47 @@
 import type { JsonObject } from "../../../types";
+import { TLS_FINGERPRINTS } from "./constants";
 
-type ParameterKind = "text" | "boolean" | "json" | "security";
 export const specialHostParameters = [
-  { id: "templates", labelKey: "subscriptionTemplates.title" },
+  { id: "templates", labelKey: "hostEditor.templates" },
   { id: "is_hidden", labelKey: "hostEditor.isHidden" },
 ] as const;
 export type HostParameterDefinition = {
   id: string;
   path: string[];
   labelKey: string;
-  kind: ParameterKind;
+  hintKey?: string;
+  hintListKeys?: readonly string[];
   xhttpOnly?: boolean;
-};
+} & (
+  | { kind: "text"; placeholder: string }
+  | { kind: "boolean" | "json" }
+  | {
+      kind: "select";
+      options: readonly (readonly [string, string])[];
+      preserveEmptyValue?: boolean;
+      preserveStoredValue?: boolean;
+      emptyLabelKey?: string;
+    }
+);
 
 export const hostParameters: readonly HostParameterDefinition[] = [
   {
     id: "sni",
     path: ["security", "sni"],
     labelKey: "hostsDialog.sni",
+    hintKey: "hostsDialog.sni.info",
     kind: "text",
+    placeholder: "www.example.com",
   },
   {
     id: "security",
     path: ["security", "mode"],
     labelKey: "hostEditor.security",
-    kind: "security",
-  },
-  {
-    id: "keep_sni_blank",
-    path: ["security", "keep_sni_blank"],
-    labelKey: "hostEditor.keepSniBlank",
-    kind: "boolean",
+    kind: "select",
+    options: [
+      ["tls", "TLS"],
+      ["none", "hostEditor.noSecurity"],
+    ],
   },
   {
     id: "sni_from_address",
@@ -42,13 +53,27 @@ export const hostParameters: readonly HostParameterDefinition[] = [
     id: "alpn",
     path: ["security", "alpn"],
     labelKey: "hostsDialog.alpn",
+    hintKey: "hostEditor.alpnHint",
     kind: "json",
   },
   {
     id: "fingerprint",
     path: ["security", "fingerprint"],
     labelKey: "hostsDialog.fingerprint",
-    kind: "text",
+    hintKey: "hostsDialog.fingerprint.info",
+    hintListKeys: [
+      "hostsDialog.fingerprint.info.profiles",
+      "hostsDialog.fingerprint.info.random",
+      "hostsDialog.fingerprint.info.randomized",
+      "hostsDialog.fingerprint.info.randomizednoalpn",
+      "hostsDialog.fingerprint.info.unsafe",
+      "hostsDialog.fingerprint.info.default",
+    ],
+    kind: "select",
+    options: TLS_FINGERPRINTS.map((value) => [value, value] as const),
+    preserveEmptyValue: true,
+    preserveStoredValue: true,
+    emptyLabelKey: "hostEditor.clientDefault",
   },
   {
     id: "allow_insecure",
@@ -60,13 +85,17 @@ export const hostParameters: readonly HostParameterDefinition[] = [
     id: "host",
     path: ["transport", "host"],
     labelKey: "hostsDialog.host",
+    hintKey: "hostsDialog.host.info",
     kind: "text",
+    placeholder: "cdn.example.com",
   },
   {
     id: "path",
     path: ["transport", "path"],
     labelKey: "hostsDialog.path",
+    hintKey: "hostsDialog.path.info",
     kind: "text",
+    placeholder: "/proxy",
   },
   {
     id: "use_sni_as_host",
@@ -84,42 +113,74 @@ export const hostParameters: readonly HostParameterDefinition[] = [
     id: "xhttp_extra",
     path: ["transport", "xhttp", "extra"],
     labelKey: "hostEditor.xhttpExtra",
+    hintKey: "hostEditor.extraHint",
     kind: "json",
     xhttpOnly: true,
   },
-  { id: "mux", path: ["mux"], labelKey: "hostEditor.muxOptions", kind: "json" },
+  {
+    id: "mux",
+    path: ["mux"],
+    labelKey: "hostEditor.muxOptions",
+    kind: "json",
+    hintKey: "hostEditor.muxHint",
+  },
   {
     id: "fragment",
     path: ["fragment"],
     labelKey: "hostsDialog.fragment",
+    hintKey: "hostsDialog.fragment.info",
     kind: "text",
+    placeholder: "100-200,10-20,tlshello",
   },
-  { id: "noise", path: ["noise"], labelKey: "hostsDialog.noise", kind: "text" },
+  {
+    id: "noise",
+    path: ["noise"],
+    labelKey: "hostsDialog.noise",
+    kind: "text",
+    hintKey: "hostsDialog.noise.info",
+    placeholder: "rand:10-20,10-20",
+  },
   {
     id: "sockopt",
     path: ["stream", "sockopt"],
     labelKey: "hostEditor.sockopt",
+    hintKey: "hostEditor.sockoptHint",
     kind: "json",
   },
   {
     id: "final_mask",
     path: ["stream", "final_mask"],
     labelKey: "hostEditor.finalMask",
+    hintKey: "hostEditor.finalMaskHint",
     kind: "json",
   },
   {
     id: "clients",
     path: ["clients"],
     labelKey: "hostEditor.clientOptions",
+    hintKey: "hostEditor.clientOptionsHint",
     kind: "json",
   },
   {
     id: "mapper",
     path: ["mapper"],
     labelKey: "hostEditor.mapper",
+    hintKey: "hostEditor.mapperHint",
     kind: "json",
   },
 ];
+
+export function getParameterSelectOptions(
+  definition: Extract<HostParameterDefinition, { kind: "select" }>,
+  value: string,
+) {
+  // Keep a saved version-specific fingerprint selectable even when absent from the preset list.
+  return definition.preserveStoredValue &&
+    value &&
+    !definition.options.some(([option]) => option === value)
+    ? [...definition.options, [value, value] as const]
+    : definition.options;
+}
 
 const parameterGroups = [
   {
@@ -127,7 +188,6 @@ const parameterGroups = [
     ids: [
       "security",
       "sni",
-      "keep_sni_blank",
       "sni_from_address",
       "alpn",
       "fingerprint",
@@ -148,7 +208,10 @@ const parameterGroups = [
     id: "connection",
     ids: ["mux", "fragment", "noise", "sockopt", "final_mask"],
   },
-  { id: "subscription", ids: ["templates", "clients", "mapper"] },
+  {
+    id: "subscription",
+    ids: ["templates", "clients", "mapper"],
+  },
   { id: "visibility", ids: ["is_hidden"] },
 ] as const;
 

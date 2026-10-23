@@ -56,18 +56,17 @@
   "hostsDialog.dataUsage": "ترافیک مصرف‌شده کاربر",
   "hostsDialog.desc": "از متغیرها در نام و آدرس هاست استفاده کنید.",
   "hostsDialog.expireDate": "تاریخ انقضای کاربر",
-  "hostsDialog.fingerprint": "اثر انگشت TLS",
+  "hostsDialog.fingerprint": "Fingerprint",
   "hostsDialog.fragment": "تکه‌تکه‌سازی",
-  "hostsDialog.fragment.info": "قالب: length,interval,packets",
+  "hostsDialog.fragment.info": "قالب: length,interval,packets. ‏length به بایت و interval به میلی‌ثانیه است؛ عدد یا بازهٔ A-B. ‏packets مقدار tlshello یا شمارهٔ بسته‌هاست.",
   "hostsDialog.fragment.info.attention": "برای JSON سفارشی: Streisand 1.6.12+ یا v2rayNG 1.8.16+.",
   "hostsDialog.fragment.info.examples": "نمونه‌ها",
   "hostsDialog.noise": "نویز",
-  "hostsDialog.noise.info": "قالب: packets,delay",
+  "hostsDialog.noise.info": "قالب: type:value[,delay]. نوع‌ها: rand، str، hex، base64. ‏rand تعداد بایت یا بازهٔ A-B و delay میلی‌ثانیه است. بسته‌ها با & جدا می‌شوند. برای Xray JSON.",
   "hostsDialog.noise.info.attention": "برای JSON سفارشی: Streisand 1.6.32+ یا v2rayNG 1.8.39+.",
   "hostsDialog.noise.info.examples": "نمونه‌ها",
-
-  "hostsDialog.host": "هدر Host",
-  "hostsDialog.host.info": "برای استفاده از هدر Host ورودی، خالی بگذارید.",
+  "hostsDialog.host": "Host",
+  "hostsDialog.host.info": "Host انتقال. مقادیر جداشده با ویرگول تصادفی انتخاب می‌شوند؛ * به رشته‌ای تصادفی تبدیل می‌شود.",
   "hostsDialog.host.multiHost": "آدرس‌ها را با <badge>,</badge> جدا کنید. یک آدرس تصادفی انتخاب می‌شود.",
   "hostsDialog.host.wildcard": "برای رشته تصادفی در دامنه wildcard از <badge>*</badge> استفاده کنید.",
   "hostsDialog.jalaliExpireDate": "تاریخ انقضای کاربر به شمسی",
@@ -76,7 +75,7 @@
   "hostsDialog.noCertificates": "نودهای اختصاص داده شده هنوز گواهی ندارند.",
   "hostsDialog.muxEnable": "فعال‌سازی MUX",
   "hostsDialog.path": "مسیر",
-  "hostsDialog.path.info": "برای استفاده از مسیر ورودی، خالی بگذارید.",
+  "hostsDialog.path.info": "مسیر انتقال یا نام سرویس gRPC. متغیرهایی مانند {USERNAME} پشتیبانی می‌شوند.",
   "hostsDialog.port": "پورت",
   "hostsDialog.port.info": "برای استفاده از پورت ورودی، خالی بگذارید. برای انتقال پورت، پورت خارجی را وارد کنید.",
   "hostsDialog.proxyMethod": "انتقال",
@@ -93,8 +92,8 @@
   "hostsDialog.selectCertificates": "انتخاب گواهی‌ها",
   "hostsDialog.selectNodes": "انتخاب نودها",
   "hostsDialog.sni": "SNI",
-  "hostsDialog.sni.info": "برای استفاده از SNI ورودی، خالی بگذارید.",
-  "hostsDialog.sockopt": "گزینه‌های سوکت",
+  "hostsDialog.sni.info": "نام سرور TLS/REALITY. مقادیر جداشده با ویرگول تصادفی انتخاب می‌شوند؛ * به رشته‌ای تصادفی تبدیل می‌شود. مقدار خالی، SNI خالی تنظیم می‌کند.",
+  "hostsDialog.sockopt": "SockOpt",
   "hostsDialog.statusEmoji": "ایموجی وضعیت کاربر",
   "hostsDialog.statusText": "وضعیت کاربر",
   "hostsDialog.title": "هاست‌های اشتراک را برای هر ورودی تنظیم کنید.",
@@ -649,85 +648,85 @@
   "statsPage.summary.limited": "سقف ترافیک مصرف شده",
   "statsPage.summary.expired": "منقضی‌شده",
   "statsPage.summary.percentTooltip": "{{value}} از {{total}} کاربر",
-  "statsPage.summary.onlinePercentTooltip": "{{value}} کاربر آنلاین از {{total}} کاربر فعال"
-  ,"nodeProfile.restart": "راه‌اندازی مجدد Xray"
-  ,"nodeProfile.actions": "عملیات نود"
-  ,"nodeProfile.restartTitle": "Xray این نود راه‌اندازی مجدد شود؟"
-  ,"nodeProfile.restartDescription": "Xray در {{name}} با پیکربندی فعلی راه‌اندازی مجدد می‌شود. اتصال‌های فعال ممکن است قطع شوند."
-  ,"nodeProfile.restartSuccess": "درخواست راه‌اندازی مجدد Xray ثبت شد"
-  ,"nodeProfile.applyChanges": "اعمال تغییرات"
-  ,"nodeProfile.restartRequiredTitle": "راه‌اندازی مجدد Xray لازم است"
-  ,"nodeProfile.restartRequiredDescription": "برای اعمال تغییرات پیکربندی نود، Xray را راه‌اندازی مجدد کنید."
-  ,"geoResources.title": "فایل‌های جغرافیایی"
-  ,"geoResources.description": "فایل‌های Geosite و GeoIP این نود."
-  ,"geoResources.add": "افزودن فایل"
-  ,"geoResources.addTitle": "افزودن فایل جغرافیایی"
-  ,"geoResources.addDescription": "فایل .dat بارگذاری کنید یا به‌روزرسانی خودکار از URL را تنظیم کنید."
-  ,"geoResources.upload": "بارگذاری فایل"
-  ,"geoResources.remote": "به‌روزرسانی خودکار"
-  ,"geoResources.file": "فایل DAT"
-  ,"geoResources.filename": "نام فایل"
-  ,"geoResources.url": "آدرس دانلود"
-  ,"geoResources.cron": "زمان‌بندی به‌روزرسانی"
-  ,"geoResources.cronHint": "عبارت cron پنج‌فیلدی با منطقه زمانی UTC."
-  ,"geoResources.cronHelp": "توضیح زمان‌بندی"
-  ,"geoResources.cronCurrent": "زمان‌بندی فعلی"
-  ,"geoResources.cronUnknown": "عبارت cron پنج‌فیلدی دلخواه."
-  ,"geoResources.cronEveryMinute": "هر دقیقه."
-  ,"geoResources.cronHourlyAtMinute": "هر ساعت در دقیقه {{minute}}."
-  ,"geoResources.cronDailyAt": "هر روز ساعت {{time}}."
-  ,"geoResources.cronExamplesTitle": "نمونه‌ها"
-  ,"geoResources.cronExampleDailyNoon": "هر روز ساعت ۱۲:۰۰"
-  ,"geoResources.cronExampleHourly": "هر ساعت"
-  ,"geoResources.cronExampleDaily": "هر روز"
-  ,"geoResources.empty": "فایل جغرافیایی وجود ندارد"
-  ,"geoResources.loadError": "فایل‌های جغرافیایی بارگذاری نشدند"
-  ,"geoResources.autoUpdate": "به‌روزرسانی خودکار فعال است"
-  ,"geoResources.updateNow": "به‌روزرسانی اکنون"
-  ,"geoResources.download": "دانلود"
-  ,"geoResources.actions": "عملیات"
-  ,"geoResources.editTitle": "ویرایش فایل جغرافیایی"
-  ,"geoResources.editDescription": "نام فایل یا تنظیمات به‌روزرسانی خودکار را تغییر دهید."
-  ,"geoResources.deleteTitle": "حذف فایل‌های جغرافیایی"
-  ,"geoResources.deleteDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست."
-  ,"geoResources.overwriteTitle": "فایل موجود جایگزین شود؟"
-  ,"geoResources.overwriteDescription": "فایلی با این نام در نود وجود دارد."
-  ,"geoResources.overwrite": "جایگزینی"
-  ,"geoResources.dropHere": "فایل‌های .dat را اینجا رها کنید"
-  ,"geoResources.dropInvalid": "فقط فایل‌های .dat قابل بارگذاری هستند"
-  ,"geoResources.dropSuccess": "فایل‌های بارگذاری‌شده: {{count}}"
-  ,"geoResources.dropOverwriteDescription": "فایل‌های موجود در نود: {{count}}. جایگزین شوند؟"
-  ,"geoResources.dropOrSelect": "فایل را اینجا رها کنید یا برای انتخاب کلیک کنید"
-  ,"geoResources.selectedFile": "برای جایگزینی، فایل دیگری را انتخاب یا رها کنید"
-  ,"geoResources.save": "ذخیره"
-  ,"geoResources.deleteSingleTitle": "حذف فایل جغرافیایی"
-  ,"geoResources.deleteSingleDescription": "فایل «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست."
-  ,"geoResources.deleteMultipleTitle": "حذف فایل‌های جغرافیایی"
-  ,"geoResources.deleteMultipleDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست."
-  ,"nodes.logging": "ثبت رخداد"
-  ,"nodes.accessLog": "رخداد دسترسی"
-  ,"nodes.errorLog": "رخداد خطا"
-  ,"nodes.logRetentionDays": "مدت نگهداری (روز)"
-  ,"nodes.logStorageLimit": "حد فضا (مگابایت، اختیاری)"
-  ,"staticLogs.title": "فایل‌های لاگ"
-  ,"staticLogs.runtime": "لاگ زنده"
-  ,"staticLogs.static": "فایل‌های لاگ"
-  ,"staticLogs.access": "دسترسی"
-  ,"staticLogs.error": "خطاها"
-  ,"staticLogs.active": "فعال"
-  ,"staticLogs.download": "دانلود"
-  ,"staticLogs.empty": "فایل رخدادی وجود ندارد"
-  ,"staticLogs.filesNotCreated": "فایل‌های رخداد هنوز ایجاد نشده‌اند"
-  ,"staticLogs.disabled": "ثبت لاگ در فایل غیرفعال است"
-  ,"staticLogs.configure": "پیکربندی"
-  ,"staticLogs.loadError": "فایل‌های لاگ بارگذاری نشدند"
-  ,"staticLogs.deleteTitle": "حذف فایل رخداد"
-  ,"staticLogs.deleteDescription": "فایل رخداد «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست."
-  ,"staticLogs.clearDescription": "فایل رخداد فعال «{{filename}}» در نود پاک‌سازی شود؟"
-  ,"staticLogs.clearTitle": "پاک‌سازی فایل رخداد"
-  ,"staticLogs.clear": "پاک‌سازی"
-  ,"nodeLoggingSettings.title": "تنظیمات ثبت رخداد"
-  ,"nodeLoggingSettings.saveSuccess": "تنظیمات ثبت رخداد برای {{name}} ذخیره شد",
+  "statsPage.summary.onlinePercentTooltip": "{{value}} کاربر آنلاین از {{total}} کاربر فعال",
+  "nodeProfile.restart": "راه‌اندازی مجدد Xray",
+  "nodeProfile.actions": "عملیات نود",
+  "nodeProfile.restartTitle": "Xray این نود راه‌اندازی مجدد شود؟",
+  "nodeProfile.restartDescription": "Xray در {{name}} با پیکربندی فعلی راه‌اندازی مجدد می‌شود. اتصال‌های فعال ممکن است قطع شوند.",
+  "nodeProfile.restartSuccess": "درخواست راه‌اندازی مجدد Xray ثبت شد",
+  "nodeProfile.applyChanges": "اعمال تغییرات",
+  "nodeProfile.restartRequiredTitle": "راه‌اندازی مجدد Xray لازم است",
+  "nodeProfile.restartRequiredDescription": "برای اعمال تغییرات پیکربندی نود، Xray را راه‌اندازی مجدد کنید.",
+  "geoResources.title": "فایل‌های جغرافیایی",
+  "geoResources.description": "فایل‌های Geosite و GeoIP این نود.",
+  "geoResources.add": "افزودن فایل",
+  "geoResources.addTitle": "افزودن فایل جغرافیایی",
+  "geoResources.addDescription": "فایل .dat بارگذاری کنید یا به‌روزرسانی خودکار از URL را تنظیم کنید.",
+  "geoResources.upload": "بارگذاری فایل",
+  "geoResources.remote": "به‌روزرسانی خودکار",
+  "geoResources.file": "فایل DAT",
+  "geoResources.filename": "نام فایل",
+  "geoResources.url": "آدرس دانلود",
+  "geoResources.cron": "زمان‌بندی به‌روزرسانی",
+  "geoResources.cronHint": "عبارت cron پنج‌فیلدی با منطقه زمانی UTC.",
+  "geoResources.cronHelp": "توضیح زمان‌بندی",
+  "geoResources.cronCurrent": "زمان‌بندی فعلی",
+  "geoResources.cronUnknown": "عبارت cron پنج‌فیلدی دلخواه.",
+  "geoResources.cronEveryMinute": "هر دقیقه.",
+  "geoResources.cronHourlyAtMinute": "هر ساعت در دقیقه {{minute}}.",
+  "geoResources.cronDailyAt": "هر روز ساعت {{time}}.",
+  "geoResources.cronExamplesTitle": "نمونه‌ها",
+  "geoResources.cronExampleDailyNoon": "هر روز ساعت ۱۲:۰۰",
+  "geoResources.cronExampleHourly": "هر ساعت",
+  "geoResources.cronExampleDaily": "هر روز",
+  "geoResources.empty": "فایل جغرافیایی وجود ندارد",
+  "geoResources.loadError": "فایل‌های جغرافیایی بارگذاری نشدند",
+  "geoResources.autoUpdate": "به‌روزرسانی خودکار فعال است",
+  "geoResources.updateNow": "به‌روزرسانی اکنون",
+  "geoResources.download": "دانلود",
+  "geoResources.actions": "عملیات",
+  "geoResources.editTitle": "ویرایش فایل جغرافیایی",
+  "geoResources.editDescription": "نام فایل یا تنظیمات به‌روزرسانی خودکار را تغییر دهید.",
+  "geoResources.deleteTitle": "حذف فایل‌های جغرافیایی",
+  "geoResources.deleteDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست.",
+  "geoResources.overwriteTitle": "فایل موجود جایگزین شود؟",
+  "geoResources.overwriteDescription": "فایلی با این نام در نود وجود دارد.",
+  "geoResources.overwrite": "جایگزینی",
+  "geoResources.dropHere": "فایل‌های .dat را اینجا رها کنید",
+  "geoResources.dropInvalid": "فقط فایل‌های .dat قابل بارگذاری هستند",
+  "geoResources.dropSuccess": "فایل‌های بارگذاری‌شده: {{count}}",
+  "geoResources.dropOverwriteDescription": "فایل‌های موجود در نود: {{count}}. جایگزین شوند؟",
+  "geoResources.dropOrSelect": "فایل را اینجا رها کنید یا برای انتخاب کلیک کنید",
+  "geoResources.selectedFile": "برای جایگزینی، فایل دیگری را انتخاب یا رها کنید",
+  "geoResources.save": "ذخیره",
+  "geoResources.deleteSingleTitle": "حذف فایل جغرافیایی",
+  "geoResources.deleteSingleDescription": "فایل «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست.",
+  "geoResources.deleteMultipleTitle": "حذف فایل‌های جغرافیایی",
+  "geoResources.deleteMultipleDescription": "فایل‌های انتخاب‌شده از نود حذف شوند ({{count}})؟ این کار قابل بازگشت نیست.",
+  "nodes.logging": "ثبت رخداد",
+  "nodes.accessLog": "رخداد دسترسی",
+  "nodes.errorLog": "رخداد خطا",
+  "nodes.logRetentionDays": "مدت نگهداری (روز)",
+  "nodes.logStorageLimit": "حد فضا (مگابایت، اختیاری)",
+  "staticLogs.title": "فایل‌های لاگ",
+  "staticLogs.runtime": "لاگ زنده",
+  "staticLogs.static": "فایل‌های لاگ",
+  "staticLogs.access": "دسترسی",
+  "staticLogs.error": "خطاها",
+  "staticLogs.active": "فعال",
+  "staticLogs.download": "دانلود",
+  "staticLogs.empty": "فایل رخدادی وجود ندارد",
+  "staticLogs.filesNotCreated": "فایل‌های رخداد هنوز ایجاد نشده‌اند",
+  "staticLogs.disabled": "ثبت لاگ در فایل غیرفعال است",
+  "staticLogs.configure": "پیکربندی",
+  "staticLogs.loadError": "فایل‌های لاگ بارگذاری نشدند",
+  "staticLogs.deleteTitle": "حذف فایل رخداد",
+  "staticLogs.deleteDescription": "فایل رخداد «{{filename}}» از نود حذف شود؟ این کار قابل بازگشت نیست.",
+  "staticLogs.clearDescription": "فایل رخداد فعال «{{filename}}» در نود پاک‌سازی شود؟",
+  "staticLogs.clearTitle": "پاک‌سازی فایل رخداد",
+  "staticLogs.clear": "پاک‌سازی",
+  "nodeLoggingSettings.title": "تنظیمات ثبت رخداد",
+  "nodeLoggingSettings.saveSuccess": "تنظیمات ثبت رخداد برای {{name}} ذخیره شد",
   "subscriptionTemplates.title": "قالب‌های اشتراک",
   "subscriptionTemplates.create": "ایجاد قالب",
   "subscriptionTemplates.createTitle": "ایجاد قالب اشتراک",
@@ -836,14 +835,17 @@
   "hostEditor.editTitle": "ویرایش میزبان",
   "hostEditor.remark": "نام نمایشی",
   "hostEditor.security": "امنیت",
-  "hostEditor.keepSniBlank": "خالی گذاشتن SNI",
   "hostEditor.sniFromAddress": "استفاده از آدرس برای SNI",
   "hostEditor.noSecurity": "هیچ‌کدام",
   "hostEditor.xhttpExtra": "پارامترهای اضافی XHTTP",
-  "hostEditor.sockopt": "تنظیمات سوکت",
+  "hostEditor.sockopt": "SockOpt",
   "hostEditor.finalMask": "Final mask",
   "hostEditor.clientOptions": "تنظیمات کلاینت",
-  "hostEditor.mapper": "تبدیل‌های میزبان",
+  "actions.configure": "پیکربندی",
+  "hostEditor.configureParameter": "پیکربندی: {{name}}",
+  "hostEditor.invalidJsonObject": "یک شیء JSON معتبر وارد کنید",
+  "hostEditor.jsonSchemaError": "خطاهای مشخص‌شده در JSON را برطرف کنید",
+  "hostEditor.mapper": "Mapper",
   "hostEditor.addParameter": "افزودن پارامتر",
   "hostEditor.additional": "تنظیمات بیشتر",
   "hostEditor.parameterGroups.security": "امنیت",
@@ -867,7 +869,7 @@
   "hostEditor.invalidJson": "یک شیء JSON معتبر وارد کنید (برای ALPN آرایه)",
   "hostEditor.invalidJsonArray": "یک آرایهٔ JSON معتبر با مقادیر مجاز وارد کنید",
   "hostEditor.incompatibleInbound": "این پارامترها به ورودی XHTTP نیاز دارند. آن‌ها را حذف کنید یا ورودی سازگار انتخاب کنید.",
-  "hostEditor.extraHint": "کل شیء extra ورودی را جایگزین می‌کند. کلیدهای حذف‌شده از پیش‌فرض کلاینت استفاده می‌کنند. GET به حالت packet-up نیاز دارد.",
+  "hostEditor.extraHint": "کل extra ورودی را جایگزین می‌کند. کلیدهای حذف‌شده از پیش‌فرض کلاینت استفاده می‌کنند. GET به packet-up نیاز دارد.",
   "hostEditor.moveUp": "انتقال به بالا",
   "hostEditor.moveDown": "انتقال به پایین",
   "hostEditor.links": "ارتباط‌ها",
@@ -886,10 +888,28 @@
   "hostEditor.failure_tolerance": "نسبت خطای مجاز (۰ تا ۱)",
   "hostEditor.baselines_ms": "مقادیر پایه RTT (آرایه JSON)",
   "hostEditor.costs": "هزینه اتصال‌ها (آرایه JSON)",
-  "hostEditor.muxOptions": "تنظیمات MUX",
+  "hostEditor.muxOptions": "MUX",
   "hostEditor.noAlpnResults": "پروتکلی پیدا نشد",
   "hostEditor.defaultValue": "پیش‌فرض",
-  "hostEditor.isHidden": "پنهان در JSON/YAML",
-  "hostEditor.hiddenHint": "URI و Outline همچنان این اتصال را شامل می‌شوند.",
-  "hostEditor.parameterGroups.visibility": "نمایش"
+  "hostEditor.isHidden": "پنهان کردن از فهرست",
+  "hostEditor.parameterGroups.visibility": "نمایش",
+  "hostEditor.templates": "قالب‌ها",
+  "hostEditor.remarkPlaceholder": "اروپا",
+  "hostEditor.parameterHelp": "راهنما: {{name}}",
+  "hostEditor.example": "نمونه",
+  "hostEditor.clientDefault": "پیش‌فرض کلاینت",
+  "hostEditor.addressHint": "آدرس IP یا دامنه. مقادیر جداشده با ویرگول تصادفی انتخاب می‌شوند؛ * به رشته‌ای تصادفی تبدیل می‌شود. متغیرهایی مانند {SERVER_IP} پشتیبانی می‌شوند.",
+  "hostsDialog.fingerprint.info": "پروفایل TLS ClientHello.",
+  "hostEditor.alpnHint": "پروتکل‌های TLS ALPN. پاک‌کردن انتخاب، فهرست خالی تنظیم می‌کند.",
+  "hostEditor.muxHint": "چند جریان در یک اتصال. enabled قابلیت MUX را فعال می‌کند؛ xray و smux تنظیمات آن را مشخص می‌کنند.",
+  "hostEditor.sockoptHint": "تنظیمات سوکت Xray: ‏TCP، ‏DNS و رابط شبکه. فاصله‌های KeepAlive به ثانیه‌اند.",
+  "hostEditor.finalMaskHint": "ماسک‌های TCP/UDP و تنظیمات QUIC برای Xray JSON. ماسک‌ها از لایهٔ داخلی به خارجی اعمال می‌شوند.",
+  "hostEditor.clientOptionsHint": "clash — ‏IP و X25519؛ server_description — توضیح برای کلاینت‌های سازگار.",
+  "hostEditor.mapperHint": "عملیات set، copy و unset برای xrayJson، clash، singbox و base64؛ به‌ترتیب اجرا می‌شوند.",
+  "hostsDialog.fingerprint.info.profiles": "chrome، firefox، safari، ios، android، edge، 360، qq — پروفایل‌های آماده.",
+  "hostsDialog.fingerprint.info.random": "random — پروفایل آمادهٔ تصادفی هنگام اجرای هسته.",
+  "hostsDialog.fingerprint.info.randomized": "randomized — پروفایل تصادفی با ALPN.",
+  "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — پروفایل تصادفی بدون ALPN.",
+  "hostsDialog.fingerprint.info.unsafe": "unsafe — ‏TLS استاندارد Go بدون شبیه‌سازی مرورگر.",
+  "hostsDialog.fingerprint.info.default": "پیش‌فرض کلاینت — fingerprint خالی."
 }

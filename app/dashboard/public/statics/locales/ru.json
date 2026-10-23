@@ -56,17 +56,17 @@
   "hostsDialog.dataUsage": "Использованный трафик пользователя",
   "hostsDialog.desc": "Используйте переменные в названиях и адресах хостов.",
   "hostsDialog.expireDate": "Срок действия пользователя",
-  "hostsDialog.fingerprint": "Отпечаток TLS",
+  "hostsDialog.fingerprint": "Fingerprint",
   "hostsDialog.fragment": "Фрагментация",
-  "hostsDialog.fragment.info": "Формат: length,interval,packets",
+  "hostsDialog.fragment.info": "Формат: length,interval,packets. length — байты, interval — мс; число или диапазон A-B. packets — tlshello или номера пакетов.",
   "hostsDialog.fragment.info.attention": "Для JSON-конфигурации: Streisand 1.6.12+ или v2rayNG 1.8.16+.",
   "hostsDialog.fragment.info.examples": "Примеры",
   "hostsDialog.noise": "Шум",
-  "hostsDialog.noise.info": "Формат: packets,delay",
+  "hostsDialog.noise.info": "Формат: type:value[,delay]. Типы: rand, str, hex, base64. rand — длина в байтах или диапазон A-B; delay — мс. Пакеты разделяются &. Для Xray JSON.",
   "hostsDialog.noise.info.attention": "Для JSON-конфигурации: Streisand 1.6.32+ или v2rayNG 1.8.39+.",
   "hostsDialog.noise.info.examples": "Примеры",
-  "hostsDialog.host": "Заголовок Host",
-  "hostsDialog.host.info": "Оставьте пустым, чтобы использовать Host инбаунда.",
+  "hostsDialog.host": "Host",
+  "hostsDialog.host.info": "Host транспорта. Через запятую — случайный выбор; * — случайная строка.",
   "hostsDialog.host.multiHost": "Разделяйте адреса знаком <badge>,</badge>. Адрес выбирается случайно.",
   "hostsDialog.host.wildcard": "Используйте <badge>*</badge> для случайной строки в wildcard-домене.",
   "hostsDialog.jalaliExpireDate": "Срок действия по солнечной хиджре",
@@ -75,7 +75,7 @@
   "hostsDialog.noCertificates": "У назначенных нод пока нет сертификатов.",
   "hostsDialog.muxEnable": "Включить MUX",
   "hostsDialog.path": "Путь",
-  "hostsDialog.path.info": "Оставьте пустым, чтобы использовать путь инбаунда.",
+  "hostsDialog.path.info": "Путь транспорта или имя сервиса gRPC. Поддерживаются переменные, например {USERNAME}.",
   "hostsDialog.port": "Порт",
   "hostsDialog.port.info": "Оставьте пустым, чтобы использовать порт инбаунда. При перенаправлении укажите внешний порт.",
   "hostsDialog.proxyMethod": "Транспорт",
@@ -92,8 +92,8 @@
   "hostsDialog.selectCertificates": "Выберите сертификаты",
   "hostsDialog.selectNodes": "Выберите ноды",
   "hostsDialog.sni": "SNI",
-  "hostsDialog.sni.info": "Оставьте пустым, чтобы использовать SNI инбаунда.",
-  "hostsDialog.sockopt": "Параметры сокета",
+  "hostsDialog.sni.info": "Имя сервера TLS/REALITY. Через запятую — случайный выбор; * — случайная строка. Пустое значение задаёт пустой SNI.",
+  "hostsDialog.sockopt": "SockOpt",
   "hostsDialog.statusEmoji": "Эмодзи статуса пользователя",
   "hostsDialog.statusText": "Статус пользователя",
   "hostsDialog.title": "Настройте хосты подписки для каждого инбаунда.",
@@ -650,85 +650,85 @@
   "statsPage.summary.limited": "Лимит исчерпан",
   "statsPage.summary.expired": "Срок истёк",
   "statsPage.summary.percentTooltip": "{{value}} из {{total}} пользователей",
-  "statsPage.summary.onlinePercentTooltip": "{{value}} пользователей онлайн из {{total}} активных пользователей"
-  ,"nodeProfile.restart": "Перезапустить Xray"
-  ,"nodeProfile.actions": "Действия с нодой"
-  ,"nodeProfile.restartTitle": "Перезапустить Xray на этой ноде?"
-  ,"nodeProfile.restartDescription": "Xray на ноде {{name}} перезапустится с текущей конфигурацией. Активные соединения могут прерваться."
-  ,"nodeProfile.restartSuccess": "Перезапуск Xray запланирован"
-  ,"nodeProfile.applyChanges": "Применить изменения"
-  ,"nodeProfile.restartRequiredTitle": "Требуется перезапуск Xray"
-  ,"nodeProfile.restartRequiredDescription": "Перезапустите Xray, чтобы применить изменения конфигурации ноды."
-  ,"geoResources.title": "Геофайлы"
-  ,"geoResources.description": "Файлы Geosite и GeoIP на этой ноде."
-  ,"geoResources.add": "Добавить файл"
-  ,"geoResources.addTitle": "Добавить геофайл"
-  ,"geoResources.addDescription": "Загрузите .dat-файл или настройте автоматическое обновление по URL."
-  ,"geoResources.upload": "Загрузить файл"
-  ,"geoResources.remote": "Автообновление"
-  ,"geoResources.file": "DAT-файл"
-  ,"geoResources.filename": "Название файла"
-  ,"geoResources.url": "Ссылка для скачивания"
-  ,"geoResources.cron": "Расписание обновления"
-  ,"geoResources.cronHint": "Cron из пяти полей, часовой пояс UTC."
-  ,"geoResources.cronHelp": "Объяснить расписание обновления"
-  ,"geoResources.cronCurrent": "Текущее расписание"
-  ,"geoResources.cronUnknown": "Пользовательское cron-выражение из пяти полей."
-  ,"geoResources.cronEveryMinute": "Запускается каждую минуту."
-  ,"geoResources.cronHourlyAtMinute": "Запускается каждый час на минуте {{minute}}."
-  ,"geoResources.cronDailyAt": "Запускается каждый день в {{time}}."
-  ,"geoResources.cronExamplesTitle": "Частые примеры"
-  ,"geoResources.cronExampleDailyNoon": "каждый день в 12:00"
-  ,"geoResources.cronExampleHourly": "каждый час"
-  ,"geoResources.cronExampleDaily": "каждые сутки"
-  ,"geoResources.empty": "Нет геофайлов"
-  ,"geoResources.loadError": "Не удалось загрузить геофайлы"
-  ,"geoResources.autoUpdate": "Автоматическое обновление включено"
-  ,"geoResources.updateNow": "Обновить сейчас"
-  ,"geoResources.download": "Скачать"
-  ,"geoResources.actions": "Действия"
-  ,"geoResources.editTitle": "Изменить геофайл"
-  ,"geoResources.editDescription": "Переименуйте файл или измените параметры автообновления."
-  ,"geoResources.deleteTitle": "Удаление геофайлов"
-  ,"geoResources.deleteDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя."
-  ,"geoResources.overwriteTitle": "Заменить существующий файл?"
-  ,"geoResources.overwriteDescription": "Файл с таким названием уже существует на ноде."
-  ,"geoResources.overwrite": "Заменить"
-  ,"geoResources.dropHere": "Перетащите .dat-файлы сюда"
-  ,"geoResources.dropInvalid": "Можно загружать только .dat-файлы"
-  ,"geoResources.dropSuccess": "Загружено файлов: {{count}}"
-  ,"geoResources.dropOverwriteDescription": "На ноде уже есть файлы: {{count}}. Заменить их?"
-  ,"geoResources.dropOrSelect": "Перетащите файл или нажмите для выбора"
-  ,"geoResources.selectedFile": "Нажмите или перетащите другой файл, чтобы заменить выбранный"
-  ,"geoResources.save": "Сохранить"
-  ,"geoResources.deleteSingleTitle": "Удаление геофайла"
-  ,"geoResources.deleteSingleDescription": "Удалить файл «{{filename}}» с ноды? Восстановить его нельзя."
-  ,"geoResources.deleteMultipleTitle": "Удаление геофайлов"
-  ,"geoResources.deleteMultipleDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя."
-  ,"nodes.logging": "Логирование"
-  ,"nodes.accessLog": "Лог доступа"
-  ,"nodes.errorLog": "Лог ошибок"
-  ,"nodes.logRetentionDays": "Хранение (дней)"
-  ,"nodes.logStorageLimit": "Лимит хранения (МБ)"
-  ,"staticLogs.title": "Файлы логов"
-  ,"staticLogs.runtime": "Текущие логи"
-  ,"staticLogs.static": "Файлы логов"
-  ,"staticLogs.access": "Доступ"
-  ,"staticLogs.error": "Ошибки"
-  ,"staticLogs.active": "Активный"
-  ,"staticLogs.download": "Скачать"
-  ,"staticLogs.empty": "Файлы логов отсутствуют"
-  ,"staticLogs.filesNotCreated": "Файлы логов ещё не созданы"
-  ,"staticLogs.disabled": "Запись логов в файлы отключена"
-  ,"staticLogs.configure": "Настроить"
-  ,"staticLogs.loadError": "Не удалось загрузить файлы логов"
-  ,"staticLogs.deleteTitle": "Удаление файла лога"
-  ,"staticLogs.deleteDescription": "Удалить файл лога «{{filename}}» с ноды? Восстановить его нельзя."
-  ,"staticLogs.clearDescription": "Очистить активный файл лога «{{filename}}» на ноде?"
-  ,"staticLogs.clearTitle": "Очистка файла лога"
-  ,"staticLogs.clear": "Очистить"
-  ,"nodeLoggingSettings.title": "Настройки логирования"
-  ,"nodeLoggingSettings.saveSuccess": "Настройки логирования для {{name}} сохранены",
+  "statsPage.summary.onlinePercentTooltip": "{{value}} пользователей онлайн из {{total}} активных пользователей",
+  "nodeProfile.restart": "Перезапустить Xray",
+  "nodeProfile.actions": "Действия с нодой",
+  "nodeProfile.restartTitle": "Перезапустить Xray на этой ноде?",
+  "nodeProfile.restartDescription": "Xray на ноде {{name}} перезапустится с текущей конфигурацией. Активные соединения могут прерваться.",
+  "nodeProfile.restartSuccess": "Перезапуск Xray запланирован",
+  "nodeProfile.applyChanges": "Применить изменения",
+  "nodeProfile.restartRequiredTitle": "Требуется перезапуск Xray",
+  "nodeProfile.restartRequiredDescription": "Перезапустите Xray, чтобы применить изменения конфигурации ноды.",
+  "geoResources.title": "Геофайлы",
+  "geoResources.description": "Файлы Geosite и GeoIP на этой ноде.",
+  "geoResources.add": "Добавить файл",
+  "geoResources.addTitle": "Добавить геофайл",
+  "geoResources.addDescription": "Загрузите .dat-файл или настройте автоматическое обновление по URL.",
+  "geoResources.upload": "Загрузить файл",
+  "geoResources.remote": "Автообновление",
+  "geoResources.file": "DAT-файл",
+  "geoResources.filename": "Название файла",
+  "geoResources.url": "Ссылка для скачивания",
+  "geoResources.cron": "Расписание обновления",
+  "geoResources.cronHint": "Cron из пяти полей, часовой пояс UTC.",
+  "geoResources.cronHelp": "Объяснить расписание обновления",
+  "geoResources.cronCurrent": "Текущее расписание",
+  "geoResources.cronUnknown": "Пользовательское cron-выражение из пяти полей.",
+  "geoResources.cronEveryMinute": "Запускается каждую минуту.",
+  "geoResources.cronHourlyAtMinute": "Запускается каждый час на минуте {{minute}}.",
+  "geoResources.cronDailyAt": "Запускается каждый день в {{time}}.",
+  "geoResources.cronExamplesTitle": "Частые примеры",
+  "geoResources.cronExampleDailyNoon": "каждый день в 12:00",
+  "geoResources.cronExampleHourly": "каждый час",
+  "geoResources.cronExampleDaily": "каждые сутки",
+  "geoResources.empty": "Нет геофайлов",
+  "geoResources.loadError": "Не удалось загрузить геофайлы",
+  "geoResources.autoUpdate": "Автоматическое обновление включено",
+  "geoResources.updateNow": "Обновить сейчас",
+  "geoResources.download": "Скачать",
+  "geoResources.actions": "Действия",
+  "geoResources.editTitle": "Изменить геофайл",
+  "geoResources.editDescription": "Переименуйте файл или измените параметры автообновления.",
+  "geoResources.deleteTitle": "Удаление геофайлов",
+  "geoResources.deleteDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя.",
+  "geoResources.overwriteTitle": "Заменить существующий файл?",
+  "geoResources.overwriteDescription": "Файл с таким названием уже существует на ноде.",
+  "geoResources.overwrite": "Заменить",
+  "geoResources.dropHere": "Перетащите .dat-файлы сюда",
+  "geoResources.dropInvalid": "Можно загружать только .dat-файлы",
+  "geoResources.dropSuccess": "Загружено файлов: {{count}}",
+  "geoResources.dropOverwriteDescription": "На ноде уже есть файлы: {{count}}. Заменить их?",
+  "geoResources.dropOrSelect": "Перетащите файл или нажмите для выбора",
+  "geoResources.selectedFile": "Нажмите или перетащите другой файл, чтобы заменить выбранный",
+  "geoResources.save": "Сохранить",
+  "geoResources.deleteSingleTitle": "Удаление геофайла",
+  "geoResources.deleteSingleDescription": "Удалить файл «{{filename}}» с ноды? Восстановить его нельзя.",
+  "geoResources.deleteMultipleTitle": "Удаление геофайлов",
+  "geoResources.deleteMultipleDescription": "Удалить выбранные файлы с ноды ({{count}})? Восстановить их нельзя.",
+  "nodes.logging": "Логирование",
+  "nodes.accessLog": "Лог доступа",
+  "nodes.errorLog": "Лог ошибок",
+  "nodes.logRetentionDays": "Хранение (дней)",
+  "nodes.logStorageLimit": "Лимит хранения (МБ)",
+  "staticLogs.title": "Файлы логов",
+  "staticLogs.runtime": "Текущие логи",
+  "staticLogs.static": "Файлы логов",
+  "staticLogs.access": "Доступ",
+  "staticLogs.error": "Ошибки",
+  "staticLogs.active": "Активный",
+  "staticLogs.download": "Скачать",
+  "staticLogs.empty": "Файлы логов отсутствуют",
+  "staticLogs.filesNotCreated": "Файлы логов ещё не созданы",
+  "staticLogs.disabled": "Запись логов в файлы отключена",
+  "staticLogs.configure": "Настроить",
+  "staticLogs.loadError": "Не удалось загрузить файлы логов",
+  "staticLogs.deleteTitle": "Удаление файла лога",
+  "staticLogs.deleteDescription": "Удалить файл лога «{{filename}}» с ноды? Восстановить его нельзя.",
+  "staticLogs.clearDescription": "Очистить активный файл лога «{{filename}}» на ноде?",
+  "staticLogs.clearTitle": "Очистка файла лога",
+  "staticLogs.clear": "Очистить",
+  "nodeLoggingSettings.title": "Настройки логирования",
+  "nodeLoggingSettings.saveSuccess": "Настройки логирования для {{name}} сохранены",
   "subscriptionTemplates.title": "Шаблоны подписок",
   "subscriptionTemplates.create": "Создать шаблон",
   "subscriptionTemplates.createTitle": "Создать шаблон подписки",
@@ -837,14 +837,17 @@
   "hostEditor.editTitle": "Редактирование хоста",
   "hostEditor.remark": "Примечание",
   "hostEditor.security": "Безопасность",
-  "hostEditor.keepSniBlank": "Оставить SNI пустым",
   "hostEditor.sniFromAddress": "Использовать адрес как SNI",
   "hostEditor.noSecurity": "Нет",
   "hostEditor.xhttpExtra": "Дополнительные параметры XHTTP",
-  "hostEditor.sockopt": "Параметры сокета",
+  "hostEditor.sockopt": "SockOpt",
   "hostEditor.finalMask": "Final mask",
   "hostEditor.clientOptions": "Параметры клиента",
-  "hostEditor.mapper": "Преобразования хоста",
+  "actions.configure": "Настроить",
+  "hostEditor.configureParameter": "Настроить: {{name}}",
+  "hostEditor.invalidJsonObject": "Введите корректный JSON-объект",
+  "hostEditor.jsonSchemaError": "Исправьте отмеченные ошибки в JSON",
+  "hostEditor.mapper": "Mapper",
   "hostEditor.addParameter": "Добавить параметр",
   "hostEditor.additional": "Дополнительно",
   "hostEditor.parameterGroups.security": "Безопасность",
@@ -868,7 +871,7 @@
   "hostEditor.invalidJson": "Введите корректный JSON-объект (для ALPN — массив)",
   "hostEditor.invalidJsonArray": "Введите корректный JSON-массив с допустимыми значениями",
   "hostEditor.incompatibleInbound": "Эти параметры требуют XHTTP-инбаунд. Удалите их или выберите совместимый инбаунд.",
-  "hostEditor.extraHint": "Заменяет весь extra инбаунда. Для пропущенных ключей действуют defaults клиента. GET требует режима packet-up.",
+  "hostEditor.extraHint": "Заменяет extra инбаунда целиком. Пропущенные ключи используют значения по умолчанию клиента. GET требует packet-up.",
   "hostEditor.moveUp": "Переместить выше",
   "hostEditor.moveDown": "Переместить ниже",
   "hostEditor.links": "Связи",
@@ -887,10 +890,28 @@
   "hostEditor.failure_tolerance": "Допустимая доля ошибок (0–1)",
   "hostEditor.baselines_ms": "Базовые RTT (мс, JSON-массив)",
   "hostEditor.costs": "Стоимость подключений (JSON-массив)",
-  "hostEditor.muxOptions": "Параметры MUX",
+  "hostEditor.muxOptions": "MUX",
   "hostEditor.noAlpnResults": "Протоколы не найдены",
   "hostEditor.defaultValue": "По умолчанию",
-  "hostEditor.isHidden": "Скрыть в JSON/YAML",
-  "hostEditor.hiddenHint": "URI и Outline продолжают включать это подключение.",
-  "hostEditor.parameterGroups.visibility": "Видимость"
+  "hostEditor.isHidden": "Скрыть из списка",
+  "hostEditor.parameterGroups.visibility": "Видимость",
+  "hostEditor.templates": "Шаблоны",
+  "hostEditor.remarkPlaceholder": "Европа",
+  "hostEditor.parameterHelp": "Справка: {{name}}",
+  "hostEditor.example": "Пример",
+  "hostEditor.clientDefault": "По умолчанию клиента",
+  "hostEditor.addressHint": "IP-адрес или домен. Через запятую — случайный выбор; * — случайная строка. Поддерживаются переменные, например {SERVER_IP}.",
+  "hostsDialog.fingerprint.info": "Профиль TLS ClientHello.",
+  "hostEditor.alpnHint": "Протоколы TLS ALPN. Очистка выбора задаёт пустой список.",
+  "hostEditor.muxHint": "Несколько потоков в одном соединении. enabled включает MUX; xray и smux задают его параметры.",
+  "hostEditor.sockoptHint": "Параметры сокета Xray: TCP, DNS и сетевой интерфейс. Интервалы KeepAlive — в секундах.",
+  "hostEditor.finalMaskHint": "Маски TCP/UDP и параметры QUIC для Xray JSON. Маски применяются от внутренней к внешней.",
+  "hostEditor.clientOptionsHint": "clash — IP и X25519; server_description — описание для совместимых клиентов.",
+  "hostEditor.mapperHint": "Операции set, copy, unset для xrayJson, clash, singbox и base64. Выполняются по порядку.",
+  "hostsDialog.fingerprint.info.profiles": "chrome, firefox, safari, ios, android, edge, 360, qq — готовые профили.",
+  "hostsDialog.fingerprint.info.random": "random — случайный готовый профиль при запуске ядра.",
+  "hostsDialog.fingerprint.info.randomized": "randomized — случайный профиль с ALPN.",
+  "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — случайный профиль без ALPN.",
+  "hostsDialog.fingerprint.info.unsafe": "unsafe — стандартный TLS Go без имитации браузера.",
+  "hostsDialog.fingerprint.info.default": "По умолчанию клиента — пустой fingerprint."
 }

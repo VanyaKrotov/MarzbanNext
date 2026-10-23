@@ -27,6 +27,23 @@ def _table(name):
     return sa.Table(name, sa.MetaData(), autoload_with=op.get_bind())
 
 
+def _write_rows(connection, table_name, original_rows, converted_rows):
+    table = _table(table_name)
+    existing_ids = {row["id"] for row in original_rows}
+    for row in converted_rows:
+        statement = table.update().where(table.c.id == row["id"]) if row["id"] in existing_ids else table.insert()
+        connection.execute(statement.values(**row))
+
+
+def _insert_new_links(connection, table_name, original_rows, converted_rows):
+    table = _table(table_name)
+    keys = tuple(table.primary_key.columns.keys())
+    existing = {tuple(row[key] for key in keys) for row in original_rows}
+    additions = [row for row in converted_rows if tuple(row[key] for key in keys) not in existing]
+    if additions:
+        connection.execute(table.insert(), additions)
+
+
 def upgrade():
     connection = op.get_bind()
     original, converted, report = prepare(connection)
@@ -53,20 +70,11 @@ def upgrade():
     for name in LEGACY_HOST_COLUMNS:
         op.drop_column("hosts", name)
 
-    hosts, templates = _table("hosts"), _table("subscription_templates")
-    old_hosts = {row["id"] for row in original["hosts"]}
-    old_templates = {row["id"] for row in original["subscription_templates"]}
-    for row in converted["hosts"]:
-        statement = hosts.update().where(hosts.c.id == row["id"]) if row["id"] in old_hosts else hosts.insert()
-        connection.execute(statement.values(**row))
-    for row in converted["subscription_templates"]:
-        statement = (templates.update().where(templates.c.id == row["id"])
-                     if row["id"] in old_templates else templates.insert())
-        connection.execute(statement.values(**row))
+    op.add_column("subscription_templates", sa.Column("migration_settings", sa.JSON(), nullable=True))
+    for name in ("hosts", "subscription_templates"):
+        _write_rows(connection, name, original[name], converted[name])
     for name in ("host_subscription_templates", "host_group_hosts"):
-        additions = [row for row in converted[name] if row not in original[name]]
-        if additions:
-            connection.execute(_table(name).insert(), additions)
+        _insert_new_links(connection, name, original[name], converted[name])
     if not sqlite:
         required_columns = (("overrides", sa.JSON()), ("created_at", sa.DateTime()), ("updated_at", sa.DateTime()))
         for name, column_type in required_columns:
@@ -149,4 +157,5 @@ def downgrade():
             connection.execute(_table(name).insert(), original[name])
     for name in NEW_COLUMNS:
         op.drop_column("hosts", name)
+    op.drop_column("subscription_templates", "migration_settings")
     op.drop_table(ARCHIVE)

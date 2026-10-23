@@ -76,7 +76,6 @@ export function HostsToolbar({
           }
         />
 
-
         <HostGroupsFilter
           groups={groups}
           selectedGroupIds={selectedGroupIds}
@@ -129,7 +128,7 @@ function HostGroupsFilter({
               <span className="truncate">
                 {groups.length
                   ? t("hostsPage.allGroups")
-                : t("hostsPage.noGroupsShort")}
+                  : t("hostsPage.noGroupsShort")}
               </span>
             )}
           </span>

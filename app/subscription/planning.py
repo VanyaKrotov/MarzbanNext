@@ -60,8 +60,7 @@ class ProfilePlanner:
         source_hosts = roots if target in {"v2ray", "outline"} else snapshot.hosts
         resolved, diagnostics = ConnectionCatalog().resolve(
             snapshot, source_hosts, target, proxies, allowed_inbounds, context)
-        visible = [host for host in roots if host.id in resolved
-                   and (not host.is_hidden or target in {"v2ray", "outline"})]
+        visible = [host for host in roots if host.id in resolved and not host.is_hidden]
         recipients = visible
         # Explicit aggregate templates can consume a pool containing only hidden hosts.
         if not recipients and template_id is not None and target in {"clash", "sing-box"}:

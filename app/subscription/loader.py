@@ -6,11 +6,13 @@ from app.subscription.contracts import HostSnapshot, SubscriptionSnapshot, Templ
 
 
 def snapshot_host(host) -> HostSnapshot:
+    from app.models.host import normalize_stored_host_overrides
+
     return HostSnapshot(
         id=host.id, inbound_id=host.inbound_id, inbound_tag=host.inbound_tag,
         remark=host.remark, address=host.address, port=host.port, enabled=host.enabled,
         position=host.position, is_hidden=host.is_hidden,
-        overrides=deepcopy(host.overrides),
+        overrides=normalize_stored_host_overrides(host.overrides),
         group_ids=tuple(group.id for group in host.groups),
         subscription_template_ids=dict(host.subscription_template_ids),
     )
@@ -33,7 +35,7 @@ class SubscriptionSnapshotLoader:
             inbounds={row.id: deepcopy(registry.inbounds_by_tag[row.tag])
                       for row in rows if row.tag in registry.inbounds_by_tag},
             raw_inbounds={row.id: deepcopy(row.content) for row in rows},
-            templates={row.id: TemplateSnapshot(row.id, row.format, row.content)
+            templates={row.id: TemplateSnapshot(row.id, row.format, row.content, deepcopy(row.migration_settings))
                        for row in db.query(SubscriptionTemplate).all()},
             defaults={key: getattr(settings, key) for key in GENERATOR_TEMPLATE_SOURCES},
             external_config=settings.external_config,

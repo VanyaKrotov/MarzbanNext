@@ -1,10 +1,5 @@
 export type ProtocolType =
-  | "vmess"
-  | "vless"
-  | "trojan"
-  | "shadowsocks"
-  | "socks"
-  | "hysteria";
+  "vmess" | "vless" | "trojan" | "shadowsocks" | "socks" | "hysteria";
 
 export type InboundType = {
   id: number;

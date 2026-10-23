@@ -71,7 +71,7 @@ export function SubscriptionTemplateFields({
   return (
     <Field data-invalid={fieldState.invalid}>
       <FieldLabel htmlFor={id} className="sr-only">
-        {t("subscriptionTemplates.title")}
+        {t("hostEditor.templates")}
       </FieldLabel>
       <Combobox<SubscriptionTemplate, true>
         multiple

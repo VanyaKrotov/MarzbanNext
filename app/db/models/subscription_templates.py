@@ -34,6 +34,8 @@ class SubscriptionTemplate(Base):
     name = Column(String(128), nullable=False)
     format = Column(String(32), nullable=False)
     content = Column(Text().with_variant(LONGTEXT(), "mysql", "mariadb"), nullable=False)
+    # Compatibility settings are applied after rendering; the original source stays editable.
+    migration_settings = Column(JSON, nullable=True)
     # NULL permits many non-default rows under the portable unique constraint above.
     default_marker = Column(SmallInteger, nullable=True)
     created_at = Column(DateTime, nullable=False, default=datetime.utcnow)

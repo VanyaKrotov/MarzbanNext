@@ -1,11 +1,12 @@
 """Read-only preflight: python scripts/host_preflight.py --database-url sqlite:///backup.db."""
 
-from sqlalchemy import create_engine
 import argparse
 import json
 import os
 from pathlib import Path
 import sys
+
+from sqlalchemy import create_engine
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 os.environ.setdefault("MARZBAN_CLI", "1")

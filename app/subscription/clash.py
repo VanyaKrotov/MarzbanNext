@@ -10,11 +10,12 @@ from app.subscription.funcs import get_grpc_gun
 from app.templates import render_template_content
 from app.utils.helpers import yml_uuid_representer
 from app.models.subscription_template import SubscriptionFormat
-from app.utils.subscription_templates import parse_subscription_document, render_subscription_template
+from app.utils.subscription_templates import render_template_document
 
 
 class ClashConfiguration(object):
-    def __init__(self, template: str | None = None, defaults: dict | None = None):
+    def __init__(self, template: str | None = None, defaults: dict | None = None,
+                 migration_settings: dict | None = None):
         from app.utils.runtime_settings import build_default_generator_templates
 
         defaults = defaults if defaults is not None else build_default_generator_templates()
@@ -31,6 +32,7 @@ class ClashConfiguration(object):
         self.proxy_remarks = []
         self.default_proxy_remarks = []
         self.template_context = {}
+        self.migration_settings = migration_settings
         self.mux_template = render_template_content(defaults["mux"])
         user_agent_data = json.loads(render_template_content(defaults["user_agent"]))
 
@@ -55,12 +57,10 @@ class ClashConfiguration(object):
 
         yaml.add_representer(UUID, yml_uuid_representer)
         return yaml.dump(
-            parse_subscription_document(
-                SubscriptionFormat.clash,
-                render_subscription_template(
-                    self.template,
-                    {**self.template_context, "conf": self.data, "proxy_remarks": self.default_proxy_remarks}
-                ),
+            render_template_document(
+                SubscriptionFormat.clash, self.template,
+                {**self.template_context, "conf": self.data, "proxy_remarks": self.default_proxy_remarks},
+                self.migration_settings,
             ),
             sort_keys=False,
             allow_unicode=True,

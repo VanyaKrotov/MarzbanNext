@@ -5,7 +5,7 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, ValidationError, model_validator
 
-from app.subscription.contracts import SubscriptionError
+from app.subscription.contracts import HostSnapshot, ProfilePlan, ResolvedConnection, SubscriptionError
 
 
 class Selector(BaseModel):
@@ -69,32 +69,42 @@ def parse_directive(schema, value):
         raise SubscriptionError(f"Invalid marzban directive: {exc}") from exc
 
 
-def selected_sources(profile, options, *, recipient=None, diagnostics=None):
+def _selected_ids(profile: ProfilePlan, options: Selection, recipient: HostSnapshot | None) -> list[int]:
+    selector = options.selector
+    if selector is None:
+        if options.selectFrom == "VISIBLE":
+            return list(profile.visible_ids)
+        return [connection.host_id for connection in profile.sources]
+    if selector.type == "ids":
+        return list(dict.fromkeys(selector.values))
+    groups = set(selector.values)
+    if selector.type == "sameGroupsAsRecipient":
+        if recipient is None:
+            raise SubscriptionError("sameGroupsAsRecipient requires an Xray recipient")
+        groups = set(recipient.group_ids)
+    return [host.id for host in profile.hosts if groups.intersection(host.group_ids)]
+
+
+def selected_sources(profile: ProfilePlan, options: Selection, *, recipient: HostSnapshot | None = None,
+                     diagnostics: list[dict] | None = None) -> list[ResolvedConnection]:
+    """Filter the authorized catalog; explicit selectors never grant additional access."""
     by_id = {connection.host_id: connection for connection in profile.sources}
     hosts = {host.id: host for host in profile.hosts}
-    selector = options.selector
-    ids = list(by_id)
-    if selector is None and options.selectFrom == "VISIBLE":
-        ids = list(profile.visible_ids)
-    if selector is not None:
-        if selector.type == "ids":
-            ids = list(dict.fromkeys(selector.values))
-        else:
-            groups = set(selector.values)
-            if selector.type == "sameGroupsAsRecipient":
-                if recipient is None:
-                    raise SubscriptionError("sameGroupsAsRecipient requires an Xray recipient")
-                groups = set(recipient.group_ids)
-            ids = [host.id for host in profile.hosts if groups.intersection(host.group_ids)]
-    selected = [by_id[host_id] for host_id in ids if host_id in by_id
-                and (recipient is None or host_id != recipient.id)
-                and (options.selectFrom == "ALL"
-                     or hosts[host_id].is_hidden == (options.selectFrom == "HIDDEN"))]
+    ids = _selected_ids(profile, options, recipient)
+    selected = []
+    for host_id in ids:
+        if host_id not in by_id or (recipient is not None and host_id == recipient.id):
+            continue
+        if options.selectFrom != "ALL" and hosts[host_id].is_hidden != (options.selectFrom == "HIDDEN"):
+            continue
+        selected.append(by_id[host_id])
     if diagnostics is not None:
         chosen = {item.host_id for item in selected}
-        diagnostics.extend({"host_id": host_id, "reason": "selected" if host_id in chosen else
-                            "unavailable" if host_id not in by_id else "excluded_by_selection"}
-                           for host_id in ids)
+        for host_id in ids:
+            reason = "selected" if host_id in chosen else "excluded_by_selection"
+            if host_id not in by_id:
+                reason = "unavailable"
+            diagnostics.append({"host_id": host_id, "reason": reason})
     return selected
 
 

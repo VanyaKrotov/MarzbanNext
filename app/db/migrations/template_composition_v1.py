@@ -23,30 +23,6 @@ def encode_snapshot(snapshot):
     return json.loads(json.dumps(snapshot, default=lambda value: value.isoformat()))
 
 
-def wrap_template(source, overlay, target):
-    # Capture the original source, retaining Jinja expressions and user-defined sections verbatim.
-    return ("{% set original_config %}" + source + "{% endset %}\n"
-            "{% set composition_config %}" + json.dumps(overlay, ensure_ascii=False) + "{% endset %}\n"
-            "{{ original_config | merge_config(composition_config, " + json.dumps(target) + ") | tojson }}")
-
-
-def wrap_aggregate(source, entries, target):
-    # Disabled balancers retain their native configuration but never enter the response.
-    parts = ["{% set composition_nodes = [] %}"]
-    for member_ids, node in entries:
-        parts.append("{% if " + repr(member_ids) + " | select('in', host_ids) | list %}"
-                     "{% set composition_nodes = composition_nodes + ["
-                     + repr(node) + "] %}{% endif %}")
-    if target == "clash":
-        parts.append("{% set proxy_remarks = proxy_remarks + (composition_nodes | map(attribute='name')"
-                     " | map('format_variables') | list) %}")
-    parts.extend(["{% set original_config %}", source, "{% endset %}\n{% set composition_config %}{\"",
-                  "proxy-groups" if target == "clash" else "outbounds",
-                  "\": {{ composition_nodes | tojson }}}{% endset %}\n",
-                  "{{ original_config | merge_config(composition_config, " + json.dumps(target) + ") | tojson }}"])
-    return "".join(parts)
-
-
 def xray_overlay(balancer, members):
     prefix = f"mb-auto-{balancer['id']}-"
     strategy = {"type": {"least_ping": "leastPing", "least_load": "leastLoad", "random": "random",
@@ -81,86 +57,116 @@ def aggregate_node(balancer, members, target):
     return node
 
 
-def convert(snapshot):
-    """Convert master rows straight to the final schema, without synthetic composition owners."""
-    from app.db.migrations.host_redesign_v1 import COMPOSITE_FORMATS, legacy_overrides, supports_family
+class CompositionConverter:
+    """One in-memory transfer plan; no database writes occur during conversion."""
 
-    result = {name: deepcopy(snapshot[name]) for name in TABLES}
-    hosts = {host["id"]: host for host in result["hosts"]}
-    inbounds = {row["id"]: row for row in snapshot["inbounds"]}
-    templates = {row["id"]: row for row in result["subscription_templates"]}
-    bindings = {(row["host_id"], row["format"]): row["template_id"]
-                for row in result["host_subscription_templates"]}
-    now = datetime.now(UTC).replace(tzinfo=None)
-    for host in hosts.values():
-        overrides = legacy_overrides(host, inbounds[host["inbound_id"]])
-        normalized = {key: host[key] for key in ("id", "remark", "address", "inbound_id", "position")}
-        normalized.update(port=host["port"] or None, enabled=not bool(host["is_disabled"]), is_hidden=False,
-                          overrides=overrides, created_at=now, updated_at=now)
-        host.clear()
-        host.update(normalized)
-    next_host = max(hosts, default=0) + 1
-    next_template = max(templates, default=0) + 1
-    position = max((host["position"] for host in hosts.values()), default=-1) + 1
-    overlays = {}
-    for balancer in sorted(snapshot["subscription_balancers"], key=lambda row: (row["position"], row["id"])):
-        if balancer["strategy"] not in {"least_ping", "least_load", "random", "round_robin"}:
-            raise RuntimeError(f"Balancer {balancer['id']}: unsupported strategy {balancer['strategy']}")
-        member_ids = {row["host_id"] for row in snapshot["subscription_balancer_hosts"]
-                      if row["balancer_id"] == balancer["id"]}
-        for target in COMPOSITE_FORMATS:
-            members = sorted((hosts[host_id] for host_id in member_ids
-                              if (host_id, target) in bindings
-                              and supports_family(target, inbounds[hosts[host_id]["inbound_id"]])),
-                             key=lambda host: (not host["enabled"], host["position"], host["id"]))
-            if not members:
-                continue
-            source = members[0]
-            selected_ids = [host["id"] for host in members]
-            template_id = bindings[source["id"], target]
-            if target != "v2ray-json":
-                node = aggregate_node(balancer, selected_ids, target)
-                overlays.setdefault((target, template_id), []).append(
-                    (selected_ids if balancer["enabled"] else [], node))
-                continue
-            template = deepcopy(templates[template_id])
-            template.update(id=next_template, default_marker=None,
-                            name=f"Migrated Xray balancer {balancer['id']} ({next_template})")
-            used_names = {row["name"] for row in result["subscription_templates"] if row["format"] == target}
-            while template["name"] in used_names:
-                template["name"] += "_"
-            # Balancer IDs form their own namespace; no temporary host IDs enter selectors.
-            overlay = xray_overlay(balancer, selected_ids)
-            template["content"] = wrap_template(template["content"], overlay, target)
-            template["content"] = "{% set migrated %}" + template["content"] + (
-                "{% endset %}{{ migrated | migrate_xray_routing(" + json.dumps(
-                    f"mb-auto-{balancer['id']}-balancer") + ", none, host_ids) | tojson }}")
-            result["subscription_templates"].append(template)
-            recipient = deepcopy(source)
-            recipient.update(id=next_host, remark=balancer["name"], enabled=bool(balancer["enabled"]),
-                             position=position, created_at=balancer["created_at"], updated_at=balancer["updated_at"])
-            result["hosts"].append(recipient)
-            result["host_subscription_templates"].append({"host_id": next_host, "format": target,
-                                                          "template_id": next_template})
-            groups = {row["group_id"] for row in snapshot["host_group_hosts"] if row["host_id"] in member_ids}
-            result["host_group_hosts"].extend({"host_id": next_host, "group_id": group_id}
-                                              for group_id in sorted(groups))
-            next_host += 1
-            next_template += 1
-            position += 1
-    for (target, template_id), entries in overlays.items():
-        used = {row["template_id"] for row in result["host_subscription_templates"] if row["format"] == target
-                and hosts.get(row["host_id"], {}).get("enabled", False)}
-        if used - {template_id}:
-            raise RuntimeError(f"{target}: incompatible aggregate templates {sorted(used | {template_id})}; "
-                               "assign one shared template before upgrading")
-        template = templates[template_id]
-        template["content"] = wrap_aggregate(template["content"], entries, target)
-    for template in result["subscription_templates"]:
-        if template["format"] == "clash":
-            template["content"] = ("{% set legacy_clash %}" + template["content"]
-                                   + "{% endset %}{{ legacy_clash | preserve_clash_groups | tojson }}")
-    return result
+    def __init__(self, snapshot):
+        self.snapshot = snapshot
+        self.result = {name: deepcopy(snapshot[name]) for name in TABLES}
+        for template in self.result["subscription_templates"]:
+            template["migration_settings"] = None
+        self.hosts = {host["id"]: host for host in self.result["hosts"]}
+        self.inbounds = {row["id"]: row for row in snapshot["inbounds"]}
+        self.templates = {row["id"]: row for row in self.result["subscription_templates"]}
+        self.bindings = {(row["host_id"], row["format"]): row["template_id"]
+                         for row in self.result["host_subscription_templates"]}
+        # MySQL/MariaDB DATETIME stores whole seconds; archive the value that will actually be persisted.
+        self.now = datetime.now(UTC).replace(tzinfo=None, microsecond=0)
+        self.next_host_id = max(self.hosts, default=0) + 1
+        self.next_template_id = max(self.templates, default=0) + 1
+        self.next_position = max((host["position"] for host in self.hosts.values()), default=-1) + 1
+        self.aggregate_entries = {}
+
+    def convert(self):
+        from app.db.migrations.host_redesign_v1 import COMPOSITE_FORMATS
+
+        self._normalize_hosts()
+        balancers = sorted(self.snapshot["subscription_balancers"], key=lambda row: (row["position"], row["id"]))
+        for balancer in balancers:
+            if balancer["strategy"] not in {"least_ping", "least_load", "random", "round_robin"}:
+                raise RuntimeError(f"Balancer {balancer['id']}: unsupported strategy {balancer['strategy']}")
+            member_ids = {row["host_id"] for row in self.snapshot["subscription_balancer_hosts"]
+                          if row["balancer_id"] == balancer["id"]}
+            for target in COMPOSITE_FORMATS:
+                members = self._eligible_members(member_ids, target)
+                if not members:
+                    continue
+                template_id = self.bindings[members[0]["id"], target]
+                selected_ids = [host["id"] for host in members]
+                if target == "v2ray-json":
+                    self._append_xray_profile(balancer, members[0], selected_ids, member_ids, template_id)
+                else:
+                    node = aggregate_node(balancer, selected_ids, target)
+                    entry = {"member_ids": selected_ids, "enabled": bool(balancer["enabled"]), "node": node}
+                    self.aggregate_entries.setdefault((target, template_id), []).append(entry)
+        self._update_aggregate_templates()
+        return self.result
+
+    def _normalize_hosts(self):
+        from app.db.migrations.host_redesign_v1 import legacy_overrides
+
+        for host in self.hosts.values():
+            overrides = legacy_overrides(host, self.inbounds[host["inbound_id"]])
+            normalized = {key: host[key] for key in ("id", "remark", "address", "inbound_id", "position")}
+            normalized.update(port=host["port"] or None, enabled=not bool(host["is_disabled"]),
+                              is_hidden=False, overrides=overrides, created_at=self.now, updated_at=self.now)
+            host.clear()
+            host.update(normalized)
+
+    def _eligible_members(self, member_ids, target):
+        from app.db.migrations.host_redesign_v1 import supports_family
+
+        members = [self.hosts[host_id] for host_id in member_ids
+                   if (host_id, target) in self.bindings
+                   and supports_family(target, self.inbounds[self.hosts[host_id]["inbound_id"]])]
+        return sorted(members, key=lambda host: (not host["enabled"], host["position"], host["id"]))
+
+    def _append_xray_profile(self, balancer, source, selected_ids, member_ids, template_id):
+        template = deepcopy(self.templates[template_id])
+        name = f"Migrated Xray balancer {balancer['id']} ({self.next_template_id})"
+        used_names = {row["name"] for row in self.result["subscription_templates"] if row["format"] == "v2ray-json"}
+        while name in used_names:
+            name += "_"
+        template.update(id=self.next_template_id, default_marker=None, name=name)
+        # Stable per-host tags preserve selectors when an optional member becomes unavailable.
+        template["migration_settings"] = {
+            "version": 1, "overlay": xray_overlay(balancer, selected_ids),
+            "xray_balancer_tag": f"mb-auto-{balancer['id']}-balancer",
+        }
+        self.result["subscription_templates"].append(template)
+        recipient = deepcopy(source)
+        recipient.update(id=self.next_host_id, remark=balancer["name"], enabled=bool(balancer["enabled"]),
+                         position=self.next_position, created_at=balancer["created_at"],
+                         updated_at=balancer["updated_at"])
+        self.result["hosts"].append(recipient)
+        self.result["host_subscription_templates"].append({
+            "host_id": self.next_host_id, "format": "v2ray-json", "template_id": self.next_template_id,
+        })
+        groups = {row["group_id"] for row in self.snapshot["host_group_hosts"] if row["host_id"] in member_ids}
+        self.result["host_group_hosts"].extend({"host_id": self.next_host_id, "group_id": group_id}
+                                               for group_id in sorted(groups))
+        self.next_host_id += 1
+        self.next_template_id += 1
+        self.next_position += 1
+
+    def _update_aggregate_templates(self):
+        for (target, template_id), entries in self.aggregate_entries.items():
+            used = {row["template_id"] for row in self.result["host_subscription_templates"]
+                    if row["format"] == target and self.hosts.get(row["host_id"], {}).get("enabled", False)}
+            if used - {template_id}:
+                raise RuntimeError(f"{target}: incompatible aggregate templates {sorted(used | {template_id})}; "
+                                   "assign one shared template before upgrading")
+            template = self.templates[template_id]
+            template["migration_settings"] = {"version": 1, "aggregate": entries}
+        for template in self.result["subscription_templates"]:
+            if template["format"] == "clash":
+                settings = template["migration_settings"] or {"version": 1}
+                template["migration_settings"] = dict(settings, preserve_clash_groups=True)
+
+
+def convert(snapshot):
+    """Convert master rows directly to the final schema without touching the source snapshot."""
+    return CompositionConverter(snapshot).convert()
 
 
 def validate_conversion(original, converted):
@@ -170,9 +176,10 @@ def validate_conversion(original, converted):
     before = {row["id"]: row["content"] for row in original["subscription_templates"]}
     context = {"host_ids": [row["id"] for row in original["hosts"]]}
     for template in converted["subscription_templates"]:
-        if before.get(template["id"]) != template["content"]:
+        if template["migration_settings"] or before.get(template["id"]) != template["content"]:
             try:
-                validate_subscription_template(SubscriptionFormat(template["format"]), template["content"], context)
+                validate_subscription_template(SubscriptionFormat(template["format"]), template["content"], context,
+                                               template["migration_settings"])
             except ValueError as exc:
                 raise RuntimeError(f"Template {template['id']} cannot be migrated safely: {exc}") from exc
 
@@ -183,6 +190,13 @@ def prepare(connection):
 
     original = read_snapshot(connection, LEGACY_TABLES)
     report = inspect_legacy(original)
+    groups = sa.Table("host_groups", sa.MetaData(), autoload_with=connection)
+    group_ids = set(connection.execute(sa.select(groups.c.id)).scalars())
+    host_ids = {host["id"] for host in original["hosts"]}
+    for link in original["host_group_hosts"]:
+        if link["host_id"] not in host_ids or link["group_id"] not in group_ids:
+            report["errors"].append({"host_id": link["host_id"], "group_id": link["group_id"],
+                                     "reason": "dangling_host_group"})
     converted = None
     if not report["errors"]:
         try:

@@ -131,10 +131,18 @@ schemas currently cover:
 - inbound configuration;
 - outbound configuration;
 - routing rules with inbound tag completion;
-- node Xray templates.
+- node Xray templates;
+- subscription templates for Xray JSON, Clash (JSON and YAML), sing-box and Outline.
 
 Schema descriptions are written in English. Keep the schema optional so the
 editor remains reusable.
+Subscription schemas live in `subscription-templates-page/lib/schemas`; the Xray
+client schema extends the shared core schema without changing server validation.
+`monaco-yaml` provides YAML validation, completion and hover descriptions using
+the same Clash schema. Its worker adapter handles Monaco 0.55's worker API.
+Template variables and filters have format-specific Jinja completion and hover
+descriptions, including plain-text URI templates. Raw Jinja blocks are validated
+by the backend after rendering rather than reported as JSON/YAML syntax errors.
 
 ## Styling and localization
 
@@ -151,8 +159,29 @@ editor remains reusable.
 Before submitting dashboard changes:
 
 ```bash
+npm test
 npm run build
 ```
+
+`npm test` runs the TypeScript tests in `tests/` through Node's built-in test runner
+and the project's TypeScript loader. The build performs full source type checking.
+
+Mapper editor tests use Monaco's bundled JSON language service to check validation,
+completion and hover text. `tests/fixtures/host-mapper-schema.json` is generated from
+`HostMapperOptions.model_json_schema()` in `app/models/host_mapper.py`;
+`tests/test_host_mapper_schema.py` in the repository root checks that it stays in sync
+with the backend capabilities schema. Regenerate this fixture when the mapper contract changes.
+
+Final mask follows the same approach: `tests/fixtures/finalmask-schema.json` comes
+from `FinalMask.model_json_schema()` in `app/models/finalmask/`. The Python schema
+tests verify API parity, and `tests/finalmask-editor.test.ts` exercises validation,
+transport-specific completion and hover descriptions through Monaco's language service.
+
+Socket options use `SocketOptions.model_json_schema()` in `app/models/socket_options.py`.
+`tests/fixtures/socket-options-schema.json` is verified by the backend schema tests;
+`tests/socket-options-editor.test.ts` checks field/strategy completion, nested custom
+options, validation and hover text. Regenerate the Final mask fixture as well when
+this contract changes, because its ECH socket options use the same model.
 
 For visual changes, also open the affected page against a running backend and
 verify loading, empty, error and populated states.

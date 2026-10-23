@@ -1,0 +1,684 @@
+{
+  "$comment": "Xray SocketConfig definitions: https://github.com/XTLS/Xray-core/blob/1b1647cd9ddf0abc34b981d4611fc03bcac1ca74/infra/conf/transport_sockopt.go",
+  "$defs": {
+    "HappyEyeballs": {
+      "additionalProperties": false,
+      "description": "TCP address racing; needs non-AsIs resolution and no dialerProxy to take effect.",
+      "properties": {
+        "tryDelayMs": {
+          "anyOf": [
+            {
+              "maximum": 18446744073709551615,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Delay between TCP attempts in milliseconds. 0 disables racing; 250 is a common value.",
+          "examples": [250],
+          "title": "Trydelayms"
+        },
+        "prioritizeIPv6": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Try IPv6 addresses first; false (the core default) prioritizes IPv4.",
+          "title": "Prioritizeipv6"
+        },
+        "interleave": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Addresses per family before switching; default 1. 0 keeps the first family together.",
+          "examples": [1, 2],
+          "title": "Interleave"
+        },
+        "maxConcurrentTry": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Concurrent TCP connection attempts; default 4. 0 disables racing.",
+          "examples": [4],
+          "title": "Maxconcurrenttry"
+        }
+      },
+      "title": "HappyEyeballs",
+      "type": "object"
+    },
+    "IntegerSocketOption": {
+      "additionalProperties": false,
+      "description": "An integer setsockopt value, encoded as a decimal string.",
+      "properties": {
+        "system": {
+          "anyOf": [
+            {
+              "enum": ["", "linux", "windows", "darwin", "android"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Apply only on this client OS; empty applies on any OS. Android refers to Android builds.",
+          "title": "System"
+        },
+        "network": {
+          "anyOf": [
+            {
+              "enum": ["", "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket network filter; tcp/udp includes both families. Empty applies to every network.",
+          "title": "Network"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?[0-9]+$",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket protocol level as a decimal string; omitted/empty uses 6 (TCP).",
+          "examples": ["6", "1"],
+          "title": "Level"
+        },
+        "opt": {
+          "description": "Socket option number as a decimal string, not a JSON number.",
+          "examples": ["13"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Opt",
+          "type": "string"
+        },
+        "type": {
+          "const": "int",
+          "description": "Use the client's integer setsockopt API.",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "description": "Signed 64-bit decimal integer string; the option's actual range depends on the OS.",
+          "examples": ["1", "-1"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": ["opt", "type", "value"],
+      "title": "IntegerSocketOption",
+      "type": "object"
+    },
+    "StringSocketOption": {
+      "additionalProperties": false,
+      "description": "A string setsockopt value. The Xray Windows implementation does not support it.",
+      "properties": {
+        "system": {
+          "anyOf": [
+            {
+              "enum": ["", "linux", "darwin", "android"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client OS filter. String socket values are unsupported by Xray on Windows.",
+          "title": "System"
+        },
+        "network": {
+          "anyOf": [
+            {
+              "enum": ["", "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket network filter; tcp/udp includes both families. Empty applies to every network.",
+          "title": "Network"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?[0-9]+$",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket protocol level as a decimal string; omitted/empty uses 6 (TCP).",
+          "examples": ["6", "1"],
+          "title": "Level"
+        },
+        "opt": {
+          "description": "Socket option number as a decimal string, not a JSON number.",
+          "examples": ["13"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Opt",
+          "type": "string"
+        },
+        "type": {
+          "const": "str",
+          "description": "Use the client's string setsockopt API; unsupported on Windows.",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "description": "Literal socket option value; empty string is preserved.",
+          "examples": ["bbr"],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": ["opt", "type", "value"],
+      "title": "StringSocketOption",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "allOf": [
+    {
+      "not": {
+        "properties": {
+          "tcpKeepAliveIdle": {
+            "maximum": -1,
+            "type": "integer"
+          },
+          "tcpKeepAliveInterval": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": ["tcpKeepAliveIdle", "tcpKeepAliveInterval"]
+      }
+    },
+    {
+      "not": {
+        "properties": {
+          "tcpKeepAliveInterval": {
+            "maximum": -1,
+            "type": "integer"
+          },
+          "tcpKeepAliveIdle": {
+            "minimum": 1,
+            "type": "integer"
+          }
+        },
+        "required": ["tcpKeepAliveInterval", "tcpKeepAliveIdle"]
+      }
+    }
+  ],
+  "defaultSnippets": [
+    {
+      "body": {
+        "tcpFastOpen": true,
+        "tcpKeepAliveIdle": 45,
+        "tcpKeepAliveInterval": 45
+      },
+      "description": "KeepAlive values are seconds; Fast Open requires client OS support.",
+      "label": "TCP: Fast Open and KeepAlive"
+    },
+    {
+      "body": {
+        "domainStrategy": "UseIP",
+        "happyEyeballs": {
+          "interleave": 1,
+          "maxConcurrentTry": 4,
+          "prioritizeIPv6": false,
+          "tryDelayMs": 250
+        }
+      },
+      "description": "Race resolved IPv4/IPv6 addresses for a TCP destination.",
+      "label": "DNS: Happy Eyeballs"
+    },
+    {
+      "body": {
+        "customSockopt": [
+          {
+            "level": "6",
+            "network": "tcp",
+            "opt": "13",
+            "system": "linux",
+            "type": "str",
+            "value": "bbr"
+          }
+        ]
+      },
+      "description": "Example of a string customSockopt; the client must provide the bbr algorithm.",
+      "label": "Linux: custom TCP congestion option"
+    }
+  ],
+  "description": "Low-level Xray client socket behavior; effects depend on the client OS and transport.",
+  "properties": {
+    "mark": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux SO_MARK, signed 32-bit representation; 0 leaves it unset. Requires appropriate privileges.",
+      "examples": [0, 255],
+      "title": "Mark"
+    },
+    "tcpFastOpen": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "TCP Fast Open: true/positive enables it; false/negative disables it; 0/omitted uses OS default. On listeners a positive integer is the pending-request limit; true means 256.",
+      "examples": [true, false, 0, 256, -1],
+      "title": "Tcpfastopen"
+    },
+    "tcpMaxSeg": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux TCP maximum segment size in bytes; nonpositive leaves the OS value unchanged.",
+      "examples": [1440],
+      "title": "Tcpmaxseg"
+    },
+    "tcpWindowClamp": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux advertised receive-window clamp in bytes; nonpositive leaves it unchanged.",
+      "title": "Tcpwindowclamp"
+    },
+    "tcpUserTimeout": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux TCP timeout for unacknowledged data in milliseconds; nonpositive leaves it unchanged.",
+      "examples": [10000],
+      "title": "Tcpusertimeout"
+    },
+    "tcpKeepAliveIdle": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Idle time before TCP KeepAlive probes in seconds; 0 uses the core default (outbound: 45). Negative disables KeepAlive; cannot be paired with a positive interval.",
+      "examples": [45, -1],
+      "title": "Tcpkeepaliveidle"
+    },
+    "tcpKeepAliveInterval": {
+      "anyOf": [
+        {
+          "maximum": 2147483647,
+          "minimum": -2147483648,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "TCP KeepAlive probe interval in seconds; 0 uses the core default (outbound: 45). Negative disables KeepAlive; cannot be paired with a positive idle time.",
+      "examples": [45, -1],
+      "title": "Tcpkeepaliveinterval"
+    },
+    "tcpcongestion": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux TCP congestion algorithm, checked on the client; empty keeps the OS default.",
+      "examples": ["bbr", "cubic", "reno"],
+      "title": "Tcpcongestion"
+    },
+    "tcpCongestion": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternate Xray spelling of tcpcongestion; preserved for saved configurations.",
+      "title": "Tcpcongestion"
+    },
+    "tcpMptcp": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Use Multipath TCP on supported client OS/kernel; false is the core default.",
+      "title": "Tcpmptcp"
+    },
+    "tproxy": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "enum": ["", "off", "redirect", "tproxy"]
+            },
+            {
+              "pattern": "^(?:|[oO][fF][fF]|[rR][eE][dD][iI][rR][eE][cC][tT]|[tT][pP][rR][oO][xX][yY])$"
+            }
+          ],
+          "patternErrorMessage": "Choose one of: \"\", off, redirect, tproxy",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux transparent proxy mode: off/empty, redirect or tproxy. Requires OS rules and privileges.",
+      "title": "Tproxy"
+    },
+    "domainStrategy": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "enum": [
+                "",
+                "AsIs",
+                "UseIP",
+                "UseIPv4",
+                "UseIPv6",
+                "UseIPv4v6",
+                "UseIPv6v4",
+                "ForceIP",
+                "ForceIPv4",
+                "ForceIPv6",
+                "ForceIPv4v6",
+                "ForceIPv6v4"
+              ]
+            },
+            {
+              "pattern": "^(?:|[aA][sS][iI][sS]|[uU][sS][eE][iI][pP]|[uU][sS][eE][iI][pP][vV]4|[uU][sS][eE][iI][pP][vV]6|[uU][sS][eE][iI][pP][vV]4[vV]6|[uU][sS][eE][iI][pP][vV]6[vV]4|[fF][oO][rR][cC][eE][iI][pP]|[fF][oO][rR][cC][eE][iI][pP][vV]4|[fF][oO][rR][cC][eE][iI][pP][vV]6|[fF][oO][rR][cC][eE][iI][pP][vV]4[vV]6|[fF][oO][rR][cC][eE][iI][pP][vV]6[vV]4)$"
+            }
+          ],
+          "patternErrorMessage": "Choose one of: \"\", AsIs, UseIP, UseIPv4, UseIPv6, UseIPv4v6, UseIPv6v4, ForceIP, ForceIPv4, ForceIPv6, ForceIPv4v6, ForceIPv6v4",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Resolve the proxy server's address: AsIs/empty uses system DNS; Use* uses Xray DNS with system fallback; Force* fails if resolution cannot satisfy the selected IP family.",
+      "title": "Domainstrategy"
+    },
+    "addressPortStrategy": {
+      "anyOf": [
+        {
+          "anyOf": [
+            {
+              "enum": [
+                "",
+                "none",
+                "SrvPortOnly",
+                "SrvAddressOnly",
+                "SrvPortAndAddress",
+                "TxtPortOnly",
+                "TxtAddressOnly",
+                "TxtPortAndAddress"
+              ]
+            },
+            {
+              "pattern": "^(?:|[nN][oO][nN][eE]|[sS][rR][vV][pP][oO][rR][tT][oO][nN][lL][yY]|[sS][rR][vV][aA][dD][dD][rR][eE][sS][sS][oO][nN][lL][yY]|[sS][rR][vV][pP][oO][rR][tT][aA][nN][dD][aA][dD][dD][rR][eE][sS][sS]|[tT][xX][tT][pP][oO][rR][tT][oO][nN][lL][yY]|[tT][xX][tT][aA][dD][dD][rR][eE][sS][sS][oO][nN][lL][yY]|[tT][xX][tT][pP][oO][rR][tT][aA][nN][dD][aA][dD][dD][rR][eE][sS][sS])$"
+            }
+          ],
+          "patternErrorMessage": "Choose one of: \"\", none, SrvPortOnly, SrvAddressOnly, SrvPortAndAddress, TxtPortOnly, TxtAddressOnly, TxtPortAndAddress",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Rewrite the destination using system DNS SRV/TXT records before domainStrategy; PortOnly, AddressOnly or PortAndAddress selects the parts to replace. none/empty disables it.",
+      "title": "Addressportstrategy"
+    },
+    "happyEyeballs": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/HappyEyeballs"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "TCP address racing parameters; ignored with AsIs resolution or a nonempty dialerProxy."
+    },
+    "dialerProxy": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Existing outbound tag used to dial this connection; empty disables chaining. A generated fragment/noise dialer takes priority.",
+      "examples": ["upstream", ""],
+      "title": "Dialerproxy"
+    },
+    "interface": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Client network interface name for outbound connections; empty does not bind an interface.",
+      "examples": ["wg0", "eth0"],
+      "title": "Interface"
+    },
+    "V6Only": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Linux inbound listener on :: accepts only IPv6; has no effect on a host's client outbound.",
+      "title": "V6Only"
+    },
+    "v6only": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Alternate Xray spelling of V6Only; preserved for saved configurations.",
+      "title": "V6Only"
+    },
+    "acceptProxyProtocol": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Inbound-only PROXY protocol acceptance; has no effect on a host's client outbound.",
+      "title": "Acceptproxyprotocol"
+    },
+    "trustedXForwardedFor": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Inbound HTTP transport header names: if any is present, Xray trusts X-Forwarded-For. Has no effect on a host's client outbound.",
+      "examples": [["X-Trusted-Proxy"]],
+      "title": "Trustedxforwardedfor"
+    },
+    "penetrate": {
+      "anyOf": [
+        {
+          "type": "boolean"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "For XHTTP with separate downloadSettings: use the upload socket options for the download too.",
+      "title": "Penetrate"
+    },
+    "customSockopt": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "int": "#/$defs/IntegerSocketOption",
+                "str": "#/$defs/StringSocketOption"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/IntegerSocketOption"
+              },
+              {
+                "$ref": "#/$defs/StringSocketOption"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Platform setsockopt calls; type selects int/str and their value schema. [] applies no custom options.",
+      "title": "Customsockopt"
+    }
+  },
+  "title": "SocketOptions",
+  "type": "object"
+}

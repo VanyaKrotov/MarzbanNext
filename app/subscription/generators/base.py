@@ -3,8 +3,7 @@ from copy import deepcopy
 import json
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
-from app.subscription.contracts import GenerationResult
-from app.subscription.contracts import SubscriptionError
+from app.subscription.contracts import GenerationResult, SubscriptionError
 from app.subscription.mapper import HostMapper
 
 
@@ -29,42 +28,48 @@ def map_node(node, connection, target):
     return mapped
 
 
-def apply_resolved_options(node, connection, target):
-    """Apply resolved transport/security values after legacy encoding defaults."""
-    network = connection.inbound["network"]
-    options = connection.transport
+def _transport_section(node, network, target):
     if target == "v2ray-json":
         stream = node.setdefault("streamSettings", {})
         key = {"ws": "wsSettings", "httpupgrade": "httpupgradeSettings", "grpc": "grpcSettings",
                "xhttp": "xhttpSettings", "splithttp": "splithttpSettings"}.get(network)
-        section = stream.setdefault(key, {}) if key else None
-    elif target == "clash":
+        return stream.setdefault(key, {}) if key else None
+    if target == "clash":
         key = {"ws": "ws-opts", "httpupgrade": "ws-opts", "grpc": "grpc-opts"}.get(network)
-        section = node.setdefault(key, {}) if key else None
-    else:
-        section = node.get("transport")
-    if section is not None:
-        if "headers" in options:
-            headers = {**section.get("headers", {}), **deepcopy(options["headers"])}
-            if connection.inbound.get("random_user_agent") and "User-Agent" in section.get("headers", {}):
-                headers["User-Agent"] = section["headers"]["User-Agent"]
-            section["headers"] = headers
-        if "path" in options:
-            key = "path"
-            if network == "grpc":
-                key = {"v2ray-json": "serviceName", "clash": "grpc-service-name",
-                       "sing-box": "service_name"}[target]
-            section[key] = options["path"]
-        if "host" in options:
-            if network in {"ws", "httpupgrade"} and target != "v2ray-json":
-                section.setdefault("headers", {})["Host"] = options["host"]
-            elif network == "grpc":
-                if target == "v2ray-json":
-                    section["authority"] = options["host"]
-            else:
-                section["host"] = options["host"]
-        if target == "v2ray-json" and network == "ws" and "heartbeatPeriod" in options:
-            section["heartbeatPeriod"] = options["heartbeatPeriod"]
+        return node.setdefault(key, {}) if key else None
+    return node.get("transport")
+
+
+def _apply_transport_options(node, connection, target):
+    network = connection.inbound["network"]
+    options = connection.transport
+    section = _transport_section(node, network, target)
+    if section is None:
+        return
+    if "headers" in options:
+        headers = {**section.get("headers", {}), **deepcopy(options["headers"])}
+        if connection.inbound.get("random_user_agent") and "User-Agent" in section.get("headers", {}):
+            headers["User-Agent"] = section["headers"]["User-Agent"]
+        section["headers"] = headers
+    if "path" in options:
+        path_key = "path"
+        if network == "grpc":
+            path_key = {"v2ray-json": "serviceName", "clash": "grpc-service-name",
+                        "sing-box": "service_name"}[target]
+        section[path_key] = options["path"]
+    if "host" in options:
+        if network == "ws" or (network == "httpupgrade" and target != "v2ray-json"):
+            section.setdefault("headers", {})["Host"] = options["host"]
+        elif network == "grpc":
+            if target == "v2ray-json":
+                section["authority"] = options["host"]
+        else:
+            section["host"] = options["host"]
+    if target == "v2ray-json" and network == "ws" and "heartbeatPeriod" in options:
+        section["heartbeatPeriod"] = options["heartbeatPeriod"]
+
+
+def _apply_security_options(node, connection, target):
     security = connection.security
     if connection.inbound["tls"] not in {"tls", "reality"}:
         return
@@ -79,6 +84,12 @@ def apply_resolved_options(node, connection, target):
         tls["alpn"] = deepcopy(security["alpn"])
     if "allow_insecure" in security:
         tls[insecure_key] = security["allow_insecure"]
+
+
+def apply_resolved_options(node, connection, target):
+    """Apply resolved transport/security values after legacy encoding defaults."""
+    _apply_transport_options(node, connection, target)
+    _apply_security_options(node, connection, target)
 
 
 def apply_xray_options(outbound, connection):

@@ -1,5 +1,6 @@
 import type { HostPayload, JsonObject } from "../../../types";
 import type { HostFormValues } from "./form";
+import { parseJsonObject } from "./json-parameters";
 import {
   getPath,
   hostParameters,
@@ -25,7 +26,7 @@ function parseParameterValue(
   if (definition.kind !== "json") return text;
   let value: unknown;
   try {
-    value = JSON.parse(text);
+    value = definition.id === "alpn" ? JSON.parse(text) : parseJsonObject(text);
   } catch {
     throw new ParameterError(definition.id, "hostEditor.invalidJson");
   }
@@ -50,7 +51,12 @@ function buildOverrides(values: HostFormValues): JsonObject {
   for (const definition of hostParameters) {
     if (!values.selected.includes(definition.id)) continue;
     const text = values.parameters[definition.id] ?? "";
-    if (text === "" && definition.kind !== "text") {
+    const preserveEmpty =
+      definition.kind === "text" ||
+      // An added switch overrides the default even before its first toggle.
+      definition.kind === "boolean" ||
+      (definition.kind === "select" && definition.preserveEmptyValue);
+    if (text === "" && !preserveEmpty) {
       if (
         definition.kind === "json" &&
         getPath(values.original_overrides, definition.path) !== undefined

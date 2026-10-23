@@ -1,7 +1,8 @@
 import type { editor, json } from "monaco-editor";
-import { forwardRef, lazy, Suspense, useId, useMemo } from "react";
+import { forwardRef, lazy, Suspense, useId } from "react";
 
 import { cn } from "@/lib/utils";
+import type { TemplateVariable } from "./monaco-template-support";
 
 export type MonacoJsonSchema = json.JSONSchema;
 export type MonacoJsonMarker = editor.IMarker;
@@ -13,6 +14,7 @@ export type MonacoJsonEditorProps = {
   schemaUri?: string;
   onValidate?: (markers: MonacoJsonMarker[]) => void;
   language?: "json" | "yaml" | "text";
+  templateVariables?: readonly TemplateVariable[];
   className?: string;
   disabled?: boolean;
   invalid?: boolean;
@@ -37,6 +39,7 @@ export const MonacoJsonEditor = forwardRef<
       schemaUri,
       onValidate,
       language = "json",
+      templateVariables,
       className,
       disabled = false,
       invalid = false,
@@ -45,10 +48,8 @@ export const MonacoJsonEditor = forwardRef<
     ref,
   ) => {
     const editorId = useId();
-    const modelPath = useMemo(
-      () => `inmemory://model/json-editor-${editorId.replace(/:/g, "")}.${language}`,
-      [editorId, language],
-    );
+    // Reuse the model when the template language changes; do not leave old models alive.
+    const modelPath = `inmemory://model/json-editor-${editorId.replace(/:/g, "")}`;
 
     return (
       <div
@@ -79,6 +80,7 @@ export const MonacoJsonEditor = forwardRef<
             schemaUri={schemaUri}
             onValidate={onValidate}
             language={language}
+            templateVariables={templateVariables}
           />
         </Suspense>
       </div>

@@ -2,7 +2,7 @@ import json
 from uuid import UUID
 
 import yaml
-from jinja2 import StrictUndefined, TemplateError, pass_context
+from jinja2 import StrictUndefined, TemplateError
 from jinja2.sandbox import SandboxedEnvironment
 
 from app.models.subscription_template import SubscriptionFormat
@@ -15,89 +15,6 @@ template_env.globals["now"] = env.globals["now"]
 template_env.policies["json.dumps_kwargs"] = {"sort_keys": True, "cls": UUIDEncoder}
 
 
-@pass_context
-def merge_config(context, source, additions, format):
-    """Preserve a complete Jinja template while appending native configuration sections."""
-    document = parse_subscription_document(SubscriptionFormat(format), source)
-    overlay = yaml.safe_load(additions)
-    for node in overlay.get("proxy-groups", []) + overlay.get("outbounds", []):
-        for key in ("name", "tag"):
-            if key in node:
-                node[key] = format_variables(context, node[key])
-
-    def merge(current, extra):
-        for key, value in extra.items():
-            if key not in current:
-                current[key] = value
-            elif isinstance(value, list) and isinstance(current[key], list):
-                if key in {"outbounds", "proxy-groups", "balancers"}:
-                    identity = "name" if key == "proxy-groups" else "tag"
-                    existing = {node.get(identity) for node in current[key] if isinstance(node, dict)}
-                    incoming = [node.get(identity) for node in value if isinstance(node, dict)]
-                    if existing.intersection(incoming) or len(incoming) != len(set(incoming)):
-                        raise TemplateValidationError(f"Template composition contains duplicate {identity} values")
-                current[key].extend(value)
-            elif isinstance(value, dict) and isinstance(current[key], dict):
-                merge(current[key], value)
-            elif current[key] != value:
-                raise TemplateValidationError(f"Template composition conflicts at {key}")
-        return current
-
-    return merge(document, overlay)
-
-
-template_env.filters["merge_config"] = merge_config
-
-
-@pass_context
-def format_variables(context, value):
-    from app.models.proxy import FormatVariables
-
-    return value.format_map(FormatVariables(context.get_all()))
-
-
-template_env.filters["format_variables"] = format_variables
-
-
-def migrate_xray_routing(source, balancer_tag, owner_id=None, host_ids=None):
-    document = parse_subscription_document(SubscriptionFormat.v2ray_json, source)
-    if host_ids is not None:
-        available = set(host_ids)
-        directives = document.get("marzban", {})
-        # Legacy members were optional. Keep the owner's injection mandatory, while
-        # retaining stable per-host tags and costs for available optional members.
-        directives["injectHosts"] = [entry for entry in directives.get("injectHosts", [])
-                                     if any(host_id == owner_id or host_id in available
-                                            for host_id in entry.get("selector", {}).get("values", []))]
-        tags = {entry["tagPrefix"] for entry in directives["injectHosts"]}
-        for balancer in document.get("routing", {}).get("balancers", []):
-            if balancer.get("tag") == balancer_tag:
-                settings = balancer.get("strategy", {}).get("settings", {})
-                if "costs" in settings:
-                    settings["costs"] = [cost for cost in settings["costs"] if cost.get("match") in tags]
-    rules = document.setdefault("routing", {}).setdefault("rules", [])
-    for rule in rules:
-        if rule.get("outboundTag") == "proxy":
-            rule.pop("outboundTag")
-            rule["balancerTag"] = balancer_tag
-    rules.append({"type": "field", "network": "tcp,udp", "balancerTag": balancer_tag})
-    return document
-
-
-template_env.filters["migrate_xray_routing"] = migrate_xray_routing
-
-
-def preserve_clash_groups(source):
-    """Keep legacy explicit membership when adopting template-controlled proxy injection."""
-    document = parse_subscription_document(SubscriptionFormat.clash, source)
-    for group in document.get("proxy-groups", []):
-        group.setdefault("marzban", {"include-proxies": False})
-    return document
-
-
-template_env.filters["preserve_clash_groups"] = preserve_clash_groups
-
-
 class TemplateValidationError(ValueError):
     """The rendered document does not satisfy the selected subscription format."""
 
@@ -107,6 +24,20 @@ def render_subscription_template(content: str, context: dict | None = None) -> s
         return template_env.from_string(content).render(context or {})
     except (TemplateError, ValueError, TypeError, AttributeError, ArithmeticError, yaml.YAMLError) as exc:
         raise TemplateValidationError(f"Template rendering failed: {exc}") from exc
+
+
+def render_template_document(format: SubscriptionFormat, content: str, context: dict | None = None,
+                             migration_settings: dict | None = None) -> dict:
+    from app.subscription.template_migration import apply_template_migration, migration_context
+
+    try:
+        context = migration_context(migration_settings or {}, context or {})
+        document = parse_subscription_document(format, render_subscription_template(content, context))
+        return apply_template_migration(document, migration_settings, format.value, context)
+    except TemplateValidationError:
+        raise
+    except (ValueError, TypeError, AttributeError, ArithmeticError) as exc:
+        raise TemplateValidationError(f"Template migration failed: {exc}") from exc
 
 
 def parse_subscription_document(format: SubscriptionFormat, rendered: str) -> dict:
@@ -149,7 +80,8 @@ def parse_subscription_links(rendered: str) -> list[str]:
     return links
 
 
-def validate_subscription_template(format: SubscriptionFormat, content: str, extra_context: dict | None = None) -> None:
+def validate_subscription_template(format: SubscriptionFormat, content: str, extra_context: dict | None = None,
+                                   migration_settings: dict | None = None) -> None:
     sample = {
         "conf": {
             "proxies": [{"name": "Example", "type": "ss", "server": "example.com", "port": 443,
@@ -174,14 +106,23 @@ def validate_subscription_template(format: SubscriptionFormat, content: str, ext
         SubscriptionFormat.outline: ("config",),
         SubscriptionFormat.sing_box: ("host_ids",),
     }
-    rendered = render_subscription_template(content, {
+    if migration_settings:
+        # Exercise all saved groups when validating edits, including groups outside the sample host pool.
+        host_ids = {1}
+        for entry in migration_settings.get("aggregate", ()):
+            host_ids.update(entry["member_ids"])
+        injections = migration_settings.get("overlay", {}).get("marzban", {}).get("injectHosts", ())
+        for entry in injections:
+            host_ids.update(entry["selector"]["values"])
+        sample["host_ids"] = sorted(host_ids)
+    context = {
         **{key: sample[key] for key in context_keys[format]}, **(extra_context or {}),
-    })
+    }
     if format == SubscriptionFormat.v2ray:
-        if not parse_subscription_links(rendered):
+        if not parse_subscription_links(render_subscription_template(content, context)):
             raise TemplateValidationError("Link templates must render one client URI per line")
         return
-    document = parse_subscription_document(format, rendered)
+    document = render_template_document(format, content, context, migration_settings)
     from app.subscription.template_directives import validate_directives
 
     validate_directives(document, format.value)

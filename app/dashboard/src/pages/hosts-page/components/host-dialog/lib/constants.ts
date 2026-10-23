@@ -13,3 +13,19 @@ export const HOST_VARIABLES = [
   "PROTOCOL",
   "TRANSPORT",
 ] as const;
+
+// GUI presets from Xray's TLS registry. Specific client cores may support a subset.
+export const TLS_FINGERPRINTS = [
+  "chrome",
+  "firefox",
+  "safari",
+  "ios",
+  "android",
+  "edge",
+  "360",
+  "qq",
+  "random",
+  "randomized",
+  "randomizednoalpn",
+  "unsafe",
+] as const;

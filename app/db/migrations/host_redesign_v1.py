@@ -18,7 +18,12 @@ NOISE = re.compile(r'^(rand:(\d{1,4}-\d{1,4}|\d{1,4})|str:.+|hex:.+|base64:.+)(,
 
 
 def _object(value):
-    return json.loads(value) if isinstance(value, str) else (value or {})
+    document = json.loads(value) if isinstance(value, str) else value
+    if document is None:
+        return {}
+    if not isinstance(document, dict):
+        raise ValueError("Inbound content must be an object")
+    return document
 
 
 def legacy_overrides(host, inbound):
@@ -47,7 +52,7 @@ def legacy_overrides(host, inbound):
         extra = {key: settings.get(key, settings.get("extra", {}).get(key)) for key in EXTRA_FIELDS
                  if settings.get(key, settings.get("extra", {}).get(key)) is not None}
         extra.update(supplied)
-        if "uplinkHTTPMethod" in extra:
+        if isinstance(extra.get("uplinkHTTPMethod"), str):
             extra["uplinkHTTPMethod"] = extra["uplinkHTTPMethod"].strip().upper()
         transport["xhttp"] = {"extra": extra}
     if security:
@@ -92,7 +97,13 @@ def _validate_legacy_overrides(overrides, inbound):
 def inspect_legacy(rows):
     hosts = {row["id"]: row for row in rows["hosts"]}
     inbounds = {row["id"]: row for row in rows["inbounds"]}
+    templates = {row["id"]: row for row in rows["subscription_templates"]}
     errors, warnings = [], []
+    for binding in rows["host_subscription_templates"]:
+        template = templates.get(binding["template_id"])
+        if binding["host_id"] not in hosts or template is None or template["format"] != binding["format"]:
+            errors.append({"host_id": binding["host_id"], "template_id": binding["template_id"],
+                           "reason": "invalid_template_binding"})
     balancer_ids = {row["id"] for row in rows["subscription_balancers"]}
     for link in rows["subscription_balancer_hosts"]:
         if link["host_id"] not in hosts or link["balancer_id"] not in balancer_ids:
@@ -102,16 +113,22 @@ def inspect_legacy(rows):
         if host["inbound_id"] not in inbounds:
             errors.append({"host_id": host["id"], "reason": "missing_inbound"})
             continue
-        overrides = legacy_overrides(host, inbounds[host["inbound_id"]])
         try:
+            overrides = legacy_overrides(host, inbounds[host["inbound_id"]])
             _validate_legacy_overrides(overrides, inbounds[host["inbound_id"]])
-        except ValueError as exc:
+            for family in COMPOSITE_FORMATS:
+                supports_family(family, inbounds[host["inbound_id"]])
+        except (ValueError, TypeError, AttributeError) as exc:
             errors.append({"host_id": host["id"], "reason": str(exc)})
+            continue
         if overrides.get("transport", {}).get("xhttp"):
             warnings.append({"host_id": host["id"], "reason": "xhttp_extra_becomes_explicit_snapshot"})
     mapping = []
-    bindings = {host_id: {row["format"] for row in rows["host_subscription_templates"]
-                          if row["host_id"] == host_id} for host_id in hosts}
+    invalid_hosts = {error["host_id"] for error in errors if "host_id" in error}
+    bindings = {host_id: set() for host_id in hosts}
+    for binding in rows["host_subscription_templates"]:
+        if binding["host_id"] in bindings:
+            bindings[binding["host_id"]].add(binding["format"])
     for balancer in rows["subscription_balancers"]:
         members = [link["host_id"] for link in rows["subscription_balancer_hosts"]
                    if link["balancer_id"] == balancer["id"]]
@@ -119,10 +136,15 @@ def inspect_legacy(rows):
             errors.append({"balancer_id": balancer["id"], "reason": "empty_balancer_requires_source_host"})
         else:
             for family in COMPOSITE_FORMATS:
-                eligible = sorted((hosts[host_id] for host_id in members if host_id in hosts
-                                   and family in bindings[host_id] and hosts[host_id]["inbound_id"] in inbounds
-                                   and supports_family(family, inbounds[hosts[host_id]["inbound_id"]])),
-                                  key=lambda row: (bool(row["is_disabled"]), row["position"], row["id"]))
+                eligible = []
+                for host_id in members:
+                    host = hosts.get(host_id)
+                    if host is None or host_id in invalid_hosts or family not in bindings[host_id]:
+                        continue
+                    inbound = inbounds.get(host["inbound_id"])
+                    if inbound is not None and supports_family(family, inbound):
+                        eligible.append(host)
+                eligible.sort(key=lambda host: (bool(host["is_disabled"]), host["position"], host["id"]))
                 mapping.append({"balancer_id": balancer["id"], "format": family,
                                 "source_host_id": eligible[0]["id"] if eligible else None,
                                 "member_host_ids": [row["id"] for row in eligible],

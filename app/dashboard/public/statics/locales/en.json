@@ -56,17 +56,17 @@
   "hostsDialog.dataUsage": "User traffic usage",
   "hostsDialog.desc": "Use variables in host names and addresses.",
   "hostsDialog.expireDate": "User expiry date",
-  "hostsDialog.fingerprint": "TLS fingerprint",
+  "hostsDialog.fingerprint": "Fingerprint",
   "hostsDialog.fragment": "Fragmentation",
-  "hostsDialog.fragment.info": "Format: length,interval,packets",
+  "hostsDialog.fragment.info": "Format: length,interval,packets. length is in bytes; interval is in ms. Both accept an integer or A-B range. packets selects tlshello or packet numbers.",
   "hostsDialog.fragment.info.attention": "For custom JSON: Streisand 1.6.12+ or v2rayNG 1.8.16+.",
   "hostsDialog.fragment.info.examples": "Examples",
   "hostsDialog.noise": "Noise",
-  "hostsDialog.noise.info": "Format: packets,delay",
+  "hostsDialog.noise.info": "Format: type:value[,delay]. Types: rand, str, hex, base64. rand sets a byte count or A-B range; delay is in ms. Separate packets with &. For Xray JSON.",
   "hostsDialog.noise.info.attention": "For custom JSON: Streisand 1.6.32+ or v2rayNG 1.8.39+.",
   "hostsDialog.noise.info.examples": "Examples",
-  "hostsDialog.host": "Host header",
-  "hostsDialog.host.info": "Leave empty to use the inbound's Host header.",
+  "hostsDialog.host": "Host",
+  "hostsDialog.host.info": "Transport Host. Comma-separated values are chosen at random; * becomes a random string.",
   "hostsDialog.host.multiHost": "Separate addresses with <badge>,</badge>. One is selected at random.",
   "hostsDialog.host.wildcard": "Use <badge>*</badge> for a random string in a wildcard domain.",
   "hostsDialog.jalaliExpireDate": "User expiry date (Solar Hijri)",
@@ -75,7 +75,7 @@
   "hostsDialog.noCertificates": "The assigned nodes do not have certificates yet.",
   "hostsDialog.muxEnable": "Enable MUX",
   "hostsDialog.path": "Path",
-  "hostsDialog.path.info": "Leave empty to use the inbound's path.",
+  "hostsDialog.path.info": "Transport path or gRPC service name. Variables such as {USERNAME} are supported.",
   "hostsDialog.port": "Port",
   "hostsDialog.port.info": "Leave empty to use the inbound's port. Set a different port for port forwarding.",
   "hostsDialog.proxyMethod": "Transport",
@@ -92,8 +92,8 @@
   "hostsDialog.selectCertificates": "Select certificates",
   "hostsDialog.selectNodes": "Select nodes",
   "hostsDialog.sni": "SNI",
-  "hostsDialog.sni.info": "Leave empty to use the inbound's SNI.",
-  "hostsDialog.sockopt": "Socket options",
+  "hostsDialog.sni.info": "TLS/REALITY server name. Comma-separated values are chosen at random; * becomes a random string. An empty value sets a blank SNI.",
+  "hostsDialog.sockopt": "SockOpt",
   "hostsDialog.statusEmoji": "User status emoji",
   "hostsDialog.statusText": "User status",
   "hostsDialog.title": "Configure subscription hosts for each inbound.",
@@ -648,85 +648,85 @@
   "statsPage.summary.limited": "Traffic limit reached",
   "statsPage.summary.expired": "Expired",
   "statsPage.summary.percentTooltip": "{{value}} of {{total}} total users",
-  "statsPage.summary.onlinePercentTooltip": "{{value}} online users of {{total}} active users"
-  ,"nodeProfile.restart": "Restart Xray"
-  ,"nodeProfile.actions": "Node actions"
-  ,"nodeProfile.restartTitle": "Restart Xray on this node?"
-  ,"nodeProfile.restartDescription": "Xray on {{name}} will restart with the current configuration. Active connections may be interrupted."
-  ,"nodeProfile.restartSuccess": "Xray restart has been scheduled"
-  ,"nodeProfile.applyChanges": "Apply changes"
-  ,"nodeProfile.restartRequiredTitle": "Xray restart required"
-  ,"nodeProfile.restartRequiredDescription": "Restart Xray to apply the node's configuration changes."
-  ,"geoResources.title": "Geo files"
-  ,"geoResources.description": "Geosite and GeoIP files on this node."
-  ,"geoResources.add": "Add file"
-  ,"geoResources.addTitle": "Add geo file"
-  ,"geoResources.addDescription": "Upload a .dat file or configure automatic updates from a URL."
-  ,"geoResources.upload": "Upload file"
-  ,"geoResources.remote": "Auto-update"
-  ,"geoResources.file": "DAT file"
-  ,"geoResources.filename": "Filename"
-  ,"geoResources.url": "Download URL"
-  ,"geoResources.cron": "Update schedule"
-  ,"geoResources.cronHint": "Five-field cron expression in UTC."
-  ,"geoResources.cronHelp": "Explain update schedule"
-  ,"geoResources.cronCurrent": "Current schedule"
-  ,"geoResources.cronUnknown": "Custom five-field cron expression."
-  ,"geoResources.cronEveryMinute": "Runs every minute."
-  ,"geoResources.cronHourlyAtMinute": "Runs every hour at minute {{minute}}."
-  ,"geoResources.cronDailyAt": "Runs every day at {{time}}."
-  ,"geoResources.cronExamplesTitle": "Common examples"
-  ,"geoResources.cronExampleDailyNoon": "every day at 12:00"
-  ,"geoResources.cronExampleHourly": "every hour"
-  ,"geoResources.cronExampleDaily": "every day"
-  ,"geoResources.empty": "No geo files"
-  ,"geoResources.loadError": "Could not load geo files"
-  ,"geoResources.autoUpdate": "Automatic updates enabled"
-  ,"geoResources.updateNow": "Update now"
-  ,"geoResources.download": "Download"
-  ,"geoResources.actions": "Actions"
-  ,"geoResources.editTitle": "Edit geo file"
-  ,"geoResources.editDescription": "Rename the file or change its automatic update settings."
-  ,"geoResources.deleteTitle": "Delete geo files"
-  ,"geoResources.deleteDescription": "Delete the selected files from this node ({{count}})? This cannot be undone."
-  ,"geoResources.overwriteTitle": "Replace existing file?"
-  ,"geoResources.overwriteDescription": "A file with this name already exists on the node."
-  ,"geoResources.overwrite": "Replace"
-  ,"geoResources.dropHere": "Drop .dat files here"
-  ,"geoResources.dropInvalid": "Only .dat files can be uploaded"
-  ,"geoResources.dropSuccess": "Files uploaded: {{count}}"
-  ,"geoResources.dropOverwriteDescription": "Files already on this node: {{count}}. Replace them?"
-  ,"geoResources.dropOrSelect": "Drag a file here or click to select"
-  ,"geoResources.selectedFile": "Click or drop another file to replace the selection"
-  ,"geoResources.save": "Save"
-  ,"geoResources.deleteSingleTitle": "Delete geo file"
-  ,"geoResources.deleteSingleDescription": "Delete file “{{filename}}” from this node? This cannot be undone."
-  ,"geoResources.deleteMultipleTitle": "Delete geo files"
-  ,"geoResources.deleteMultipleDescription": "Delete the selected files from this node ({{count}})? This cannot be undone."
-  ,"nodes.logging": "Logging"
-  ,"nodes.accessLog": "Access log"
-  ,"nodes.errorLog": "Error log"
-  ,"nodes.logRetentionDays": "Retention (days)"
-  ,"nodes.logStorageLimit": "Storage limit (MB, optional)"
-  ,"staticLogs.title": "Log files"
-  ,"staticLogs.runtime": "Live logs"
-  ,"staticLogs.static": "Log files"
-  ,"staticLogs.access": "Access"
-  ,"staticLogs.error": "Errors"
-  ,"staticLogs.active": "Active"
-  ,"staticLogs.download": "Download"
-  ,"staticLogs.empty": "No log files"
-  ,"staticLogs.filesNotCreated": "Log files have not been created yet"
-  ,"staticLogs.disabled": "File logging is disabled"
-  ,"staticLogs.configure": "Configure"
-  ,"staticLogs.loadError": "Could not load log files"
-  ,"staticLogs.deleteTitle": "Delete log file"
-  ,"staticLogs.deleteDescription": "Delete log file “{{filename}}” from this node? This cannot be undone."
-  ,"staticLogs.clearDescription": "Clear the active log file “{{filename}}” on this node?"
-  ,"staticLogs.clearTitle": "Clear log file"
-  ,"staticLogs.clear": "Clear"
-  ,"nodeLoggingSettings.title": "Logging settings"
-  ,"nodeLoggingSettings.saveSuccess": "Logging settings for {{name}} saved",
+  "statsPage.summary.onlinePercentTooltip": "{{value}} online users of {{total}} active users",
+  "nodeProfile.restart": "Restart Xray",
+  "nodeProfile.actions": "Node actions",
+  "nodeProfile.restartTitle": "Restart Xray on this node?",
+  "nodeProfile.restartDescription": "Xray on {{name}} will restart with the current configuration. Active connections may be interrupted.",
+  "nodeProfile.restartSuccess": "Xray restart has been scheduled",
+  "nodeProfile.applyChanges": "Apply changes",
+  "nodeProfile.restartRequiredTitle": "Xray restart required",
+  "nodeProfile.restartRequiredDescription": "Restart Xray to apply the node's configuration changes.",
+  "geoResources.title": "Geo files",
+  "geoResources.description": "Geosite and GeoIP files on this node.",
+  "geoResources.add": "Add file",
+  "geoResources.addTitle": "Add geo file",
+  "geoResources.addDescription": "Upload a .dat file or configure automatic updates from a URL.",
+  "geoResources.upload": "Upload file",
+  "geoResources.remote": "Auto-update",
+  "geoResources.file": "DAT file",
+  "geoResources.filename": "Filename",
+  "geoResources.url": "Download URL",
+  "geoResources.cron": "Update schedule",
+  "geoResources.cronHint": "Five-field cron expression in UTC.",
+  "geoResources.cronHelp": "Explain update schedule",
+  "geoResources.cronCurrent": "Current schedule",
+  "geoResources.cronUnknown": "Custom five-field cron expression.",
+  "geoResources.cronEveryMinute": "Runs every minute.",
+  "geoResources.cronHourlyAtMinute": "Runs every hour at minute {{minute}}.",
+  "geoResources.cronDailyAt": "Runs every day at {{time}}.",
+  "geoResources.cronExamplesTitle": "Common examples",
+  "geoResources.cronExampleDailyNoon": "every day at 12:00",
+  "geoResources.cronExampleHourly": "every hour",
+  "geoResources.cronExampleDaily": "every day",
+  "geoResources.empty": "No geo files",
+  "geoResources.loadError": "Could not load geo files",
+  "geoResources.autoUpdate": "Automatic updates enabled",
+  "geoResources.updateNow": "Update now",
+  "geoResources.download": "Download",
+  "geoResources.actions": "Actions",
+  "geoResources.editTitle": "Edit geo file",
+  "geoResources.editDescription": "Rename the file or change its automatic update settings.",
+  "geoResources.deleteTitle": "Delete geo files",
+  "geoResources.deleteDescription": "Delete the selected files from this node ({{count}})? This cannot be undone.",
+  "geoResources.overwriteTitle": "Replace existing file?",
+  "geoResources.overwriteDescription": "A file with this name already exists on the node.",
+  "geoResources.overwrite": "Replace",
+  "geoResources.dropHere": "Drop .dat files here",
+  "geoResources.dropInvalid": "Only .dat files can be uploaded",
+  "geoResources.dropSuccess": "Files uploaded: {{count}}",
+  "geoResources.dropOverwriteDescription": "Files already on this node: {{count}}. Replace them?",
+  "geoResources.dropOrSelect": "Drag a file here or click to select",
+  "geoResources.selectedFile": "Click or drop another file to replace the selection",
+  "geoResources.save": "Save",
+  "geoResources.deleteSingleTitle": "Delete geo file",
+  "geoResources.deleteSingleDescription": "Delete file “{{filename}}” from this node? This cannot be undone.",
+  "geoResources.deleteMultipleTitle": "Delete geo files",
+  "geoResources.deleteMultipleDescription": "Delete the selected files from this node ({{count}})? This cannot be undone.",
+  "nodes.logging": "Logging",
+  "nodes.accessLog": "Access log",
+  "nodes.errorLog": "Error log",
+  "nodes.logRetentionDays": "Retention (days)",
+  "nodes.logStorageLimit": "Storage limit (MB, optional)",
+  "staticLogs.title": "Log files",
+  "staticLogs.runtime": "Live logs",
+  "staticLogs.static": "Log files",
+  "staticLogs.access": "Access",
+  "staticLogs.error": "Errors",
+  "staticLogs.active": "Active",
+  "staticLogs.download": "Download",
+  "staticLogs.empty": "No log files",
+  "staticLogs.filesNotCreated": "Log files have not been created yet",
+  "staticLogs.disabled": "File logging is disabled",
+  "staticLogs.configure": "Configure",
+  "staticLogs.loadError": "Could not load log files",
+  "staticLogs.deleteTitle": "Delete log file",
+  "staticLogs.deleteDescription": "Delete log file “{{filename}}” from this node? This cannot be undone.",
+  "staticLogs.clearDescription": "Clear the active log file “{{filename}}” on this node?",
+  "staticLogs.clearTitle": "Clear log file",
+  "staticLogs.clear": "Clear",
+  "nodeLoggingSettings.title": "Logging settings",
+  "nodeLoggingSettings.saveSuccess": "Logging settings for {{name}} saved",
   "subscriptionTemplates.title": "Subscription templates",
   "subscriptionTemplates.create": "Create template",
   "subscriptionTemplates.createTitle": "Create subscription template",
@@ -835,14 +835,17 @@
   "hostEditor.editTitle": "Edit host",
   "hostEditor.remark": "Remark",
   "hostEditor.security": "Security",
-  "hostEditor.keepSniBlank": "Keep SNI blank",
   "hostEditor.sniFromAddress": "Use address as SNI",
   "hostEditor.noSecurity": "None",
   "hostEditor.xhttpExtra": "XHTTP extra",
-  "hostEditor.sockopt": "Socket options",
+  "hostEditor.sockopt": "SockOpt",
   "hostEditor.finalMask": "Final mask",
   "hostEditor.clientOptions": "Client options",
-  "hostEditor.mapper": "Host mapper",
+  "actions.configure": "Configure",
+  "hostEditor.configureParameter": "Configure: {{name}}",
+  "hostEditor.invalidJsonObject": "Enter a valid JSON object",
+  "hostEditor.jsonSchemaError": "Fix the marked errors in the JSON",
+  "hostEditor.mapper": "Mapper",
   "hostEditor.addParameter": "Add parameter",
   "hostEditor.additional": "Advanced",
   "hostEditor.parameterGroups.security": "Security",
@@ -866,7 +869,7 @@
   "hostEditor.invalidJson": "Enter a valid JSON object (an array for ALPN)",
   "hostEditor.invalidJsonArray": "Enter a valid JSON array with the expected entries",
   "hostEditor.incompatibleInbound": "These parameters require an XHTTP inbound. Remove them or select a compatible inbound.",
-  "hostEditor.extraHint": "Replaces the entire inbound extra object. Omitted keys use client defaults. GET requires packet-up mode.",
+  "hostEditor.extraHint": "Replaces inbound extra entirely. Omitted keys use client defaults. GET requires packet-up.",
   "hostEditor.moveUp": "Move up",
   "hostEditor.moveDown": "Move down",
   "hostEditor.links": "Links",
@@ -885,10 +888,28 @@
   "hostEditor.failure_tolerance": "Failure tolerance (0–1)",
   "hostEditor.baselines_ms": "RTT baselines (ms, JSON array)",
   "hostEditor.costs": "Connection costs (JSON array)",
-  "hostEditor.muxOptions": "MUX settings",
+  "hostEditor.muxOptions": "MUX",
   "hostEditor.noAlpnResults": "No protocols found",
   "hostEditor.defaultValue": "Default",
-  "hostEditor.isHidden": "Hide in JSON/YAML",
-  "hostEditor.hiddenHint": "URI and Outline still include this connection.",
-  "hostEditor.parameterGroups.visibility": "Visibility"
+  "hostEditor.isHidden": "Hide from list",
+  "hostEditor.parameterGroups.visibility": "Visibility",
+  "hostEditor.templates": "Templates",
+  "hostEditor.remarkPlaceholder": "Europe",
+  "hostEditor.parameterHelp": "Help: {{name}}",
+  "hostEditor.example": "Example",
+  "hostEditor.clientDefault": "Client default",
+  "hostEditor.addressHint": "IP address or domain. Comma-separated values are chosen at random; * becomes a random string. Variables such as {SERVER_IP} are supported.",
+  "hostsDialog.fingerprint.info": "TLS ClientHello profile.",
+  "hostEditor.alpnHint": "TLS ALPN protocols. Clearing the selection sets an empty list.",
+  "hostEditor.muxHint": "Multiple streams over one connection. enabled turns on MUX; xray and smux configure it.",
+  "hostEditor.sockoptHint": "Xray socket settings: TCP, DNS and network interface. KeepAlive intervals are in seconds.",
+  "hostEditor.finalMaskHint": "TCP/UDP masks and QUIC settings for Xray JSON. Masks run from the innermost layer to the outermost.",
+  "hostEditor.clientOptionsHint": "clash — IP and X25519; server_description — description for compatible clients.",
+  "hostEditor.mapperHint": "Ordered set, copy and unset operations for xrayJson, clash, singbox and base64.",
+  "hostsDialog.fingerprint.info.profiles": "chrome, firefox, safari, ios, android, edge, 360, qq — preset profiles.",
+  "hostsDialog.fingerprint.info.random": "random — a random preset profile at core startup.",
+  "hostsDialog.fingerprint.info.randomized": "randomized — a random profile with ALPN.",
+  "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — a random profile without ALPN.",
+  "hostsDialog.fingerprint.info.unsafe": "unsafe — standard Go TLS without browser impersonation.",
+  "hostsDialog.fingerprint.info.default": "Client default — an empty fingerprint."
 }

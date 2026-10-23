@@ -56,17 +56,17 @@
   "hostsDialog.dataUsage": "用户已用流量",
   "hostsDialog.desc": "可在主机名称和地址中使用变量。",
   "hostsDialog.expireDate": "用户到期日期",
-  "hostsDialog.fingerprint": "TLS 指纹",
+  "hostsDialog.fingerprint": "Fingerprint",
   "hostsDialog.fragment": "分片",
-  "hostsDialog.fragment.info": "格式：length,interval,packets",
+  "hostsDialog.fragment.info": "格式：length,interval,packets。length 单位为字节，interval 为毫秒；接受整数或 A-B 范围。packets 指定 tlshello 或数据包编号。",
   "hostsDialog.fragment.info.attention": "自定义 JSON 需使用 Streisand 1.6.12+ 或 v2rayNG 1.8.16+。",
   "hostsDialog.fragment.info.examples": "示例",
   "hostsDialog.noise": "噪声",
-  "hostsDialog.noise.info": "格式：packets,delay",
+  "hostsDialog.noise.info": "格式：type:value[,delay]。类型：rand、str、hex、base64。rand 指定字节数或 A-B 范围；delay 单位为毫秒。多个数据包用 & 分隔。用于 Xray JSON。",
   "hostsDialog.noise.info.attention": "自定义 JSON 需使用 Streisand 1.6.32+ 或 v2rayNG 1.8.39+。",
   "hostsDialog.noise.info.examples": "示例",
-  "hostsDialog.host": "Host 标头",
-  "hostsDialog.host.info": "留空以使用入站的 Host 标头。",
+  "hostsDialog.host": "Host",
+  "hostsDialog.host.info": "传输层 Host。逗号分隔的值会随机选取；* 替换为随机字符串。",
   "hostsDialog.host.multiHost": "用 <badge>,</badge> 分隔地址，每次随机选择一个。",
   "hostsDialog.host.wildcard": "用 <badge>*</badge> 生成通配域名中的随机字符串。",
   "hostsDialog.jalaliExpireDate": "用户到期日期（波斯历）",
@@ -75,7 +75,7 @@
   "hostsDialog.noCertificates": "已分配节点尚无证书。",
   "hostsDialog.muxEnable": "启用 MUX",
   "hostsDialog.path": "路径",
-  "hostsDialog.path.info": "留空以使用入站的路径。",
+  "hostsDialog.path.info": "传输路径或 gRPC 服务名。支持 {USERNAME} 等变量。",
   "hostsDialog.port": "端口",
   "hostsDialog.port.info": "留空以使用入站端口。使用端口转发时填写外部端口。",
   "hostsDialog.proxyMethod": "传输方式",
@@ -92,8 +92,8 @@
   "hostsDialog.selectCertificates": "选择证书",
   "hostsDialog.selectNodes": "选择节点",
   "hostsDialog.sni": "SNI",
-  "hostsDialog.sni.info": "留空以使用入站的 SNI。",
-  "hostsDialog.sockopt": "套接字选项",
+  "hostsDialog.sni.info": "TLS/REALITY 服务器名称。逗号分隔的值会随机选取；* 替换为随机字符串。空值设置空 SNI。",
+  "hostsDialog.sockopt": "SockOpt",
   "hostsDialog.statusEmoji": "用户状态表情",
   "hostsDialog.statusText": "用户状态",
   "hostsDialog.title": "为每个入站配置订阅主机。",
@@ -648,85 +648,85 @@
   "statsPage.summary.limited": "流量已用尽",
   "statsPage.summary.expired": "已过期",
   "statsPage.summary.percentTooltip": "{{value}} / {{total}} 位用户",
-  "statsPage.summary.onlinePercentTooltip": "{{value}} 名在线用户，占 {{total}} 名活跃用户"
-  ,"nodeProfile.restart": "重启 Xray"
-  ,"nodeProfile.actions": "节点操作"
-  ,"nodeProfile.restartTitle": "重启此节点的 Xray？"
-  ,"nodeProfile.restartDescription": "{{name}} 上的 Xray 将使用当前配置重启，现有连接可能中断。"
-  ,"nodeProfile.restartSuccess": "已提交 Xray 重启请求"
-  ,"nodeProfile.applyChanges": "应用更改"
-  ,"nodeProfile.restartRequiredTitle": "需要重启 Xray"
-  ,"nodeProfile.restartRequiredDescription": "重启 Xray 以应用节点配置更改。"
-  ,"geoResources.title": "地理数据文件"
-  ,"geoResources.description": "此节点的 Geosite 和 GeoIP 文件。"
-  ,"geoResources.add": "添加文件"
-  ,"geoResources.addTitle": "添加地理数据文件"
-  ,"geoResources.addDescription": "上传 .dat 文件或设置从 URL 自动更新。"
-  ,"geoResources.upload": "上传文件"
-  ,"geoResources.remote": "自动更新"
-  ,"geoResources.file": "DAT 文件"
-  ,"geoResources.filename": "文件名"
-  ,"geoResources.url": "下载地址"
-  ,"geoResources.cron": "更新计划"
-  ,"geoResources.cronHint": "五字段 cron 表达式，时区为 UTC。"
-  ,"geoResources.cronHelp": "说明更新计划"
-  ,"geoResources.cronCurrent": "当前计划"
-  ,"geoResources.cronUnknown": "自定义五字段 cron 表达式。"
-  ,"geoResources.cronEveryMinute": "每分钟运行。"
-  ,"geoResources.cronHourlyAtMinute": "每小时第 {{minute}} 分钟运行。"
-  ,"geoResources.cronDailyAt": "每天 {{time}} 运行。"
-  ,"geoResources.cronExamplesTitle": "常用示例"
-  ,"geoResources.cronExampleDailyNoon": "每天 12:00"
-  ,"geoResources.cronExampleHourly": "每小时"
-  ,"geoResources.cronExampleDaily": "每天"
-  ,"geoResources.empty": "暂无地理数据文件"
-  ,"geoResources.loadError": "无法加载地理数据文件"
-  ,"geoResources.autoUpdate": "已启用自动更新"
-  ,"geoResources.updateNow": "立即更新"
-  ,"geoResources.download": "下载"
-  ,"geoResources.actions": "操作"
-  ,"geoResources.editTitle": "编辑地理数据文件"
-  ,"geoResources.editDescription": "修改文件名或自动更新设置。"
-  ,"geoResources.deleteTitle": "删除地理数据文件"
-  ,"geoResources.deleteDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。"
-  ,"geoResources.overwriteTitle": "替换现有文件？"
-  ,"geoResources.overwriteDescription": "节点上已存在同名文件。"
-  ,"geoResources.overwrite": "替换"
-  ,"geoResources.dropHere": "将 .dat 文件拖到此处"
-  ,"geoResources.dropInvalid": "只能上传 .dat 文件"
-  ,"geoResources.dropSuccess": "已上传 {{count}} 个文件"
-  ,"geoResources.dropOverwriteDescription": "节点上已存在 {{count}} 个文件。是否替换？"
-  ,"geoResources.dropOrSelect": "拖入文件或点击选择"
-  ,"geoResources.selectedFile": "点击或拖入其他文件以替换"
-  ,"geoResources.save": "保存"
-  ,"geoResources.deleteSingleTitle": "删除地理数据文件"
-  ,"geoResources.deleteSingleDescription": "从此节点删除文件“{{filename}}”？此操作无法撤销。"
-  ,"geoResources.deleteMultipleTitle": "删除地理数据文件"
-  ,"geoResources.deleteMultipleDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。"
-  ,"nodes.logging": "日志记录"
-  ,"nodes.accessLog": "访问日志"
-  ,"nodes.errorLog": "错误日志"
-  ,"nodes.logRetentionDays": "保留天数"
-  ,"nodes.logStorageLimit": "存储限制（MB，可选）"
-  ,"staticLogs.title": "日志文件"
-  ,"staticLogs.runtime": "实时日志"
-  ,"staticLogs.static": "日志文件"
-  ,"staticLogs.access": "访问"
-  ,"staticLogs.error": "错误"
-  ,"staticLogs.active": "活动"
-  ,"staticLogs.download": "下载"
-  ,"staticLogs.empty": "没有日志文件"
-  ,"staticLogs.filesNotCreated": "日志文件尚未创建"
-  ,"staticLogs.disabled": "未启用文件日志"
-  ,"staticLogs.configure": "配置"
-  ,"staticLogs.loadError": "无法加载日志文件"
-  ,"staticLogs.deleteTitle": "删除日志文件"
-  ,"staticLogs.deleteDescription": "从此节点删除日志文件“{{filename}}”？此操作无法撤销。"
-  ,"staticLogs.clearDescription": "清空此节点上的活动日志文件“{{filename}}”？"
-  ,"staticLogs.clearTitle": "清空日志文件"
-  ,"staticLogs.clear": "清空"
-  ,"nodeLoggingSettings.title": "日志设置"
-  ,"nodeLoggingSettings.saveSuccess": "{{name}} 的日志设置已保存",
+  "statsPage.summary.onlinePercentTooltip": "{{value}} 名在线用户，占 {{total}} 名活跃用户",
+  "nodeProfile.restart": "重启 Xray",
+  "nodeProfile.actions": "节点操作",
+  "nodeProfile.restartTitle": "重启此节点的 Xray？",
+  "nodeProfile.restartDescription": "{{name}} 上的 Xray 将使用当前配置重启，现有连接可能中断。",
+  "nodeProfile.restartSuccess": "已提交 Xray 重启请求",
+  "nodeProfile.applyChanges": "应用更改",
+  "nodeProfile.restartRequiredTitle": "需要重启 Xray",
+  "nodeProfile.restartRequiredDescription": "重启 Xray 以应用节点配置更改。",
+  "geoResources.title": "地理数据文件",
+  "geoResources.description": "此节点的 Geosite 和 GeoIP 文件。",
+  "geoResources.add": "添加文件",
+  "geoResources.addTitle": "添加地理数据文件",
+  "geoResources.addDescription": "上传 .dat 文件或设置从 URL 自动更新。",
+  "geoResources.upload": "上传文件",
+  "geoResources.remote": "自动更新",
+  "geoResources.file": "DAT 文件",
+  "geoResources.filename": "文件名",
+  "geoResources.url": "下载地址",
+  "geoResources.cron": "更新计划",
+  "geoResources.cronHint": "五字段 cron 表达式，时区为 UTC。",
+  "geoResources.cronHelp": "说明更新计划",
+  "geoResources.cronCurrent": "当前计划",
+  "geoResources.cronUnknown": "自定义五字段 cron 表达式。",
+  "geoResources.cronEveryMinute": "每分钟运行。",
+  "geoResources.cronHourlyAtMinute": "每小时第 {{minute}} 分钟运行。",
+  "geoResources.cronDailyAt": "每天 {{time}} 运行。",
+  "geoResources.cronExamplesTitle": "常用示例",
+  "geoResources.cronExampleDailyNoon": "每天 12:00",
+  "geoResources.cronExampleHourly": "每小时",
+  "geoResources.cronExampleDaily": "每天",
+  "geoResources.empty": "暂无地理数据文件",
+  "geoResources.loadError": "无法加载地理数据文件",
+  "geoResources.autoUpdate": "已启用自动更新",
+  "geoResources.updateNow": "立即更新",
+  "geoResources.download": "下载",
+  "geoResources.actions": "操作",
+  "geoResources.editTitle": "编辑地理数据文件",
+  "geoResources.editDescription": "修改文件名或自动更新设置。",
+  "geoResources.deleteTitle": "删除地理数据文件",
+  "geoResources.deleteDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。",
+  "geoResources.overwriteTitle": "替换现有文件？",
+  "geoResources.overwriteDescription": "节点上已存在同名文件。",
+  "geoResources.overwrite": "替换",
+  "geoResources.dropHere": "将 .dat 文件拖到此处",
+  "geoResources.dropInvalid": "只能上传 .dat 文件",
+  "geoResources.dropSuccess": "已上传 {{count}} 个文件",
+  "geoResources.dropOverwriteDescription": "节点上已存在 {{count}} 个文件。是否替换？",
+  "geoResources.dropOrSelect": "拖入文件或点击选择",
+  "geoResources.selectedFile": "点击或拖入其他文件以替换",
+  "geoResources.save": "保存",
+  "geoResources.deleteSingleTitle": "删除地理数据文件",
+  "geoResources.deleteSingleDescription": "从此节点删除文件“{{filename}}”？此操作无法撤销。",
+  "geoResources.deleteMultipleTitle": "删除地理数据文件",
+  "geoResources.deleteMultipleDescription": "从此节点删除选中的文件（{{count}} 个）？此操作无法撤销。",
+  "nodes.logging": "日志记录",
+  "nodes.accessLog": "访问日志",
+  "nodes.errorLog": "错误日志",
+  "nodes.logRetentionDays": "保留天数",
+  "nodes.logStorageLimit": "存储限制（MB，可选）",
+  "staticLogs.title": "日志文件",
+  "staticLogs.runtime": "实时日志",
+  "staticLogs.static": "日志文件",
+  "staticLogs.access": "访问",
+  "staticLogs.error": "错误",
+  "staticLogs.active": "活动",
+  "staticLogs.download": "下载",
+  "staticLogs.empty": "没有日志文件",
+  "staticLogs.filesNotCreated": "日志文件尚未创建",
+  "staticLogs.disabled": "未启用文件日志",
+  "staticLogs.configure": "配置",
+  "staticLogs.loadError": "无法加载日志文件",
+  "staticLogs.deleteTitle": "删除日志文件",
+  "staticLogs.deleteDescription": "从此节点删除日志文件“{{filename}}”？此操作无法撤销。",
+  "staticLogs.clearDescription": "清空此节点上的活动日志文件“{{filename}}”？",
+  "staticLogs.clearTitle": "清空日志文件",
+  "staticLogs.clear": "清空",
+  "nodeLoggingSettings.title": "日志设置",
+  "nodeLoggingSettings.saveSuccess": "{{name}} 的日志设置已保存",
   "subscriptionTemplates.title": "订阅模板",
   "subscriptionTemplates.create": "创建模板",
   "subscriptionTemplates.createTitle": "创建订阅模板",
@@ -835,14 +835,17 @@
   "hostEditor.editTitle": "编辑主机",
   "hostEditor.remark": "备注",
   "hostEditor.security": "安全设置",
-  "hostEditor.keepSniBlank": "保持 SNI 为空",
   "hostEditor.sniFromAddress": "使用地址作为 SNI",
   "hostEditor.noSecurity": "无",
   "hostEditor.xhttpExtra": "XHTTP 附加参数",
-  "hostEditor.sockopt": "套接字选项",
+  "hostEditor.sockopt": "SockOpt",
   "hostEditor.finalMask": "Final mask",
   "hostEditor.clientOptions": "客户端选项",
-  "hostEditor.mapper": "主机字段映射",
+  "actions.configure": "配置",
+  "hostEditor.configureParameter": "配置：{{name}}",
+  "hostEditor.invalidJsonObject": "请输入有效的 JSON 对象",
+  "hostEditor.jsonSchemaError": "请修正 JSON 中标记的错误",
+  "hostEditor.mapper": "Mapper",
   "hostEditor.addParameter": "添加参数",
   "hostEditor.additional": "高级选项",
   "hostEditor.parameterGroups.security": "安全",
@@ -866,7 +869,7 @@
   "hostEditor.invalidJson": "请输入有效的 JSON 对象（ALPN 使用数组）",
   "hostEditor.invalidJsonArray": "请输入包含有效值的 JSON 数组",
   "hostEditor.incompatibleInbound": "这些参数需要 XHTTP 入站。请移除参数或选择兼容入站。",
-  "hostEditor.extraHint": "替换整个入站 extra 对象。省略的键使用客户端默认值。GET 需要 packet-up 模式。",
+  "hostEditor.extraHint": "完整替换入站 extra。省略的键使用客户端默认值。GET 需要 packet-up。",
   "hostEditor.moveUp": "上移",
   "hostEditor.moveDown": "下移",
   "hostEditor.links": "关联",
@@ -885,10 +888,28 @@
   "hostEditor.failure_tolerance": "失败容差（0–1）",
   "hostEditor.baselines_ms": "RTT 基准（毫秒，JSON 数组）",
   "hostEditor.costs": "连接成本（JSON 数组）",
-  "hostEditor.muxOptions": "MUX 设置",
+  "hostEditor.muxOptions": "MUX",
   "hostEditor.noAlpnResults": "未找到协议",
   "hostEditor.defaultValue": "默认",
-  "hostEditor.isHidden": "在 JSON/YAML 中隐藏",
-  "hostEditor.hiddenHint": "URI 和 Outline 仍包含此连接。",
-  "hostEditor.parameterGroups.visibility": "可见性"
+  "hostEditor.isHidden": "从列表中隐藏",
+  "hostEditor.parameterGroups.visibility": "可见性",
+  "hostEditor.templates": "模板",
+  "hostEditor.remarkPlaceholder": "欧洲",
+  "hostEditor.parameterHelp": "帮助：{{name}}",
+  "hostEditor.example": "示例",
+  "hostEditor.clientDefault": "客户端默认值",
+  "hostEditor.addressHint": "IP 地址或域名。逗号分隔的值会随机选取；* 替换为随机字符串。支持 {SERVER_IP} 等变量。",
+  "hostsDialog.fingerprint.info": "TLS ClientHello 配置。",
+  "hostEditor.alpnHint": "TLS ALPN 协议。清空选择会设置空列表。",
+  "hostEditor.muxHint": "在一个连接中复用多个流。enabled 启用 MUX；xray 和 smux 配置其参数。",
+  "hostEditor.sockoptHint": "Xray 套接字设置：TCP、DNS 和网络接口。KeepAlive 间隔单位为秒。",
+  "hostEditor.finalMaskHint": "Xray JSON 的 TCP/UDP 掩码和 QUIC 设置。掩码从内层向外层应用。",
+  "hostEditor.clientOptionsHint": "clash — IP 和 X25519；server_description — 兼容客户端的服务器说明。",
+  "hostEditor.mapperHint": "xrayJson、clash、singbox 和 base64 的 set、copy、unset 操作，按顺序执行。",
+  "hostsDialog.fingerprint.info.profiles": "chrome、firefox、safari、ios、android、edge、360、qq — 预设配置。",
+  "hostsDialog.fingerprint.info.random": "random — 内核启动时随机选择预设配置。",
+  "hostsDialog.fingerprint.info.randomized": "randomized — 带 ALPN 的随机配置。",
+  "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — 不带 ALPN 的随机配置。",
+  "hostsDialog.fingerprint.info.unsafe": "unsafe — 标准 Go TLS，不模拟浏览器。",
+  "hostsDialog.fingerprint.info.default": "客户端默认 — 空 fingerprint。"
 }

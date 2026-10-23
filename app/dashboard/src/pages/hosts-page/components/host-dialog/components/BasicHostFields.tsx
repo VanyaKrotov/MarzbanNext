@@ -24,6 +24,7 @@ import { Switch } from "@/components/ui/switch";
 import type { InboundType } from "@/types/Inbound";
 import type { HostFormValues } from "../lib/form";
 import { VariablesPopover } from "./VariablesPopover";
+import { HostParameterHelp } from "./HostParameterHelp";
 
 type PendingProps = { pending: boolean };
 
@@ -40,6 +41,7 @@ export function RemarkField({ pending }: PendingProps) {
       <FieldGroup className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
         <Input
           id="host-remark"
+          placeholder={t("hostEditor.remarkPlaceholder")}
           disabled={pending}
           aria-invalid={Boolean(errors.remark)}
           {...register("remark")}
@@ -110,9 +112,17 @@ export function AddressField({ pending }: PendingProps) {
   const { errors } = useFormState({ control, name: "address", exact: true });
   return (
     <Field data-invalid={Boolean(errors.address)}>
-      <FieldLabel htmlFor="host-address">{t("nodes.nodeAddress")}</FieldLabel>
+      <div className="flex items-center gap-1">
+        <FieldLabel htmlFor="host-address">{t("nodes.nodeAddress")}</FieldLabel>
+        <HostParameterHelp
+          label={t("nodes.nodeAddress")}
+          hint={t("hostEditor.addressHint")}
+          example="proxy.example.com"
+        />
+      </div>
       <Input
         id="host-address"
+        placeholder="proxy.example.com"
         disabled={pending}
         aria-invalid={Boolean(errors.address)}
         {...register("address")}

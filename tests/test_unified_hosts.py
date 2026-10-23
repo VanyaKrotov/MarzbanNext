@@ -1,5 +1,4 @@
 import json
-from dataclasses import replace
 from types import SimpleNamespace
 from unittest import TestCase
 from unittest.mock import patch
@@ -52,14 +51,45 @@ class UnifiedHostTests(TestCase):
 
     def plan(self, target="v2ray-json", **options):
         snapshot = SubscriptionSnapshotLoader().load(self.db, self.settings)
-        plans, diagnostics = ProfilePlanner().plan(snapshot, target,
-                                                   {"shadowsocks": {"password": "test-password", "method": "aes-256-gcm"}},
-                                                   {"shadowsocks": ["SS"]}, ResolveContext({"USERNAME": "test"}), **options)
+        plans, diagnostics = ProfilePlanner().plan(
+            snapshot, target, {"shadowsocks": {"password": "test-password", "method": "aes-256-gcm"}},
+            {"shadowsocks": ["SS"]}, ResolveContext({"USERNAME": "test"}), **options,
+        )
         return snapshot, plans, diagnostics
 
     def generate(self, target="v2ray-json", **options):
         snapshot, plans, _ = self.plan(target, **options)
         return GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults)).body
+
+    def test_removed_blank_sni_option_is_not_advertised_or_accepted(self):
+        from app.subscription.capabilities import host_capabilities
+
+        security_schema = host_capabilities()["overrides_schema"]["$defs"]["SecurityOverrides"]
+        self.assertNotIn("keep_sni_blank", security_schema["properties"])
+        with self.assertRaises(ValidationError):
+            HostCreate(inbound_id=self.inbound.id, remark="A", address="example.com",
+                       overrides={"security": {"keep_sni_blank": True}})
+
+    def test_stored_blank_sni_is_preserved_in_responses_snapshots_clones_and_updates(self):
+        for flag in (True, False):
+            with self.subTest(flag=flag):
+                host = self.host(f"Saved-{flag}")
+                host.overrides = {"security": {"keep_sni_blank": flag, "allow_insecure": False}}
+                self.db.commit()
+                expected = {"security": {"allow_insecure": False}}
+                if flag:
+                    expected["security"]["sni"] = ""
+                self.assertEqual(HostResponse.model_validate(host).overrides, expected)
+                snapshot = SubscriptionSnapshotLoader().load(self.db, self.settings)
+                saved = next(item for item in snapshot.hosts if item.id == host.id)
+                self.assertEqual(saved.overrides, expected)
+                self.assertEqual(host.overrides["security"]["keep_sni_blank"], flag)
+                clone = crud.clone_host(self.db, host, f"Copy-{flag}")
+                self.assertEqual(clone.overrides, expected)
+                crud.update_host(self.db, host, HostPatch(remark=f"Renamed-{flag}"))
+                self.assertEqual(host.overrides, expected)
+                crud.update_host(self.db, host, HostPatch(overrides={"security": {"sni": None}}))
+                self.assertEqual(host.overrides, {"security": {"allow_insecure": False}})
 
     def test_mapper_copies_raw_inbound_and_creates_arrays_without_mutating_inputs(self):
         from app.subscription.mapper import HostMapper
@@ -75,6 +105,69 @@ class UnifiedHostTests(TestCase):
         self.assertEqual(result["options"], [{"cipher": "aes-256-gcm", "enabled": False}])
         self.assertEqual(result["port"], 443)
         self.assertEqual(node, {"keep": True})
+
+    def test_mapper_explicit_null_round_trips_through_create_edit_and_clone(self):
+        overrides = {"mapper": {"clash": [{"op": "set", "to": "custom", "value": None}]}}
+        host = self.host("NullMapper", overrides=overrides)
+        self.assertEqual(host.overrides, overrides)
+        crud.update_host(self.db, host, HostPatch(remark="Renamed"))
+        self.assertEqual(host.overrides, overrides)
+        clone = crud.clone_host(self.db, host, "Cloned")
+        self.assertEqual(clone.overrides, overrides)
+
+    def test_socket_options_survive_create_edit_clone_and_sparse_patch(self):
+        from test_socket_options_schema import SOCKET_OPTIONS
+
+        overrides = {"stream": {"sockopt": SOCKET_OPTIONS}}
+        host = self.host("Socket", overrides=overrides)
+        self.assertEqual(host.overrides, overrides)
+        crud.update_host(self.db, host, HostPatch(remark="Renamed socket"))
+        self.assertEqual(host.overrides, overrides)
+        clone = crud.clone_host(self.db, host, "Cloned socket")
+        self.assertEqual(clone.overrides, overrides)
+        for value in (0, False, 1, True, False, 0):
+            with self.subTest(tcpFastOpen=value):
+                crud.update_host(self.db, host, HostPatch(overrides={"stream": {"sockopt": {"tcpFastOpen": value}}}))
+                actual = host.overrides["stream"]["sockopt"]["tcpFastOpen"]
+                self.assertIs(type(actual), type(value))
+                self.assertEqual(actual, value)
+        self.assertEqual(host.overrides["stream"]["sockopt"]["customSockopt"], SOCKET_OPTIONS["customSockopt"])
+        crud.update_host(self.db, host, HostPatch(overrides={"stream": {"sockopt": None}}))
+        self.assertEqual(host.overrides, {"stream": {}})
+
+    def test_api_rejects_invalid_socket_options_without_modifying_existing_host(self):
+        application = FastAPI()
+        application.include_router(router)
+        application.dependency_overrides[get_db] = lambda: self.db
+        application.dependency_overrides[Admin.check_sudo_admin] = lambda: SimpleNamespace(username="test")
+        client = TestClient(application)
+        payload = {"inbound_id": self.inbound.id, "remark": "Socket", "address": "socket.example.com",
+                   "overrides": {"stream": {"sockopt": {"tcpFastOpen": "yes"}}}}
+        self.assertEqual(client.post("/api/hosts", json=payload).status_code, 422)
+        host = self.host("Socket", overrides={"stream": {"sockopt": {"tcpFastOpen": False}}})
+        response = client.patch(f"/api/hosts/{host.id}", json=payload)
+        self.assertEqual(response.status_code, 422)
+        self.assertIn("tcpFastOpen", response.text)
+        self.db.refresh(host)
+        self.assertEqual(host.overrides, {"stream": {"sockopt": {"tcpFastOpen": False}}})
+
+    def test_stored_legacy_mapper_is_normalized_without_mutating_data_on_read(self):
+        host = self.host("LegacyMapper")
+        stored = {"mapper": {"clash": [
+            {"op": "set", "to": "custom", "from": "ignored"},
+            {"op": "unset", "to": "udp", "from": "ignored", "value": True},
+        ]}}
+        host.overrides = stored
+        self.db.commit()
+        expected = {"mapper": {"clash": [
+            {"op": "set", "to": "custom", "value": None}, {"op": "unset", "to": "udp"},
+        ]}}
+        self.assertEqual(HostResponse.model_validate(host).overrides, expected)
+        self.assertEqual(host.overrides, stored)
+        clone = crud.clone_host(self.db, host, "Cloned")
+        self.assertEqual(clone.overrides, expected)
+        crud.update_host(self.db, host, HostPatch(remark="Renamed"))
+        self.assertEqual(host.overrides, expected)
 
     def test_inbound_update_revalidates_existing_extra_before_mutation(self):
         from app.db.crud.proxy_inbounds import update_inbound
@@ -96,7 +189,8 @@ class UnifiedHostTests(TestCase):
             with self.subTest(target=target):
                 snapshot, plans, _ = self.plan(target)
                 with patch("app.db.GetDB", side_effect=AssertionError("Renderer accessed DB")):
-                    result = GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults))
+                    result = GeneratorRegistry().for_target(target).generate(
+                        RenderInput(target, plans, snapshot.defaults))
                 self.assertTrue(result.body)
 
     def test_identity_mapper_cannot_produce_broken_references(self):
@@ -142,7 +236,7 @@ class UnifiedHostTests(TestCase):
         self.assertEqual(cloned.status_code, 201, cloned.text)
         self.assertEqual(client.delete(f"/api/hosts/{row['id']}").status_code, 204)
         self.assertEqual(client.get(f"/api/hosts/{row['id']}").status_code, 404)
-        self.assertEqual(client.get("/api/hosts/capabilities").json()["schema_version"], 4)
+        self.assertEqual(client.get("/api/hosts/capabilities").json()["schema_version"], 7)
         client.close()
 
     def test_scalar_xhttp_fields_and_explicit_nulls_are_not_accepted(self):
@@ -185,18 +279,25 @@ class UnifiedHostTests(TestCase):
     def test_empty_paths_headers_and_tls_false_survive_format_defaults(self):
         import yaml
 
-        self.inbound.content = {"tag": "SS", "protocol": "vmess", "port": 443, "settings": {"clients": []},
-                                "streamSettings": {"network": "ws", "security": "tls", "tlsSettings": {"serverName": "front.example.com"},
-                                                   "wsSettings": {"path": "/original", "headers": {"Host": "front.example.com", "X-Test": "kept"}}}}
+        self.inbound.content = {
+            "tag": "SS", "protocol": "vmess", "port": 443, "settings": {"clients": []},
+            "streamSettings": {
+                "network": "ws", "security": "tls", "tlsSettings": {"serverName": "front.example.com"},
+                "wsSettings": {"path": "/original", "headers": {"Host": "front.example.com", "X-Test": "kept"}},
+            },
+        }
         self.db.commit()
         self.host("A", overrides={"transport": {"path": "", "host": ""},
                                   "security": {"alpn": [], "allow_insecure": False}})
         snapshot = SubscriptionSnapshotLoader().load(self.db, self.settings)
         for target in ("v2ray-json", "clash", "sing-box"):
             with self.subTest(target=target):
-                plans, _ = ProfilePlanner().plan(snapshot, target,
-                                                 {"vmess": {"id": "d2719ec9-8f2d-4b70-91ad-621c6b10a13a"}}, {"vmess": ["SS"]}, ResolveContext({}))
-                body = GeneratorRegistry().for_target(target).generate(RenderInput(target, plans, snapshot.defaults)).body
+                plans, _ = ProfilePlanner().plan(
+                    snapshot, target, {"vmess": {"id": "d2719ec9-8f2d-4b70-91ad-621c6b10a13a"}},
+                    {"vmess": ["SS"]}, ResolveContext({}),
+                )
+                body = GeneratorRegistry().for_target(target).generate(
+                    RenderInput(target, plans, snapshot.defaults)).body
                 if target == "v2ray-json":
                     node = json.loads(body)[0]["outbounds"][0]
                     transport, tls = node["streamSettings"]["wsSettings"], node["streamSettings"]["tlsSettings"]

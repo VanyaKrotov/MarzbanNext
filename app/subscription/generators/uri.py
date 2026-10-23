@@ -1,3 +1,6 @@
+import base64
+
+from app.subscription.client_metadata import get_server_description
 from app.subscription.generators.base import builder_arguments, finish, map_uri
 from app.subscription.v2ray import V2rayShareLink
 from app.utils.subscription_templates import parse_subscription_links, render_subscription_template
@@ -11,6 +14,11 @@ class UriSubscriptionGenerator:
             builder = V2rayShareLink()
             builder.add(**builder_arguments(connection, profile.remark))
             mapped = [map_uri(link, connection) for link in builder.links]
+            description = get_server_description(connection, data.include_server_description)
+            if description:
+                encoded = base64.b64encode(description.encode()).decode()
+                # Extended clients expect a suffix after the complete link, including its fragment.
+                mapped = [f"{link}?serverDescription={encoded}" for link in mapped]
             rendered = render_subscription_template(profile.template.content, {
                 **connection.context, "links": mapped, "host": connection.template_record(),
             })

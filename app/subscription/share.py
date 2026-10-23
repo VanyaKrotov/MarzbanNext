@@ -8,6 +8,7 @@ from jdatetime import date as jd
 from fastapi import HTTPException
 
 from app.models.subscription_template import normalize_subscription_client_type
+from app.subscription.client_metadata import supports_server_description
 from app.subscription.contracts import RenderInput, SubscriptionError
 from app.subscription.generators import GeneratorRegistry
 from app.subscription.loader import SubscriptionSnapshotLoader
@@ -136,7 +137,8 @@ def setup_format_variables(extra_data: dict, settings=None, now=None) -> dict:
 
 
 def generate_subscription_config(proxies, inbounds, extra_data, config_format, as_base64=False,
-                                 reverse=False, hosts_by_inbound=None, template_id=None, root_ids=None):
+                                 reverse=False, hosts_by_inbound=None, template_id=None, root_ids=None,
+                                 *, user_agent=""):
     from app.db import GetDB
     from app.utils.runtime_settings import get_runtime_settings
 
@@ -160,6 +162,7 @@ def generate_subscription_config(proxies, inbounds, extra_data, config_format, a
             return ""
         result = GeneratorRegistry().for_target(target).generate(RenderInput(
             target, profiles, snapshot.defaults, snapshot.external_config, reverse, as_base64,
+            include_server_description=supports_server_description(user_agent),
         ))
         return result.body
     except SubscriptionError as exc:
@@ -168,20 +171,21 @@ def generate_subscription_config(proxies, inbounds, extra_data, config_format, a
         raise HTTPException(status_code=422, detail=f"Invalid subscription configuration: {exc}") from exc
 
 
-def generate_subscription(user, config_format, as_base64=False, reverse=False, template_id=None):
+def generate_subscription(user, config_format, as_base64=False, reverse=False, template_id=None, *, user_agent=""):
     return generate_subscription_config(user.proxies, user.inbounds, user.__dict__, config_format,
-                                        as_base64, reverse, template_id=template_id)
+                                        as_base64, reverse, template_id=template_id, user_agent=user_agent)
 
 
-def generate_subscription_from_hosts(user, hosts, config_format, as_base64=False, reverse=False, template_id=None):
+def generate_subscription_from_hosts(user, hosts, config_format, as_base64=False, reverse=False, template_id=None,
+                                     *, user_agent=""):
     return generate_subscription_config(user.proxies, user.inbounds, user.__dict__, config_format,
                                         as_base64, reverse, template_id=template_id,
-                                        root_ids={host.id for host in hosts})
+                                        root_ids={host.id for host in hosts}, user_agent=user_agent)
 
 
 def generate_v2ray_links(proxies, inbounds, extra_data, reverse=False, hosts_by_inbound=None, template_id=None):
     content = generate_subscription_config(proxies, inbounds, extra_data, "v2ray", reverse=reverse,
-                                          hosts_by_inbound=hosts_by_inbound, template_id=template_id)
+                                           hosts_by_inbound=hosts_by_inbound, template_id=template_id)
     return content.splitlines() if content else []
 
 

@@ -185,7 +185,8 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(self.db.get(SubscriptionTemplate, template_id).name, 'default')
 
     def test_api_validation_and_authorization(self):
-        for content in ('not json', '[]', '{"outbounds": {}}', '{"outbounds": [1]}', '{{ missing }}', '{{ now() | tojson }}', '{{ 1 / 0 }}'):
+        for content in ('not json', '[]', '{"outbounds": {}}', '{"outbounds": [1]}',
+                        '{{ missing }}', '{{ now() | tojson }}', '{{ 1 / 0 }}'):
             response = self.client.post('/api/subscription-templates', json={
                 'name': 'invalid', 'format': 'v2ray-json', 'content': content,
             })
@@ -321,6 +322,32 @@ class SubscriptionTemplateTests(TestCase):
                 self.assertEqual(response.status_code, 422, response.text)
                 response = self.client.get('/api/subscription-templates', params={'format': format})
                 self.assertEqual(response.status_code, 422, response.text)
+
+    def test_public_subscription_routes_pass_client_metadata_capabilities(self):
+        self.create_host(overrides={'clients': {'server_description': 'Европа'}})
+        self.client.app.dependency_overrides[get_validated_sub] = self.subscription_user
+        self.settings.use_custom_json_default = True
+        cases = (
+            ('', 'Happ/2.0', True, True),
+            ('', 'Happ/2.0.0', True, False),
+            ('', 'FlClashX/1.0', True, False),
+            ('', 'Clash/1.0', False, False),
+            ('/v2ray-json', 'Happ/2.0', True, False),
+            ('/v2ray-json', 'v2rayNG/1.9.0', False, False),
+            ('/clash', 'Flowvy/1.0', True, False),
+            ('/clash', 'Mihomo/1.0', False, False),
+            ('/v2ray', 'Happ/2.0', True, True),
+            ('/v2ray', 'unknown', False, True),
+            ('/sing-box', 'Happ/2.0', False, False),
+            ('/outline', 'Happ/2.0', False, False),
+        )
+        with patch('app.db.GetDB', return_value=nullcontext(self.db)), patch('app.db.crud.users.update_user_sub'):
+            for path, agent, expected, encoded in cases:
+                with self.subTest(path=path, agent=agent):
+                    response = self.client.get(f'{public_router.prefix}/test{path}', headers={'User-Agent': agent})
+                    self.assertEqual(response.status_code, 200, response.text)
+                    body = base64.b64decode(response.text).decode() if encoded else response.text
+                    self.assertEqual('serverDescription' in body, expected)
 
     def test_per_host_json_and_link_templates_and_live_edits(self):
         first = self.create_host()

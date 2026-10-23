@@ -6,7 +6,7 @@ from app.subscription.generators.composition import assemble_singbox, required_s
 from app.subscription.generators.base import apply_resolved_options, builder_arguments, finish, map_node
 from app.subscription.singbox import SingBoxConfiguration
 from app.subscription.validation import OutputValidator, TagAllocator, validate_identities
-from app.utils.subscription_templates import parse_subscription_document, render_subscription_template
+from app.utils.subscription_templates import render_template_document
 
 
 class SingBoxSubscriptionGenerator:
@@ -15,8 +15,8 @@ class SingBoxSubscriptionGenerator:
             return finish("", data, "application/json")
         profile = data.profiles[0]
         context = {**profile.connections[0].context, "host_ids": [item.host_id for item in profile.sources]}
-        template = parse_subscription_document(
-            SubscriptionFormat.sing_box, render_subscription_template(profile.template.content, context))
+        template = render_template_document(
+            SubscriptionFormat.sing_box, profile.template.content, context, profile.template.migration_settings)
         builder = SingBoxConfiguration(document=template, defaults=data.defaults)
         allocator = TagAllocator()
         allocator.used.update(validate_identities(template["outbounds"], "tag"))

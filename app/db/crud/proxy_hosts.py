@@ -7,10 +7,12 @@ from typing import List, Optional
 
 from sqlalchemy import String, cast, func, or_
 from sqlalchemy.orm import Session, joinedload, selectinload
+from sqlalchemy.orm.attributes import flag_modified
 
 from app.db.models.proxies import HostGroup, ProxyHost, ProxyInbound
+from app.db.models.subscription_templates import HostSubscriptionTemplate
 from app.db.crud import subscription_templates as template_crud
-from app.models.host import HostCreate, HostPatch, HostOverrides
+from app.models.host import HostCreate, HostPatch, HostOverrides, normalize_stored_host_overrides
 from app.models.proxy import HostGroupCreate, HostGroupModify
 
 
@@ -18,7 +20,7 @@ from app.models.proxy import HostGroupCreate, HostGroupModify
 class PreparedHost:
     inbound: ProxyInbound
     groups: list[HostGroup]
-    bindings: list
+    bindings: list[HostSubscriptionTemplate]
     overrides: dict
 
 
@@ -122,9 +124,10 @@ def validate_connection_options(inbound: ProxyInbound, overrides: dict):
     if "extra" in xhttp:
         if network not in {"xhttp", "splithttp"}:
             raise ValueError("XHTTP extra requires an XHTTP inbound")
-        settings = stream.get("xhttpSettings") or stream.get("splithttpSettings") or {}
-        if xhttp["extra"].get("uplinkHTTPMethod") == "GET" and settings.get("mode", "auto") != "packet-up":
-            raise ValueError("overrides.transport.xhttp.extra.uplinkHTTPMethod: GET requires packet-up mode")
+        settings = stream.get("xhttpSettings", stream.get("splithttpSettings", {}))
+        from app.models.xhttp import XhttpExtra
+
+        XhttpExtra.model_validate(xhttp["extra"]).validate_mode(settings.get("mode") or "auto")
 
 
 def prepare_host(db: Session, data: HostCreate) -> PreparedHost:
@@ -139,7 +142,7 @@ def prepare_host(db: Session, data: HostCreate) -> PreparedHost:
     return PreparedHost(inbound, groups, bindings, overrides)
 
 
-def _apply(host: ProxyHost, data: HostCreate, prepared: PreparedHost):
+def _apply_host(host: ProxyHost, data: HostCreate, prepared: PreparedHost):
     host.inbound = prepared.inbound
     for name in ("remark", "address", "port", "enabled", "is_hidden"):
         setattr(host, name, getattr(data, name))
@@ -148,6 +151,8 @@ def _apply(host: ProxyHost, data: HostCreate, prepared: PreparedHost):
     host.groups = prepared.groups
     host.subscription_templates = prepared.bindings
     host.overrides = prepared.overrides
+    # Python JSON equality treats false/0 and true/1 as equal; Xray assigns them different socket meanings.
+    flag_modified(host, "overrides")
     host.updated_at = datetime.now(UTC).replace(tzinfo=None)
 
 
@@ -163,7 +168,7 @@ def create_host(db: Session, data: HostCreate) -> ProxyHost:
         position = (maximum if maximum is not None else -1) + 1
     host = ProxyHost(position=position)
     db.add(host)
-    _apply(host, data, prepared)
+    _apply_host(host, data, prepared)
     db.commit()
     return get_host(db, host.id)
 
@@ -173,6 +178,7 @@ def update_host(db: Session, host: ProxyHost, patch: HostPatch) -> ProxyHost:
               ("inbound_id", "remark", "address", "port", "enabled", "position", "is_hidden",
                "overrides", "subscription_template_ids")}
     values["group_ids"] = [group.id for group in host.groups]
+    values["overrides"] = normalize_stored_host_overrides(values["overrides"])
     changes = patch.model_dump(exclude_unset=True)
     if isinstance(changes.get("overrides"), dict):
         changes["overrides"] = merge_patch(values["overrides"] or {}, changes["overrides"])
@@ -180,7 +186,7 @@ def update_host(db: Session, host: ProxyHost, patch: HostPatch) -> ProxyHost:
     values["overrides"] = HostOverrides.model_validate(values["overrides"] or {})
     data = HostCreate.model_validate(values)
     prepared = prepare_host(db, data)
-    _apply(host, data, prepared)
+    _apply_host(host, data, prepared)
     db.commit()
     return get_host(db, host.id)
 
@@ -205,14 +211,8 @@ def clone_host(db: Session, source: ProxyHost, remark: str):
     data = HostCreate(
         inbound_id=source.inbound_id, remark=remark, address=source.address, port=source.port,
         enabled=False, is_hidden=source.is_hidden,
-        overrides=source.overrides,
+        overrides=normalize_stored_host_overrides(source.overrides),
         group_ids=[group.id for group in source.groups],
         subscription_template_ids=source.subscription_template_ids,
     )
-    prepared = prepare_host(db, data)
-    maximum = db.query(func.max(ProxyHost.position)).scalar()
-    host = ProxyHost(position=(maximum if maximum is not None else -1) + 1)
-    db.add(host)
-    _apply(host, data, prepared)
-    db.commit()
-    return get_host(db, host.id)
+    return create_host(db, data)

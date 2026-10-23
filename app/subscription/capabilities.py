@@ -20,7 +20,7 @@ def host_capabilities() -> dict:
     from app.models.host import HostOverrides
 
     return {
-        "schema_version": 4,
+        "schema_version": 7,
         "overrides_schema": HostOverrides.model_json_schema(),
         "target_families": TARGET_FAMILIES,
     }

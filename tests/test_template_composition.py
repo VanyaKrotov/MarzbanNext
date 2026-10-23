@@ -34,19 +34,43 @@ class TemplateCompositionTests(TestCase):
     def injection(self, ids, prefix="pool"):
         return {"selector": {"type": "ids", "values": ids}, "selectFrom": "ALL", "tagPrefix": prefix}
 
-    def test_hidden_hosts_never_standalone_but_uri_outline_and_base64_include_them(self):
-        self.host("Visible")
+    def test_hidden_hosts_are_excluded_from_every_standalone_format_and_base64(self):
+        visible = self.host("Visible")
+        targets = ("v2ray-json", "clash", "sing-box", "v2ray", "outline")
+        expected = {target: self.generate(target) for target in targets}
         self.host("Hidden", is_hidden=True)
-        for target in ("v2ray-json", "clash", "sing-box"):
+        for target in targets:
             with self.subTest(target=target):
-                self.assertEqual(len(self.plan(target)[1]), 1)
-        self.assertEqual(len(self.generate("v2ray").splitlines()), 2)
-        self.assertEqual(len(self.plan("outline")[1]), 2)
-        self.assertEqual(json.loads(self.generate("outline"))["tag"], "Hidden")
+                self.assertEqual([profile.owner.id for profile in self.plan(target)[1]], [visible.id])
+                self.assertEqual(self.generate(target), expected[target])
         snapshot, plans, _ = self.plan("v2ray")
         result = GeneratorRegistry().for_target("v2ray").generate(
             RenderInput("v2ray", plans, snapshot.defaults, as_base64=True))
-        self.assertEqual(len(base64.b64decode(result.body).decode().splitlines()), 2)
+        self.assertEqual(base64.b64decode(result.body).decode(), expected["v2ray"])
+
+    def test_hidden_only_selection_is_empty_and_unhiding_restores_every_format(self):
+        from app.db.crud import proxy_hosts
+
+        host = self.host("Visible")
+        targets = ("v2ray-json", "clash", "sing-box", "v2ray", "outline")
+        expected = {target: self.generate(target) for target in targets}
+        proxy_hosts.update_host(self.db, host, HostPatch(is_hidden=True))
+        self.assertTrue(host.enabled)
+        for target in targets:
+            with self.subTest(target=target):
+                self.assertEqual(self.generate(target), "")
+                self.assertEqual(self.generate(target, root_ids={host.id}), "")
+                self.assertEqual(self.generate(target, root_ids={host.id},
+                                               template_id=host.subscription_template_ids[target]), "")
+        snapshot, plans, _ = self.plan("v2ray")
+        result = GeneratorRegistry().for_target("v2ray").generate(
+            RenderInput("v2ray", plans, snapshot.defaults, as_base64=True))
+        self.assertEqual(result.body, "")
+        proxy_hosts.update_host(self.db, host, HostPatch(is_hidden=False))
+        for target in targets:
+            with self.subTest(restored_target=target):
+                self.assertTrue(expected[target])
+                self.assertEqual(self.generate(target), expected[target])
 
     def test_xray_injection_preserves_id_order_deduplicates_and_strips_metadata(self):
         recipient, a, b = self.host("Recipient"), self.host("A", is_hidden=True), self.host("B", is_hidden=True)
@@ -69,7 +93,8 @@ class TemplateCompositionTests(TestCase):
         self.template(recipient, "v2ray-json", {"outbounds": [], "marzban": {
             "injectHosts": [{"tagPrefix": "hidden"}]}})
         snapshot, plans, diagnostics = self.plan(root_ids={recipient.id})
-        output = GeneratorRegistry().for_target("v2ray-json").generate(RenderInput("v2ray-json", plans, snapshot.defaults))
+        output = GeneratorRegistry().for_target("v2ray-json").generate(
+            RenderInput("v2ray-json", plans, snapshot.defaults))
         self.assertEqual([item["tag"] for item in json.loads(output.body)[0]["outbounds"]], ["proxy", "hidden"])
         self.assertIn({"host_id": forbidden.id, "reason": "format_disabled"}, diagnostics)
         snapshot = replace(snapshot, inbounds={})
@@ -107,7 +132,16 @@ class TemplateCompositionTests(TestCase):
     def test_clash_jinja_conf_does_not_duplicate_generated_nodes_and_inline_provider_is_isolated(self):
         recipient, hidden = self.host("A"), self.host("B", is_hidden=True)
         template = self.db.get(SubscriptionTemplate, recipient.subscription_template_ids["clash"])
-        template.content = '{{ conf | yaml }}\nproxy-providers:\n  hidden:\n    type: inline\n    payload: []\n    marzban:\n      include-proxies: true\n      selectFrom: HIDDEN\n'
+        template.content = (
+            '{{ conf | yaml }}\n'
+            'proxy-providers:\n'
+            '  hidden:\n'
+            '    type: inline\n'
+            '    payload: []\n'
+            '    marzban:\n'
+            '      include-proxies: true\n'
+            '      selectFrom: HIDDEN\n'
+        )
         self.db.commit()
         output = yaml.safe_load(self.generate("clash"))
         self.assertEqual([item["name"] for item in output["proxies"]], ["A"])
@@ -215,13 +249,16 @@ class TemplateCompositionTests(TestCase):
         from app.db.crud import proxy_hosts
 
         recipient = self.host("Recipient")
-        vmess = ProxyInbound(tag="VMess", content={"tag": "VMess", "protocol": "vmess", "port": 8443,
-                                                   "settings": {"clients": []}, "streamSettings": {"network": "ws", "security": "none",
-                                                                                                   "wsSettings": {"path": "/vmess"}}})
+        vmess = ProxyInbound(tag="VMess", content={
+            "tag": "VMess", "protocol": "vmess", "port": 8443, "settings": {"clients": []},
+            "streamSettings": {"network": "ws", "security": "none", "wsSettings": {"path": "/vmess"}},
+        })
         self.db.add(vmess)
         self.db.commit()
-        source = proxy_hosts.create_host(self.db, HostCreate(inbound_id=vmess.id, remark="VMess",
-                                                             address="vmess.example.com", is_hidden=True, overrides={"transport": {"path": "/own"}}))
+        source = proxy_hosts.create_host(self.db, HostCreate(
+            inbound_id=vmess.id, remark="VMess", address="vmess.example.com", is_hidden=True,
+            overrides={"transport": {"path": "/own"}},
+        ))
         self.template(recipient, "v2ray-json", {"outbounds": [],
                       "marzban": {"injectHosts": [self.injection([source.id])]}})
         self.template(recipient, "clash", {"proxies": [], "proxy-groups": [
@@ -256,9 +293,9 @@ class TemplateCompositionTests(TestCase):
                     self.assertEqual(node["uuid"], "11111111-1111-4111-8111-111111111111")
                     self.assertEqual(node["transport"]["path"], "/own")
                 elif target == "v2ray":
-                    link = next(link for link in result.body.splitlines() if link.startswith("vmess://"))
-                    self.assertEqual(json.loads(base64.b64decode(link[8:]))["id"],
-                                     "11111111-1111-4111-8111-111111111111")
+                    self.assertEqual(len(result.body.splitlines()), 1)
+                    self.assertTrue(result.body.startswith("ss://"))
+                    self.assertNotIn("vmess://", result.body)
                 else:
                     self.assertEqual(json.loads(result.body)["password"], "own-ss-password")
 

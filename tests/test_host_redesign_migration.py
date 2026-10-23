@@ -13,6 +13,7 @@ from sqlalchemy.schema import CreateTable
 
 from app.db.base import Base
 from app.db.migrations.host_redesign_v1 import preflight
+from app.db.migrations.template_composition_v1 import LEGACY_TABLES, convert, read_snapshot
 
 
 class HostRedesignMigrationTests(TestCase):
@@ -128,3 +129,50 @@ class HostRedesignMigrationTests(TestCase):
     def test_mysql_and_mariadb_tables_compile(self):
         for name in ("hosts", "subscription_templates"):
             self.assertIn("CREATE TABLE", str(CreateTable(Base.metadata.tables[name]).compile(dialect=mysql.dialect())))
+
+    def test_transfer_plan_preserves_snapshot_and_uses_portable_timestamps(self):
+        from copy import deepcopy
+
+        self.seed()
+        with self.engine.connect() as connection:
+            original = read_snapshot(connection, LEGACY_TABLES)
+        before = deepcopy(original)
+        converted = convert(original)
+        self.assertEqual(original, before)
+        for host in converted["hosts"]:
+            self.assertEqual(host["created_at"].microsecond, 0)
+            self.assertEqual(host["updated_at"].microsecond, 0)
+
+    def test_mismatched_template_binding_is_reported_before_ddl(self):
+        ids = self.seed()
+        with self.engine.begin() as connection:
+            template_id = connection.exec_driver_sql(
+                "SELECT id FROM subscription_templates WHERE format='outline'").scalar()
+            connection.exec_driver_sql(
+                "UPDATE host_subscription_templates SET template_id=? WHERE host_id=? AND format='v2ray-json'",
+                (template_id, ids[0]))
+            report = preflight(connection)
+            self.assertTrue(any(item["reason"] == "invalid_template_binding" for item in report["errors"]))
+        self.migrate("upgrade", "head", succeeds=False)
+        self.assertNotIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
+
+    def test_malformed_inbound_is_a_preflight_error_without_partial_conversion(self):
+        self.seed()
+        with self.engine.begin() as connection:
+            table = sa.Table("inbounds", sa.MetaData(), autoload_with=connection)
+            connection.execute(table.update().values(content=[]))
+            report = preflight(connection)
+            self.assertTrue(report["errors"])
+        self.migrate("upgrade", "head", succeeds=False)
+        self.assertNotIn("host_composition_archive", sa.inspect(self.engine).get_table_names())
+
+    def test_dangling_group_link_is_reported_before_ddl(self):
+        ids = self.seed()
+        with self.engine.begin() as connection:
+            connection.exec_driver_sql("PRAGMA foreign_keys=OFF")
+            table = sa.Table("host_group_hosts", sa.MetaData(), autoload_with=connection)
+            connection.execute(table.insert().values(host_id=ids[0], group_id="missing"))
+            report = preflight(connection)
+            self.assertTrue(any(item["reason"] == "dangling_host_group" for item in report["errors"]))
+        self.migrate("upgrade", "head", succeeds=False)
+        self.assertNotIn("host_composition_archive", sa.inspect(self.engine).get_table_names())

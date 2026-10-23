@@ -1,0 +1,5396 @@
+{
+  "$comment": "Xray loader definitions at https://github.com/XTLS/Xray-core/blob/1b1647cd9ddf0abc34b981d4611fc03bcac1ca74/infra/conf/transport_finalmask.go (revision 1b1647cd9ddf0abc34b981d4611fc03bcac1ca74).",
+  "$defs": {
+    "CustomTransform": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "slice"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 3,
+                "minItems": 3
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "xor16"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "xor32"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "be16"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 1,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "be32"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 1,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "le16"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 1,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "le32"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 1,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "le64"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 1,
+                "minItems": 1
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "pad"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 3,
+                "minItems": 3
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "truncate"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "add"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "sub"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "and"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "or"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "shl"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "op": {
+                "const": "shr"
+              }
+            },
+            "required": ["op"]
+          },
+          "then": {
+            "properties": {
+              "args": {
+                "maxItems": 2,
+                "minItems": 2
+              }
+            }
+          }
+        }
+      ],
+      "description": "Byte/integer expression. Types of intermediate values are checked by Xray at runtime.",
+      "properties": {
+        "op": {
+          "description": "concat joins bytes; slice(bytes,start,end); xor16/xor32(bytes,key); be/le encode integers; pad(bytes,length,fillBytes); truncate(bytes,length); add/sub/and/or/shl/shr operate on two integers.",
+          "enum": [
+            "concat",
+            "slice",
+            "xor16",
+            "xor32",
+            "be16",
+            "be32",
+            "le16",
+            "le32",
+            "le64",
+            "pad",
+            "truncate",
+            "add",
+            "sub",
+            "and",
+            "or",
+            "shl",
+            "shr"
+          ],
+          "title": "Op",
+          "type": "string"
+        },
+        "args": {
+          "description": "Ordered operands; nested transforms are supported.",
+          "items": {
+            "$ref": "#/$defs/TransformArgument"
+          },
+          "minItems": 1,
+          "title": "Args",
+          "type": "array"
+        }
+      },
+      "required": ["op", "args"],
+      "title": "CustomTransform",
+      "type": "object"
+    },
+    "Filter": {
+      "additionalProperties": false,
+      "description": "Inbound source-address filter; has no effect in a generated client outbound.",
+      "properties": {
+        "blockedSourceIPs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Blocked IPs/CIDRs/geoip rules. Inbound-only; not applied to client outbounds.",
+          "title": "Blockedsourceips"
+        },
+        "allowedSourceIPs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Allowed IPs/CIDRs/geoip rules. Inbound-only; not applied to client outbounds.",
+          "title": "Allowedsourceips"
+        }
+      },
+      "title": "Filter",
+      "type": "object"
+    },
+    "FilterMask": {
+      "additionalProperties": false,
+      "description": "Inbound source-address filter; has no effect in a generated client outbound.",
+      "properties": {
+        "type": {
+          "const": "filter",
+          "description": "Xray mask loader: filter.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Filter"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "filter settings. Inbound source-address filter; has no effect in a generated client outbound."
+        }
+      },
+      "required": ["type"],
+      "title": "FilterMask",
+      "type": "object"
+    },
+    "Fragment": {
+      "additionalProperties": false,
+      "anyOf": [
+        {
+          "properties": {
+            "lengths": {
+              "minItems": 1,
+              "type": "array"
+            }
+          },
+          "required": ["lengths"]
+        },
+        {
+          "properties": {
+            "length": {
+              "anyOf": [
+                {
+                  "minimum": 1,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?$",
+                  "type": "string"
+                }
+              ]
+            }
+          },
+          "required": ["length"]
+        }
+      ],
+      "description": "Split outgoing TCP data into fragments, optionally targeting only TLS ClientHello.",
+      "properties": {
+        "packets": {
+          "anyOf": [
+            {
+              "pattern": "^(?:|[tT][lL][sS][hH][eE][lL][lL][oO]|0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Empty fragments all packets; tlshello targets TLS ClientHello; e.g. 1-3 selects packet numbers.",
+          "title": "Packets"
+        },
+        "length": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Legacy fragment length in bytes, used when lengths is empty/omitted.",
+          "title": "Length"
+        },
+        "delay": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Legacy delay between fragments in milliseconds; used if delays is empty.",
+          "title": "Delay"
+        },
+        "lengths": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                    "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                    "type": "string"
+                  }
+                ],
+                "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+                "examples": [0, "0", "0-10"]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Fragment-length ranges in bytes. The last range must be positive; earlier zero entries skip fragmentation.",
+          "examples": [["100-200", "50-100"]],
+          "title": "Lengths"
+        },
+        "delays": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "maximum": 2147483647,
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  {
+                    "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                    "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                    "type": "string"
+                  }
+                ],
+                "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+                "examples": [0, "0", "0-10"]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Delay ranges in milliseconds, paired with lengths; 0 means no delay.",
+          "title": "Delays"
+        },
+        "maxSplit": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum number of splits; 0 means unlimited.",
+          "title": "Maxsplit"
+        }
+      },
+      "title": "Fragment",
+      "type": "object"
+    },
+    "FragmentMask": {
+      "additionalProperties": false,
+      "description": "Split outgoing TCP data into fragments, optionally targeting only TLS ClientHello.",
+      "properties": {
+        "type": {
+          "const": "fragment",
+          "description": "Xray mask loader: fragment.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/Fragment",
+          "description": "fragment settings. Split outgoing TCP data into fragments, optionally targeting only TLS ClientHello."
+        }
+      },
+      "required": ["type", "settings"],
+      "title": "FragmentMask",
+      "type": "object"
+    },
+    "HappyEyeballs": {
+      "additionalProperties": false,
+      "description": "TCP address racing; needs non-AsIs resolution and no dialerProxy to take effect.",
+      "properties": {
+        "tryDelayMs": {
+          "anyOf": [
+            {
+              "maximum": 18446744073709551615,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Delay between TCP attempts in milliseconds. 0 disables racing; 250 is a common value.",
+          "examples": [250],
+          "title": "Trydelayms"
+        },
+        "prioritizeIPv6": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Try IPv6 addresses first; false (the core default) prioritizes IPv4.",
+          "title": "Prioritizeipv6"
+        },
+        "interleave": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Addresses per family before switching; default 1. 0 keeps the first family together.",
+          "examples": [1, 2],
+          "title": "Interleave"
+        },
+        "maxConcurrentTry": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Concurrent TCP connection attempts; default 4. 0 disables racing.",
+          "examples": [4],
+          "title": "Maxconcurrenttry"
+        }
+      },
+      "title": "HappyEyeballs",
+      "type": "object"
+    },
+    "IntegerSocketOption": {
+      "additionalProperties": false,
+      "description": "An integer setsockopt value, encoded as a decimal string.",
+      "properties": {
+        "system": {
+          "anyOf": [
+            {
+              "enum": ["", "linux", "windows", "darwin", "android"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Apply only on this client OS; empty applies on any OS. Android refers to Android builds.",
+          "title": "System"
+        },
+        "network": {
+          "anyOf": [
+            {
+              "enum": ["", "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket network filter; tcp/udp includes both families. Empty applies to every network.",
+          "title": "Network"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?[0-9]+$",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket protocol level as a decimal string; omitted/empty uses 6 (TCP).",
+          "examples": ["6", "1"],
+          "title": "Level"
+        },
+        "opt": {
+          "description": "Socket option number as a decimal string, not a JSON number.",
+          "examples": ["13"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Opt",
+          "type": "string"
+        },
+        "type": {
+          "const": "int",
+          "description": "Use the client's integer setsockopt API.",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "description": "Signed 64-bit decimal integer string; the option's actual range depends on the OS.",
+          "examples": ["1", "-1"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": ["opt", "type", "value"],
+      "title": "IntegerSocketOption",
+      "type": "object"
+    },
+    "LegacyQuicHop": {
+      "additionalProperties": false,
+      "description": "Port hopping settings used by older Xray QUIC configurations.",
+      "properties": {
+        "ports": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\s*(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5])))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5]))))))?|env:[A-Za-z_][A-Za-z0-9_]*)?\\s*(?:,\\s*(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5])))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5]))))))?|env:[A-Za-z_][A-Za-z0-9_]*)?\\s*)*$",
+                  "patternErrorMessage": "Use ports from 0 to 65535, comma-separated ranges, or env:NAME.",
+                  "type": "string"
+                }
+              ],
+              "description": "Port/ranges or env:NAME resolved by the client; empty string/zero means an empty list.",
+              "examples": [443, "443,20000-50000"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Legacy port list/ranges, e.g. 443,20000-50000.",
+          "title": "Ports"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 5,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[5-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[5-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 5 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [5, "5", "5-15"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Legacy hopping interval in seconds, at least 5.",
+          "title": "Interval"
+        }
+      },
+      "title": "LegacyQuicHop",
+      "type": "object"
+    },
+    "MkcpLegacy": {
+      "additionalProperties": false,
+      "description": "Legacy UDP header imitation, or XOR/AES obfuscation when header is empty.",
+      "properties": {
+        "header": {
+          "anyOf": [
+            {
+              "enum": ["", "dns", "dtls", "srtp", "utp", "wechat", "wireguard"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Legacy header type. Empty header uses XOR without value or AES-128-GCM with value.",
+          "title": "Header"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DNS domain (default www.baidu.com) or AES password for an empty header.",
+          "title": "Value"
+        }
+      },
+      "title": "MkcpLegacy",
+      "type": "object"
+    },
+    "MkcpLegacyMask": {
+      "additionalProperties": false,
+      "description": "Legacy UDP header imitation, or XOR/AES obfuscation when header is empty.",
+      "properties": {
+        "type": {
+          "const": "mkcp-legacy",
+          "description": "Xray mask loader: mkcp-legacy.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/MkcpLegacy"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "mkcp-legacy settings. Legacy UDP header imitation, or XOR/AES obfuscation when header is empty."
+        }
+      },
+      "required": ["type"],
+      "title": "MkcpLegacyMask",
+      "type": "object"
+    },
+    "Noise": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "script": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": ["script"]
+          },
+          "then": {
+            "properties": {
+              "noise": {
+                "maxItems": 0,
+                "type": "array"
+              }
+            }
+          }
+        }
+      ],
+      "description": "UDP noise schedule or a Lua script, executed by a compatible Xray client.",
+      "properties": {
+        "reset": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Restart the noise sequence after this number of seconds; 0 disables reset.",
+          "title": "Reset"
+        },
+        "noise": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/NoiseItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Ordered noise datagrams. Cannot be combined with a nonempty script.",
+          "title": "Noise"
+        },
+        "script": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Lua noise script; syntax and execution are checked by the client core.",
+          "title": "Script"
+        }
+      },
+      "title": "Noise",
+      "type": "object"
+    },
+    "NoiseItem": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "str"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hex"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[0-9a-fA-F]{2})*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "base64"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [null, "", "array"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "rand": {
+                    "anyOf": [
+                      {
+                        "minimum": 1,
+                        "type": "integer"
+                      },
+                      {
+                        "pattern": "[1-9]",
+                        "type": "string"
+                      }
+                    ]
+                  }
+                },
+                "required": ["rand"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "exp"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "pattern": "^\\s*(?:<\\s*(?:b\\s+(?:0[xX])?(?:[0-9a-fA-F]\\s*[0-9a-fA-F]\\s*)+|r(?:c|d)?\\s+0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5])))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5]))))))?|[tcn])\\s*>\\s*)+$",
+                "type": "string"
+              }
+            },
+            "required": ["packet"]
+          }
+        }
+      ],
+      "description": "One UDP noise datagram, either random bytes, encoded bytes or an expression.",
+      "properties": {
+        "rand": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Random packet length in bytes; conflicts with an explicit packet.",
+          "title": "Rand"
+        },
+        "randRange": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 255,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5])))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5]))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 255.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inclusive byte values for random data, default 0-255.",
+          "title": "Randrange"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": ["", "array", "str", "hex", "base64", "exp"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Payload encoding; exp enables token expressions.",
+          "title": "Type"
+        },
+        "packet": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Byte array or encoded string. exp tokens: <b HEX>, <r N|A-B> random bytes, <rc N|A-B> letters, <rd N|A-B> digits, <t> timestamp, <c> counter, <n> nonce.",
+          "examples": ["<b 0001><r 8-16><t><c><n>"],
+          "title": "Packet"
+        },
+        "delay": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Delay after the noise item in milliseconds.",
+          "title": "Delay"
+        }
+      },
+      "title": "NoiseItem",
+      "type": "object"
+    },
+    "NoiseMask": {
+      "additionalProperties": false,
+      "description": "UDP noise schedule or a Lua script, executed by a compatible Xray client.",
+      "properties": {
+        "type": {
+          "const": "noise",
+          "description": "Xray mask loader: noise.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Noise"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "noise settings. UDP noise schedule or a Lua script, executed by a compatible Xray client."
+        }
+      },
+      "required": ["type"],
+      "title": "NoiseMask",
+      "type": "object"
+    },
+    "PortMapping": {
+      "additionalProperties": false,
+      "description": "Realm automatic port mapping on supported networks.",
+      "properties": {
+        "enabled": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable Realm port mapping.",
+          "title": "Enabled"
+        },
+        "timeout": {
+          "anyOf": [
+            {
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Port mapping request timeout in seconds.",
+          "title": "Timeout"
+        },
+        "lifetime": {
+          "anyOf": [
+            {
+              "maximum": 9223372036854775807,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Requested port mapping lifetime in seconds.",
+          "title": "Lifetime"
+        }
+      },
+      "title": "PortMapping",
+      "type": "object"
+    },
+    "QuicParams": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "congestion": {
+                "const": "force-brutal"
+              }
+            },
+            "required": ["congestion"]
+          },
+          "then": {
+            "properties": {
+              "brutalUp": {
+                "not": {
+                  "enum": [null, "", "0"]
+                }
+              }
+            },
+            "required": ["brutalUp"]
+          }
+        }
+      ],
+      "description": "QUIC tuning shared by FinalMask and XDNS resolvers; zero keeps core defaults.",
+      "properties": {
+        "congestion": {
+          "anyOf": [
+            {
+              "enum": ["", "reno", "bbr", "brutal", "force-brutal"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "QUIC congestion algorithm. force-brutal requires a nonzero brutalUp.",
+          "title": "Congestion"
+        },
+        "bbrProfile": {
+          "anyOf": [
+            {
+              "enum": ["", "conservative", "standard", "aggressive"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "BBR aggressiveness; omitted/empty uses standard.",
+          "title": "Bbrprofile"
+        },
+        "debug": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable QUIC BBR/Brutal diagnostic logs.",
+          "title": "Debug"
+        },
+        "brutalUp": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*(?:(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?:[bB](?:[pP][sS])?|[kKmMgGtT](?:[bB](?:[pP][sS])?)?)?)?\\s*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Upload limit in bits/s as a string, e.g. 60 mbps. Prefixes use 1024-based multipliers. 0 means automatic/negotiated. Nonzero rates must be at least 524288 bits/s.",
+          "examples": ["0", "60 mbps"],
+          "title": "Brutalup"
+        },
+        "brutalDown": {
+          "anyOf": [
+            {
+              "pattern": "^\\s*(?:(?:[0-9]+(?:\\.[0-9]*)?|\\.[0-9]+)\\s*(?:[bB](?:[pP][sS])?|[kKmMgGtT](?:[bB](?:[pP][sS])?)?)?)?\\s*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Download limit, same units and bounds as brutalUp.",
+          "title": "Brutaldown"
+        },
+        "brutalDisableLossCompensation": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disable Brutal loss compensation.",
+          "title": "Brutaldisablelosscompensation"
+        },
+        "initStreamReceiveWindow": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 18446744073709551615,
+                  "minimum": 16384
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Initial QUIC stream window in bytes; 0 uses the core default.",
+          "title": "Initstreamreceivewindow"
+        },
+        "maxStreamReceiveWindow": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 18446744073709551615,
+                  "minimum": 16384
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum QUIC stream window in bytes; nonzero minimum 16384.",
+          "title": "Maxstreamreceivewindow"
+        },
+        "initConnectionReceiveWindow": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 18446744073709551615,
+                  "minimum": 16384
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Initial connection window in bytes; nonzero minimum 16384.",
+          "title": "Initconnectionreceivewindow"
+        },
+        "maxConnectionReceiveWindow": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 18446744073709551615,
+                  "minimum": 16384
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum connection window in bytes; nonzero minimum 16384.",
+          "title": "Maxconnectionreceivewindow"
+        },
+        "maxIdleTimeout": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 120,
+                  "minimum": 4
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Idle timeout in seconds: 0 (default) or 4-120.",
+          "title": "Maxidletimeout"
+        },
+        "keepAlivePeriod": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 60,
+                  "minimum": 2
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "KeepAlive in seconds: 0 (disabled) or 2-60.",
+          "title": "Keepaliveperiod"
+        },
+        "disablePathMTUDiscovery": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disable QUIC path MTU discovery.",
+          "title": "Disablepathmtudiscovery"
+        },
+        "disableChromeParrot": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disable Chrome QUIC fingerprint imitation.",
+          "title": "Disablechromeparrot"
+        },
+        "disableGSO": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disable UDP Generic Segmentation Offload.",
+          "title": "Disablegso"
+        },
+        "maxIncomingStreams": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 9223372036854775807,
+                  "minimum": 8
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Server-side incoming streams: 0 (default) or at least 8.",
+          "title": "Maxincomingstreams"
+        },
+        "disableStatelessReset": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Disable QUIC stateless reset packets.",
+          "title": "Disablestatelessreset"
+        },
+        "udpHop": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/LegacyQuicHop"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy Xray port hopping object. New Xray versions use the udp udphop mask."
+        }
+      },
+      "title": "QuicParams",
+      "type": "object"
+    },
+    "Realm": {
+      "additionalProperties": false,
+      "description": "UDP rendezvous through Realm signaling and STUN.",
+      "properties": {
+        "url": {
+          "description": "Signaling URL: realm://token@host/id (HTTPS) or realm+http://token@host/id.",
+          "examples": ["realm://token@signal.example.com/session"],
+          "pattern": "^realm(?:\\+http)?://[^\\s/@]+@[^\\s/]+/.+$",
+          "title": "Url",
+          "type": "string"
+        },
+        "stunServers": {
+          "description": "STUN endpoints as host:port, with brackets around IPv6.",
+          "examples": [["stun.example.com:3478"]],
+          "items": {
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Stunservers",
+          "type": "array"
+        },
+        "tlsConfig": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TLSOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TLS settings for the signaling server."
+        },
+        "ipMode": {
+          "anyOf": [
+            {
+              "enum": ["", "dual", "ipv4", "ipv6"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Realm IP family preference; empty uses the core default.",
+          "title": "Ipmode"
+        },
+        "portMapping": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/PortMapping"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Automatic port mapping settings."
+        }
+      },
+      "required": ["url", "stunServers"],
+      "title": "Realm",
+      "type": "object"
+    },
+    "RealmMask": {
+      "additionalProperties": false,
+      "description": "UDP rendezvous through Realm signaling and STUN.",
+      "properties": {
+        "type": {
+          "const": "realm",
+          "description": "Xray mask loader: realm.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/Realm",
+          "description": "realm settings. UDP rendezvous through Realm signaling and STUN."
+        }
+      },
+      "required": ["type", "settings"],
+      "title": "RealmMask",
+      "type": "object"
+    },
+    "Salamander": {
+      "additionalProperties": false,
+      "description": "UDP Salamander obfuscation, optionally using Gecko fragmentation and padding.",
+      "properties": {
+        "password": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared obfuscation password; must match the peer.",
+          "title": "Password"
+        },
+        "packetSize": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 2048,
+                  "minimum": 1
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:|0+(?:-0+)?|0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|20(?:0[0-9]|[1-3][0-9]|4[0-8])))(?:-0*(?:[1-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|20(?:0[0-9]|[1-3][0-9]|4[0-8]))))?)$",
+              "patternErrorMessage": "Use zero or an A-B range between 1 and 2048.",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "0 uses basic Salamander; a positive size/range up to 2048 enables Gecko padding/fragmentation.",
+          "title": "Packetsize"
+        }
+      },
+      "title": "Salamander",
+      "type": "object"
+    },
+    "SalamanderMask": {
+      "additionalProperties": false,
+      "description": "UDP Salamander obfuscation, optionally using Gecko fragmentation and padding.",
+      "properties": {
+        "type": {
+          "const": "salamander",
+          "description": "Xray mask loader: salamander.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Salamander"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "salamander settings. UDP Salamander obfuscation, optionally using Gecko fragmentation and padding."
+        }
+      },
+      "required": ["type"],
+      "title": "SalamanderMask",
+      "type": "object"
+    },
+    "SocketOptions": {
+      "$comment": "Xray SocketConfig definitions: https://github.com/XTLS/Xray-core/blob/1b1647cd9ddf0abc34b981d4611fc03bcac1ca74/infra/conf/transport_sockopt.go",
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "not": {
+            "properties": {
+              "tcpKeepAliveIdle": {
+                "maximum": -1,
+                "type": "integer"
+              },
+              "tcpKeepAliveInterval": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": ["tcpKeepAliveIdle", "tcpKeepAliveInterval"]
+          }
+        },
+        {
+          "not": {
+            "properties": {
+              "tcpKeepAliveInterval": {
+                "maximum": -1,
+                "type": "integer"
+              },
+              "tcpKeepAliveIdle": {
+                "minimum": 1,
+                "type": "integer"
+              }
+            },
+            "required": ["tcpKeepAliveInterval", "tcpKeepAliveIdle"]
+          }
+        }
+      ],
+      "defaultSnippets": [
+        {
+          "body": {
+            "tcpFastOpen": true,
+            "tcpKeepAliveIdle": 45,
+            "tcpKeepAliveInterval": 45
+          },
+          "description": "KeepAlive values are seconds; Fast Open requires client OS support.",
+          "label": "TCP: Fast Open and KeepAlive"
+        },
+        {
+          "body": {
+            "domainStrategy": "UseIP",
+            "happyEyeballs": {
+              "interleave": 1,
+              "maxConcurrentTry": 4,
+              "prioritizeIPv6": false,
+              "tryDelayMs": 250
+            }
+          },
+          "description": "Race resolved IPv4/IPv6 addresses for a TCP destination.",
+          "label": "DNS: Happy Eyeballs"
+        },
+        {
+          "body": {
+            "customSockopt": [
+              {
+                "level": "6",
+                "network": "tcp",
+                "opt": "13",
+                "system": "linux",
+                "type": "str",
+                "value": "bbr"
+              }
+            ]
+          },
+          "description": "Example of a string customSockopt; the client must provide the bbr algorithm.",
+          "label": "Linux: custom TCP congestion option"
+        }
+      ],
+      "description": "Low-level Xray client socket behavior; effects depend on the client OS and transport.",
+      "properties": {
+        "mark": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux SO_MARK, signed 32-bit representation; 0 leaves it unset. Requires appropriate privileges.",
+          "examples": [0, 255],
+          "title": "Mark"
+        },
+        "tcpFastOpen": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TCP Fast Open: true/positive enables it; false/negative disables it; 0/omitted uses OS default. On listeners a positive integer is the pending-request limit; true means 256.",
+          "examples": [true, false, 0, 256, -1],
+          "title": "Tcpfastopen"
+        },
+        "tcpMaxSeg": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux TCP maximum segment size in bytes; nonpositive leaves the OS value unchanged.",
+          "examples": [1440],
+          "title": "Tcpmaxseg"
+        },
+        "tcpWindowClamp": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux advertised receive-window clamp in bytes; nonpositive leaves it unchanged.",
+          "title": "Tcpwindowclamp"
+        },
+        "tcpUserTimeout": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux TCP timeout for unacknowledged data in milliseconds; nonpositive leaves it unchanged.",
+          "examples": [10000],
+          "title": "Tcpusertimeout"
+        },
+        "tcpKeepAliveIdle": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Idle time before TCP KeepAlive probes in seconds; 0 uses the core default (outbound: 45). Negative disables KeepAlive; cannot be paired with a positive interval.",
+          "examples": [45, -1],
+          "title": "Tcpkeepaliveidle"
+        },
+        "tcpKeepAliveInterval": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": -2147483648,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TCP KeepAlive probe interval in seconds; 0 uses the core default (outbound: 45). Negative disables KeepAlive; cannot be paired with a positive idle time.",
+          "examples": [45, -1],
+          "title": "Tcpkeepaliveinterval"
+        },
+        "tcpcongestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux TCP congestion algorithm, checked on the client; empty keeps the OS default.",
+          "examples": ["bbr", "cubic", "reno"],
+          "title": "Tcpcongestion"
+        },
+        "tcpCongestion": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alternate Xray spelling of tcpcongestion; preserved for saved configurations.",
+          "title": "Tcpcongestion"
+        },
+        "tcpMptcp": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use Multipath TCP on supported client OS/kernel; false is the core default.",
+          "title": "Tcpmptcp"
+        },
+        "tproxy": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "enum": ["", "off", "redirect", "tproxy"]
+                },
+                {
+                  "pattern": "^(?:|[oO][fF][fF]|[rR][eE][dD][iI][rR][eE][cC][tT]|[tT][pP][rR][oO][xX][yY])$"
+                }
+              ],
+              "patternErrorMessage": "Choose one of: \"\", off, redirect, tproxy",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux transparent proxy mode: off/empty, redirect or tproxy. Requires OS rules and privileges.",
+          "title": "Tproxy"
+        },
+        "domainStrategy": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "enum": [
+                    "",
+                    "AsIs",
+                    "UseIP",
+                    "UseIPv4",
+                    "UseIPv6",
+                    "UseIPv4v6",
+                    "UseIPv6v4",
+                    "ForceIP",
+                    "ForceIPv4",
+                    "ForceIPv6",
+                    "ForceIPv4v6",
+                    "ForceIPv6v4"
+                  ]
+                },
+                {
+                  "pattern": "^(?:|[aA][sS][iI][sS]|[uU][sS][eE][iI][pP]|[uU][sS][eE][iI][pP][vV]4|[uU][sS][eE][iI][pP][vV]6|[uU][sS][eE][iI][pP][vV]4[vV]6|[uU][sS][eE][iI][pP][vV]6[vV]4|[fF][oO][rR][cC][eE][iI][pP]|[fF][oO][rR][cC][eE][iI][pP][vV]4|[fF][oO][rR][cC][eE][iI][pP][vV]6|[fF][oO][rR][cC][eE][iI][pP][vV]4[vV]6|[fF][oO][rR][cC][eE][iI][pP][vV]6[vV]4)$"
+                }
+              ],
+              "patternErrorMessage": "Choose one of: \"\", AsIs, UseIP, UseIPv4, UseIPv6, UseIPv4v6, UseIPv6v4, ForceIP, ForceIPv4, ForceIPv6, ForceIPv4v6, ForceIPv6v4",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolve the proxy server's address: AsIs/empty uses system DNS; Use* uses Xray DNS with system fallback; Force* fails if resolution cannot satisfy the selected IP family.",
+          "title": "Domainstrategy"
+        },
+        "addressPortStrategy": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "enum": [
+                    "",
+                    "none",
+                    "SrvPortOnly",
+                    "SrvAddressOnly",
+                    "SrvPortAndAddress",
+                    "TxtPortOnly",
+                    "TxtAddressOnly",
+                    "TxtPortAndAddress"
+                  ]
+                },
+                {
+                  "pattern": "^(?:|[nN][oO][nN][eE]|[sS][rR][vV][pP][oO][rR][tT][oO][nN][lL][yY]|[sS][rR][vV][aA][dD][dD][rR][eE][sS][sS][oO][nN][lL][yY]|[sS][rR][vV][pP][oO][rR][tT][aA][nN][dD][aA][dD][dD][rR][eE][sS][sS]|[tT][xX][tT][pP][oO][rR][tT][oO][nN][lL][yY]|[tT][xX][tT][aA][dD][dD][rR][eE][sS][sS][oO][nN][lL][yY]|[tT][xX][tT][pP][oO][rR][tT][aA][nN][dD][aA][dD][dD][rR][eE][sS][sS])$"
+                }
+              ],
+              "patternErrorMessage": "Choose one of: \"\", none, SrvPortOnly, SrvAddressOnly, SrvPortAndAddress, TxtPortOnly, TxtAddressOnly, TxtPortAndAddress",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Rewrite the destination using system DNS SRV/TXT records before domainStrategy; PortOnly, AddressOnly or PortAndAddress selects the parts to replace. none/empty disables it.",
+          "title": "Addressportstrategy"
+        },
+        "happyEyeballs": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/HappyEyeballs"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TCP address racing parameters; ignored with AsIs resolution or a nonempty dialerProxy."
+        },
+        "dialerProxy": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Existing outbound tag used to dial this connection; empty disables chaining. A generated fragment/noise dialer takes priority.",
+          "examples": ["upstream", ""],
+          "title": "Dialerproxy"
+        },
+        "interface": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client network interface name for outbound connections; empty does not bind an interface.",
+          "examples": ["wg0", "eth0"],
+          "title": "Interface"
+        },
+        "V6Only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Linux inbound listener on :: accepts only IPv6; has no effect on a host's client outbound.",
+          "title": "V6Only"
+        },
+        "v6only": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Alternate Xray spelling of V6Only; preserved for saved configurations.",
+          "title": "V6Only"
+        },
+        "acceptProxyProtocol": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inbound-only PROXY protocol acceptance; has no effect on a host's client outbound.",
+          "title": "Acceptproxyprotocol"
+        },
+        "trustedXForwardedFor": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inbound HTTP transport header names: if any is present, Xray trusts X-Forwarded-For. Has no effect on a host's client outbound.",
+          "examples": [["X-Trusted-Proxy"]],
+          "title": "Trustedxforwardedfor"
+        },
+        "penetrate": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "For XHTTP with separate downloadSettings: use the upload socket options for the download too.",
+          "title": "Penetrate"
+        },
+        "customSockopt": {
+          "anyOf": [
+            {
+              "items": {
+                "discriminator": {
+                  "mapping": {
+                    "int": "#/$defs/IntegerSocketOption",
+                    "str": "#/$defs/StringSocketOption"
+                  },
+                  "propertyName": "type"
+                },
+                "oneOf": [
+                  {
+                    "$ref": "#/$defs/IntegerSocketOption"
+                  },
+                  {
+                    "$ref": "#/$defs/StringSocketOption"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Platform setsockopt calls; type selects int/str and their value schema. [] applies no custom options.",
+          "title": "Customsockopt"
+        }
+      },
+      "title": "SocketOptions",
+      "type": "object"
+    },
+    "StringSocketOption": {
+      "additionalProperties": false,
+      "description": "A string setsockopt value. The Xray Windows implementation does not support it.",
+      "properties": {
+        "system": {
+          "anyOf": [
+            {
+              "enum": ["", "linux", "darwin", "android"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client OS filter. String socket values are unsupported by Xray on Windows.",
+          "title": "System"
+        },
+        "network": {
+          "anyOf": [
+            {
+              "enum": ["", "tcp", "tcp4", "tcp6", "udp", "udp4", "udp6"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket network filter; tcp/udp includes both families. Empty applies to every network.",
+          "title": "Network"
+        },
+        "level": {
+          "anyOf": [
+            {
+              "pattern": "^[+-]?[0-9]+$",
+              "type": "string"
+            },
+            {
+              "const": "",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Socket protocol level as a decimal string; omitted/empty uses 6 (TCP).",
+          "examples": ["6", "1"],
+          "title": "Level"
+        },
+        "opt": {
+          "description": "Socket option number as a decimal string, not a JSON number.",
+          "examples": ["13"],
+          "pattern": "^[+-]?[0-9]+$",
+          "title": "Opt",
+          "type": "string"
+        },
+        "type": {
+          "const": "str",
+          "description": "Use the client's string setsockopt API; unsupported on Windows.",
+          "title": "Type",
+          "type": "string"
+        },
+        "value": {
+          "description": "Literal socket option value; empty string is preserved.",
+          "examples": ["bbr"],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": ["opt", "type", "value"],
+      "title": "StringSocketOption",
+      "type": "object"
+    },
+    "Sudoku": {
+      "additionalProperties": false,
+      "description": "Shared TCP/UDP Sudoku encoding. Legacy spellings are preserved in stored JSON.",
+      "properties": {
+        "password": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Shared Sudoku encoding password; must match the peer.",
+          "title": "Password"
+        },
+        "ascii": {
+          "anyOf": [
+            {
+              "enum": [
+                "",
+                "entropy",
+                "prefer_entropy",
+                "ascii",
+                "prefer_ascii"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ASCII or entropy preference; empty uses prefer_entropy.",
+          "title": "Ascii"
+        },
+        "customTable": {
+          "anyOf": [
+            {
+              "examples": ["xpxpvvvv"],
+              "pattern": "^(?: *|(?=(?:[^xX]*[xX]){2}[^xX]*$)(?=(?:[^pP]*[pP]){2}[^pP]*$)(?=(?:[^vV]*[vV]){4}[^vV]*$)[ xXpPvV]*)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Eight layout characters: two x, two p, four v.",
+          "examples": ["xpxpvvvv"],
+          "title": "Customtable"
+        },
+        "customTables": {
+          "anyOf": [
+            {
+              "items": {
+                "examples": ["xpxpvvvv"],
+                "pattern": "^(?: *|(?=(?:[^xX]*[xX]){2}[^xX]*$)(?=(?:[^pP]*[pP]){2}[^pP]*$)(?=(?:[^vV]*[vV]){4}[^vV]*$)[ xXpPvV]*)$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Multiple layouts, each with two x, two p and four v.",
+          "title": "Customtables"
+        },
+        "paddingMin": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minimum padding probability (%); Xray clamps values above 100.",
+          "title": "Paddingmin"
+        },
+        "paddingMax": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum padding probability (%); Xray clamps to 100 and at least paddingMin.",
+          "title": "Paddingmax"
+        },
+        "custom_table": {
+          "anyOf": [
+            {
+              "examples": ["xpxpvvvv"],
+              "pattern": "^(?: *|(?=(?:[^xX]*[xX]){2}[^xX]*$)(?=(?:[^pP]*[pP]){2}[^pP]*$)(?=(?:[^vV]*[vV]){4}[^vV]*$)[ xXpPvV]*)$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy customTable spelling; used if the camelCase value is empty.",
+          "title": "Custom Table"
+        },
+        "custom_tables": {
+          "anyOf": [
+            {
+              "items": {
+                "examples": ["xpxpvvvv"],
+                "pattern": "^(?: *|(?=(?:[^xX]*[xX]){2}[^xX]*$)(?=(?:[^pP]*[pP]){2}[^pP]*$)(?=(?:[^vV]*[vV]){4}[^vV]*$)[ xXpPvV]*)$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy customTables spelling.",
+          "title": "Custom Tables"
+        },
+        "padding_min": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy paddingMin spelling; used when paddingMin is zero.",
+          "title": "Padding Min"
+        },
+        "padding_max": {
+          "anyOf": [
+            {
+              "maximum": 4294967295,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy paddingMax spelling; used when paddingMax is zero.",
+          "title": "Padding Max"
+        }
+      },
+      "title": "Sudoku",
+      "type": "object"
+    },
+    "SudokuMask": {
+      "additionalProperties": false,
+      "description": "Shared TCP/UDP Sudoku encoding. Legacy spellings are preserved in stored JSON.",
+      "properties": {
+        "type": {
+          "const": "sudoku",
+          "description": "Xray mask loader: sudoku.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Sudoku"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "sudoku settings. Shared TCP/UDP Sudoku encoding. Legacy spellings are preserved in stored JSON."
+        }
+      },
+      "required": ["type"],
+      "title": "SudokuMask",
+      "type": "object"
+    },
+    "TCPHeader": {
+      "additionalProperties": false,
+      "description": "TCP handshake sequences. Each inner list is one sequence of header items.",
+      "properties": {
+        "clients": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "$ref": "#/$defs/TCPHeaderItem"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client handshake sequences, sent in order.",
+          "title": "Clients"
+        },
+        "servers": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "$ref": "#/$defs/TCPHeaderItem"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Matching server response sequences.",
+          "title": "Servers"
+        },
+        "errors": {
+          "anyOf": [
+            {
+              "items": {
+                "items": {
+                  "$ref": "#/$defs/TCPHeaderItem"
+                },
+                "type": "array"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Server responses for an invalid handshake.",
+          "title": "Errors"
+        }
+      },
+      "title": "TCPHeader",
+      "type": "object"
+    },
+    "TCPHeaderItem": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "str"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hex"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[0-9a-fA-F]{2})*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "base64"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [null, "", "array"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capture": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": ["capture"]
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    },
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "packet": {}
+                    },
+                    "required": ["packet"]
+                  },
+                  {
+                    "properties": {
+                      "rand": {
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": ["rand"]
+                  },
+                  {
+                    "properties": {
+                      "reuse": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["reuse"]
+                  },
+                  {
+                    "properties": {
+                      "transform": {
+                        "type": "object"
+                      }
+                    },
+                    "required": ["transform"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "TCP header item, with an optional delay before sending it.",
+      "properties": {
+        "rand": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Number of random bytes; 0 disables randomness.",
+          "title": "Rand"
+        },
+        "randRange": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 255,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5])))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5]))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 255.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inclusive random byte range, default 0-255.",
+          "title": "Randrange"
+        },
+        "capture": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Save generated bytes under this variable name for later reuse.",
+          "title": "Capture"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": ["", "array", "str", "hex", "base64"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Packet encoding; str is literal text, hex has no 0x prefix.",
+          "title": "Type"
+        },
+        "reuse": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Emit the bytes saved by an earlier capture.",
+          "title": "Reuse"
+        },
+        "transform": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CustomTransform"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compute bytes using the expression language."
+        },
+        "packet": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Literal byte array or encoded string.",
+          "examples": [[22, 3, 1]],
+          "title": "Packet"
+        },
+        "delay": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 2147483647,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 2147483647.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Delay before this item in milliseconds, as an integer or A-B range.",
+          "title": "Delay"
+        }
+      },
+      "title": "TCPHeaderItem",
+      "type": "object"
+    },
+    "TCPHeaderMask": {
+      "additionalProperties": false,
+      "description": "TCP handshake sequences. Each inner list is one sequence of header items.",
+      "properties": {
+        "type": {
+          "const": "header-custom",
+          "description": "Xray mask loader: header-custom.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TCPHeader"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "header-custom settings. TCP handshake sequences. Each inner list is one sequence of header items."
+        }
+      },
+      "required": ["type"],
+      "title": "TCPHeaderMask",
+      "type": "object"
+    },
+    "TLSCertificate": {
+      "additionalProperties": false,
+      "description": "Inline certificate material or paths read by the client core.",
+      "properties": {
+        "certificateFile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client-machine path to a PEM certificate file.",
+          "title": "Certificatefile"
+        },
+        "certificate": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inline PEM certificate lines.",
+          "title": "Certificate"
+        },
+        "keyFile": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client-machine path to the private key file.",
+          "title": "Keyfile"
+        },
+        "key": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inline PEM private-key lines.",
+          "title": "Key"
+        },
+        "usage": {
+          "anyOf": [
+            {
+              "enum": ["", "encipherment", "verify", "issue"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Certificate purpose; empty uses encipherment.",
+          "title": "Usage"
+        },
+        "ocspStapling": {
+          "anyOf": [
+            {
+              "maximum": 18446744073709551615,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "OCSP refresh interval in seconds; 0 uses the core default.",
+          "title": "Ocspstapling"
+        },
+        "oneTimeLoading": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Read certificate files only once.",
+          "title": "Onetimeloading"
+        },
+        "buildChain": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Build the certificate chain.",
+          "title": "Buildchain"
+        }
+      },
+      "title": "TLSCertificate",
+      "type": "object"
+    },
+    "TLSOptions": {
+      "additionalProperties": false,
+      "description": "TLS settings for XDNS resolvers or Realm signaling connections.",
+      "properties": {
+        "allowInsecure": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "deprecated": true,
+          "description": "Legacy certificate verification bypass; removed in recent Xray versions.",
+          "title": "Allowinsecure"
+        },
+        "certificates": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/TLSCertificate"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TLS certificates; files and cryptographic material are checked by the client core.",
+          "title": "Certificates"
+        },
+        "serverName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TLS server name/SNI.",
+          "title": "Servername"
+        },
+        "alpn": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ALPN list or comma-separated string. fromMitm must be the only entry.",
+          "examples": [["h2", "http/1.1"]],
+          "title": "Alpn"
+        },
+        "enableSessionResumption": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Enable TLS session resumption.",
+          "title": "Enablesessionresumption"
+        },
+        "disableSystemRoot": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Exclude system trust roots.",
+          "title": "Disablesystemroot"
+        },
+        "minVersion": {
+          "anyOf": [
+            {
+              "enum": ["", "1.0", "1.1", "1.2", "1.3"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minimum TLS protocol version.",
+          "title": "Minversion"
+        },
+        "maxVersion": {
+          "anyOf": [
+            {
+              "enum": ["", "1.0", "1.1", "1.2", "1.3"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum TLS protocol version.",
+          "title": "Maxversion"
+        },
+        "cipherSuites": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Colon-separated Go TLS cipher-suite names.",
+          "title": "Ciphersuites"
+        },
+        "fingerprint": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "uTLS ClientHello fingerprint; availability depends on the client core.",
+          "examples": ["chrome", "firefox", "randomized", "unsafe"],
+          "title": "Fingerprint"
+        },
+        "rejectUnknownSni": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Reject inbound TLS names not covered by certificates.",
+          "title": "Rejectunknownsni"
+        },
+        "curvePreferences": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ECDHE curve names, as a list or comma-separated string.",
+          "title": "Curvepreferences"
+        },
+        "masterKeyLog": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client-machine path for TLS key logging.",
+          "title": "Masterkeylog"
+        },
+        "pinnedPeerCertSha256": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Pinned certificate SHA-256 fingerprints; checked by Xray.",
+          "title": "Pinnedpeercertsha256"
+        },
+        "verifyPeerCertByName": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Certificate names to verify, interpreted by Xray.",
+          "title": "Verifypeercertbyname"
+        },
+        "echServerKeys": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ECH server key material.",
+          "title": "Echserverkeys"
+        },
+        "echConfigList": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "ECH client configuration list.",
+          "title": "Echconfiglist"
+        },
+        "echSockopt": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/SocketOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Xray socket options for ECH resolution; same schema as streamSettings.sockopt."
+        },
+        "useSystemCA": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use the operating-system certificate verification path.",
+          "title": "Usesystemca"
+        }
+      },
+      "title": "TLSOptions",
+      "type": "object"
+    },
+    "TransformArgument": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "str"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "bytes": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hex"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "bytes": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[0-9a-fA-F]{2})*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "base64"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "bytes": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [null, "", "array"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "bytes": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "bytes": {}
+                },
+                "required": ["bytes"]
+              },
+              {
+                "properties": {
+                  "u64": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["u64"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "bytes": {}
+                },
+                "required": ["bytes"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "bytes": {}
+                },
+                "required": ["bytes"]
+              },
+              {
+                "properties": {
+                  "metadata": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["metadata"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "bytes": {}
+                },
+                "required": ["bytes"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "u64": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["u64"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "u64": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["u64"]
+              },
+              {
+                "properties": {
+                  "metadata": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["metadata"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "u64": {
+                    "type": "integer"
+                  }
+                },
+                "required": ["u64"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              },
+              {
+                "properties": {
+                  "metadata": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["metadata"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "metadata": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["metadata"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "anyOf": [
+            {
+              "properties": {
+                "bytes": {}
+              },
+              "required": ["bytes"]
+            },
+            {
+              "properties": {
+                "u64": {
+                  "type": "integer"
+                }
+              },
+              "required": ["u64"]
+            },
+            {
+              "properties": {
+                "reuse": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": ["reuse"]
+            },
+            {
+              "properties": {
+                "metadata": {
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": ["metadata"]
+            },
+            {
+              "properties": {
+                "transform": {
+                  "type": "object"
+                }
+              },
+              "required": ["transform"]
+            }
+          ]
+        }
+      ],
+      "description": "Exactly one byte value, integer, variable, metadata value or nested expression.",
+      "properties": {
+        "type": {
+          "anyOf": [
+            {
+              "enum": ["", "array", "str", "hex", "base64"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Encoding of bytes; omitted/array accepts byte arrays or Base64.",
+          "title": "Type"
+        },
+        "bytes": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Literal bytes. Choose only one argument source.",
+          "examples": [[1, 2]],
+          "title": "Bytes"
+        },
+        "u64": {
+          "anyOf": [
+            {
+              "maximum": 18446744073709551615,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Unsigned 64-bit integer; zero is an explicit value.",
+          "title": "U64"
+        },
+        "reuse": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Name of a value captured by an earlier header item.",
+          "title": "Reuse"
+        },
+        "metadata": {
+          "anyOf": [
+            {
+              "enum": [
+                "",
+                "local_port",
+                "remote_port",
+                "src_port_u16",
+                "dst_port_u16",
+                "local_ip4_u32",
+                "remote_ip4_u32",
+                "src_ip4_u32",
+                "dst_ip4_u32"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Endpoint port or IPv4 integer; requires matching runtime metadata.",
+          "title": "Metadata"
+        },
+        "transform": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CustomTransform"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Nested expression evaluated by the client core."
+        }
+      },
+      "title": "TransformArgument",
+      "type": "object"
+    },
+    "UDPHeader": {
+      "additionalProperties": false,
+      "description": "Prefix each UDP datagram, or send separate standalone datagrams.",
+      "properties": {
+        "mode": {
+          "anyOf": [
+            {
+              "enum": ["", "prefix", "standalone"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Empty uses prefix; standalone sends separate packets.",
+          "title": "Mode"
+        },
+        "client": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/UDPHeaderItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client packet sequence or prefix.",
+          "title": "Client"
+        },
+        "server": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/UDPHeaderItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Server packet sequence or prefix.",
+          "title": "Server"
+        }
+      },
+      "title": "UDPHeader",
+      "type": "object"
+    },
+    "UDPHeaderItem": {
+      "additionalProperties": false,
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "str"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "hex"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[0-9a-fA-F]{2})*$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "const": "base64"
+              }
+            },
+            "required": ["type"]
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "type": {
+                "enum": [null, "", "array"]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "packet": {
+                "anyOf": [
+                  {
+                    "items": {
+                      "maximum": 255,
+                      "minimum": 0,
+                      "type": "integer"
+                    },
+                    "type": "array"
+                  },
+                  {
+                    "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$",
+                    "type": "string"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              }
+            }
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "packet": {}
+                },
+                "required": ["packet"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              },
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "rand": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": ["rand"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "not": {
+            "allOf": [
+              {
+                "properties": {
+                  "reuse": {
+                    "minLength": 1,
+                    "type": "string"
+                  }
+                },
+                "required": ["reuse"]
+              },
+              {
+                "properties": {
+                  "transform": {
+                    "type": "object"
+                  }
+                },
+                "required": ["transform"]
+              }
+            ]
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "capture": {
+                "minLength": 1,
+                "type": "string"
+              }
+            },
+            "required": ["capture"]
+          },
+          "then": {
+            "allOf": [
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "packet": {}
+                      },
+                      "required": ["packet"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    },
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "rand": {
+                          "minimum": 1,
+                          "type": "integer"
+                        }
+                      },
+                      "required": ["rand"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "not": {
+                  "allOf": [
+                    {
+                      "properties": {
+                        "reuse": {
+                          "minLength": 1,
+                          "type": "string"
+                        }
+                      },
+                      "required": ["reuse"]
+                    },
+                    {
+                      "properties": {
+                        "transform": {
+                          "type": "object"
+                        }
+                      },
+                      "required": ["transform"]
+                    }
+                  ]
+                }
+              },
+              {
+                "anyOf": [
+                  {
+                    "properties": {
+                      "packet": {}
+                    },
+                    "required": ["packet"]
+                  },
+                  {
+                    "properties": {
+                      "rand": {
+                        "minimum": 1,
+                        "type": "integer"
+                      }
+                    },
+                    "required": ["rand"]
+                  },
+                  {
+                    "properties": {
+                      "reuse": {
+                        "minLength": 1,
+                        "type": "string"
+                      }
+                    },
+                    "required": ["reuse"]
+                  },
+                  {
+                    "properties": {
+                      "transform": {
+                        "type": "object"
+                      }
+                    },
+                    "required": ["transform"]
+                  }
+                ]
+              }
+            ]
+          }
+        }
+      ],
+      "description": "One header item: fixed bytes, random bytes, a captured value or a transform.",
+      "properties": {
+        "rand": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Number of random bytes; 0 disables randomness.",
+          "title": "Rand"
+        },
+        "randRange": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 255,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5])))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|2(?:0[0-9]|[1-4][0-9]|5[0-5]))))?|)$",
+                  "patternErrorMessage": "Use an integer or A-B range between 0 and 255.",
+                  "type": "string"
+                }
+              ],
+              "description": "Integer, numeric string or A-B range; reversed endpoints are supported by Xray.",
+              "examples": [0, "0", "0-10"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Inclusive random byte range, default 0-255.",
+          "title": "Randrange"
+        },
+        "capture": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Save generated bytes under this variable name for later reuse.",
+          "title": "Capture"
+        },
+        "type": {
+          "anyOf": [
+            {
+              "enum": ["", "array", "str", "hex", "base64"],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Packet encoding; str is literal text, hex has no 0x prefix.",
+          "title": "Type"
+        },
+        "reuse": {
+          "anyOf": [
+            {
+              "pattern": "^(?:[A-Za-z_][A-Za-z0-9_]*)?$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Emit the bytes saved by an earlier capture.",
+          "title": "Reuse"
+        },
+        "transform": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/CustomTransform"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Compute bytes using the expression language."
+        },
+        "packet": {
+          "anyOf": [
+            {
+              "items": {
+                "maximum": 255,
+                "minimum": 0,
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Literal byte array or encoded string.",
+          "examples": [[22, 3, 1]],
+          "title": "Packet"
+        }
+      },
+      "title": "UDPHeaderItem",
+      "type": "object"
+    },
+    "UDPHeaderMask": {
+      "additionalProperties": false,
+      "description": "Prefix each UDP datagram, or send separate standalone datagrams.",
+      "properties": {
+        "type": {
+          "const": "header-custom",
+          "description": "Xray mask loader: header-custom.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/UDPHeader"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "header-custom settings. Prefix each UDP datagram, or send separate standalone datagrams."
+        }
+      },
+      "required": ["type"],
+      "title": "UDPHeaderMask",
+      "type": "object"
+    },
+    "UDPHop": {
+      "additionalProperties": false,
+      "description": "UDP endpoint hopping. Remote hopping requires matching server-side port routing.",
+      "properties": {
+        "mode": {
+          "description": "Comma-separated intervallocal, intervalremote, perconnremote. Local mode needs a supported transport.",
+          "examples": ["intervalremote", "intervallocal,intervalremote"],
+          "pattern": "^(?:intervallocal|intervalremote|perconnremote)(?:,(?:intervallocal|intervalremote|perconnremote))*$",
+          "title": "Mode",
+          "type": "string"
+        },
+        "interval": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 2147483647,
+                  "minimum": 5
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "pattern": "^(?:|0+(?:-0+)?|0*(?:[5-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7]))))))))))(?:-0*(?:[5-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-8][0-9]{4}|9[0-9]{4})|(?:1[0-9]{5}|[2-8][0-9]{5}|9[0-9]{5})|(?:1[0-9]{6}|[2-8][0-9]{6}|9[0-9]{6})|(?:1[0-9]{7}|[2-8][0-9]{7}|9[0-9]{7})|(?:1[0-9]{8}|[2-8][0-9]{8}|9[0-9]{8})|(?:1[0-9]{9}|2(?:0[0-9]{8}|1(?:0[0-9]{7}|[1-3][0-9]{7}|4(?:0[0-9]{6}|[1-6][0-9]{6}|7(?:0[0-9]{5}|[1-3][0-9]{5}|4(?:0[0-9]{4}|[1-7][0-9]{4}|8(?:0[0-9]{3}|[1-2][0-9]{3}|3(?:0[0-9]{2}|[1-5][0-9]{2}|6(?:0[0-9]|[1-3][0-9]|4[0-7])))))))))))?)$",
+              "patternErrorMessage": "Use zero or an A-B range between 5 and 2147483647.",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Hop interval in seconds: 0 uses 30, otherwise at least 5; ranges are allowed.",
+          "title": "Interval"
+        },
+        "remoteIPs": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote IPs/CIDRs; omitted list inherits the destination.",
+          "title": "Remoteips"
+        },
+        "remotePorts": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "maximum": 65535,
+                  "minimum": 0,
+                  "type": "integer"
+                },
+                {
+                  "pattern": "^\\s*(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5])))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5]))))))?|env:[A-Za-z_][A-Za-z0-9_]*)?\\s*(?:,\\s*(?:0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5])))))(?:-0*(?:[0-9]|(?:1[0-9]|[2-8][0-9]|9[0-9])|(?:1[0-9]{2}|[2-8][0-9]{2}|9[0-9]{2})|(?:1[0-9]{3}|[2-8][0-9]{3}|9[0-9]{3})|(?:1[0-9]{4}|[2-5][0-9]{4}|6(?:0[0-9]{3}|[1-4][0-9]{3}|5(?:0[0-9]{2}|[1-4][0-9]{2}|5(?:0[0-9]|[1-2][0-9]|3[0-5]))))))?|env:[A-Za-z_][A-Za-z0-9_]*)?\\s*)*$",
+                  "patternErrorMessage": "Use ports from 0 to 65535, comma-separated ranges, or env:NAME.",
+                  "type": "string"
+                }
+              ],
+              "description": "Port/ranges or env:NAME resolved by the client; empty string/zero means an empty list.",
+              "examples": [443, "443,20000-50000"]
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Remote port or comma-separated ports/ranges; omitted inherits the destination.",
+          "title": "Remoteports"
+        }
+      },
+      "required": ["mode"],
+      "title": "UDPHop",
+      "type": "object"
+    },
+    "UDPHopMask": {
+      "additionalProperties": false,
+      "description": "UDP endpoint hopping. Remote hopping requires matching server-side port routing.",
+      "properties": {
+        "type": {
+          "const": "udphop",
+          "description": "Xray mask loader: udphop.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/UDPHop",
+          "description": "udphop settings. UDP endpoint hopping. Remote hopping requires matching server-side port routing."
+        }
+      },
+      "required": ["type", "settings"],
+      "title": "UDPHopMask",
+      "type": "object"
+    },
+    "XDNS": {
+      "additionalProperties": false,
+      "description": "UDP-over-DNS masking, normally combined with mKCP; client/server roles use different lists.",
+      "properties": {
+        "domains": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/XDNSDomain"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Tunnel domain definitions; must agree with the peer.",
+          "title": "Domains"
+        },
+        "resolvers": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/XDNSResolver"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Client DNS resolvers; server-only configurations may omit them.",
+          "title": "Resolvers"
+        },
+        "extraPoll": {
+          "anyOf": [
+            {
+              "maximum": 3,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Additional poll level, from 0 to 3.",
+          "title": "Extrapoll"
+        }
+      },
+      "title": "XDNS",
+      "type": "object"
+    },
+    "XDNSDomain": {
+      "additionalProperties": false,
+      "description": "DNS tunnel domain and wire-format limits.",
+      "properties": {
+        "names": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DNS tunnel domains configured on the peer.",
+          "examples": [["tunnel.example.com"]],
+          "title": "Names"
+        },
+        "lenLimit": {
+          "anyOf": [
+            {
+              "maximum": 255,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum full DNS name length; 0 uses 255.",
+          "title": "Lenlimit"
+        },
+        "labelLimit": {
+          "anyOf": [
+            {
+              "maximum": 63,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Maximum DNS label length; 0 uses 63.",
+          "title": "Labellimit"
+        },
+        "types": {
+          "anyOf": [
+            {
+              "items": {
+                "enum": [1, 5, 16, 28],
+                "type": "integer"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "DNS record types: 1=A, 5=CNAME, 16=TXT, 28=AAAA.",
+          "title": "Types"
+        },
+        "edns0": {
+          "anyOf": [
+            {
+              "anyOf": [
+                {
+                  "const": 0
+                },
+                {
+                  "maximum": 4096,
+                  "minimum": 512
+                }
+              ],
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "EDNS0 UDP size: 0 disables it; otherwise 512-4096.",
+          "title": "Edns0"
+        }
+      },
+      "title": "XDNSDomain",
+      "type": "object"
+    },
+    "XDNSMask": {
+      "additionalProperties": false,
+      "description": "UDP-over-DNS masking, normally combined with mKCP; client/server roles use different lists.",
+      "properties": {
+        "type": {
+          "const": "xdns",
+          "description": "Xray mask loader: xdns.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/XDNS"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "xdns settings. UDP-over-DNS masking, normally combined with mKCP; client/server roles use different lists."
+        }
+      },
+      "required": ["type"],
+      "title": "XDNSMask",
+      "type": "object"
+    },
+    "XDNSResolver": {
+      "additionalProperties": false,
+      "description": "Resolver endpoints. Protocols supported by the Xray loader: UDP, TCP and HTTPS.",
+      "properties": {
+        "addrs": {
+          "anyOf": [
+            {
+              "items": {
+                "pattern": "^(?:(?:udp|tcp|https)://)?[^\\s/]+(?:/[^\\s]*)?$",
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Resolver endpoints; no scheme means udp, no UDP/TCP port means 53.",
+          "examples": [["1.1.1.1:53", "https://dns.example.com/dns-query"]],
+          "title": "Addrs"
+        },
+        "worker": {
+          "anyOf": [
+            {
+              "maximum": 2147483647,
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Concurrent resolver workers; 0 uses 32.",
+          "title": "Worker"
+        },
+        "tlsConfig": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/TLSOptions"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "TLS settings for the resolver connection."
+        },
+        "quicConfig": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/QuicParams"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "QUIC tuning for compatible resolver connections."
+        }
+      },
+      "title": "XDNSResolver",
+      "type": "object"
+    },
+    "XICMP": {
+      "additionalProperties": false,
+      "description": "Wrap UDP traffic in ICMP; client OS permissions and peer support are required.",
+      "properties": {
+        "dgram": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Use an ICMP datagram socket instead of a raw socket.",
+          "title": "Dgram"
+        },
+        "ips": {
+          "anyOf": [
+            {
+              "items": {
+                "anyOf": [
+                  {
+                    "format": "ipv4",
+                    "type": "string"
+                  },
+                  {
+                    "format": "ipv6",
+                    "type": "string"
+                  }
+                ]
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "IP literals for ICMP endpoints; CIDR ranges are not accepted.",
+          "title": "Ips"
+        }
+      },
+      "title": "XICMP",
+      "type": "object"
+    },
+    "XICMPMask": {
+      "additionalProperties": false,
+      "description": "Wrap UDP traffic in ICMP; client OS permissions and peer support are required.",
+      "properties": {
+        "type": {
+          "const": "xicmp",
+          "description": "Xray mask loader: xicmp.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/XICMP"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "xicmp settings. Wrap UDP traffic in ICMP; client OS permissions and peer support are required."
+        }
+      },
+      "required": ["type"],
+      "title": "XICMPMask",
+      "type": "object"
+    },
+    "XMC": {
+      "additionalProperties": false,
+      "description": "TCP Minecraft session imitation; requires matching credentials and signed profiles.",
+      "properties": {
+        "hostname": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "description": "Minecraft handshake host; defaults to the outbound destination.",
+          "title": "Hostname"
+        },
+        "profiles": {
+          "description": "At least one signed Minecraft profile.",
+          "items": {
+            "$ref": "#/$defs/XMCProfile"
+          },
+          "minItems": 1,
+          "title": "Profiles",
+          "type": "array"
+        },
+        "password": {
+          "description": "Shared XMC password; must match the peer.",
+          "minLength": 1,
+          "title": "Password",
+          "type": "string"
+        }
+      },
+      "required": ["profiles", "password"],
+      "title": "XMC",
+      "type": "object"
+    },
+    "XMCMask": {
+      "additionalProperties": false,
+      "description": "TCP Minecraft session imitation; requires matching credentials and signed profiles.",
+      "properties": {
+        "type": {
+          "const": "xmc",
+          "description": "Xray mask loader: xmc.",
+          "title": "Type",
+          "type": "string"
+        },
+        "settings": {
+          "$ref": "#/$defs/XMC",
+          "description": "xmc settings. TCP Minecraft session imitation; requires matching credentials and signed profiles."
+        }
+      },
+      "required": ["type", "settings"],
+      "title": "XMCMask",
+      "type": "object"
+    },
+    "XMCProfile": {
+      "additionalProperties": false,
+      "description": "Signed Minecraft profile; cryptographic signatures are verified by Xray.",
+      "properties": {
+        "username": {
+          "description": "Minecraft name, 3-16 ASCII letters/digits/underscores.",
+          "pattern": "^[A-Za-z0-9_]{3,16}$",
+          "title": "Username",
+          "type": "string"
+        },
+        "uuid": {
+          "description": "Profile UUID, with or without hyphens.",
+          "examples": ["12345678-1234-5678-1234-567812345678"],
+          "pattern": "^(?:[0-9a-fA-F]{32}|[0-9a-fA-F]{8}(?:-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12})$",
+          "title": "Uuid",
+          "type": "string"
+        },
+        "texturesValue": {
+          "description": "Signed profile textures payload from the profile provider.",
+          "minLength": 1,
+          "title": "Texturesvalue",
+          "type": "string"
+        },
+        "texturesSignature": {
+          "description": "Signature of texturesValue, from the profile provider.",
+          "minLength": 1,
+          "title": "Texturessignature",
+          "type": "string"
+        }
+      },
+      "required": ["username", "uuid", "texturesValue", "texturesSignature"],
+      "title": "XMCProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "defaultSnippets": [
+    {
+      "body": {
+        "tcp": [
+          {
+            "settings": {
+              "delays": ["10-20"],
+              "lengths": ["100-200"],
+              "packets": "tlshello"
+            },
+            "type": "fragment"
+          }
+        ]
+      },
+      "description": "Fragment the TLS ClientHello into chunks of 100-200 bytes.",
+      "label": "TCP: TLS ClientHello fragmentation"
+    },
+    {
+      "body": {
+        "udp": [
+          {
+            "settings": {
+              "password": "change-me"
+            },
+            "type": "salamander"
+          }
+        ]
+      },
+      "description": "Requires a matching Salamander password on the peer.",
+      "label": "UDP: Salamander"
+    },
+    {
+      "body": {
+        "udp": [
+          {
+            "settings": {
+              "noise": [
+                {
+                  "delay": "10-20",
+                  "packet": "<b 0001><r 8-16><t>",
+                  "type": "exp"
+                }
+              ]
+            },
+            "type": "noise"
+          }
+        ]
+      },
+      "description": "A fixed prefix, random bytes and timestamp, sent by a compatible Xray core.",
+      "label": "UDP: noise expressions"
+    }
+  ],
+  "description": "Xray final stream masking. Arrays run from the innermost layer to the outermost layer.",
+  "properties": {
+    "tcp": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "filter": "#/$defs/FilterMask",
+                "fragment": "#/$defs/FragmentMask",
+                "header-custom": "#/$defs/TCPHeaderMask",
+                "sudoku": "#/$defs/SudokuMask",
+                "xmc": "#/$defs/XMCMask"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/FilterMask"
+              },
+              {
+                "$ref": "#/$defs/TCPHeaderMask"
+              },
+              {
+                "$ref": "#/$defs/FragmentMask"
+              },
+              {
+                "$ref": "#/$defs/SudokuMask"
+              },
+              {
+                "$ref": "#/$defs/XMCMask"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "TCP masks, innermost first: filter, header-custom, fragment, sudoku, xmc. Requires a client core supporting each selected mask.",
+      "title": "Tcp"
+    },
+    "udp": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "filter": "#/$defs/FilterMask",
+                "header-custom": "#/$defs/UDPHeaderMask",
+                "mkcp-legacy": "#/$defs/MkcpLegacyMask",
+                "noise": "#/$defs/NoiseMask",
+                "realm": "#/$defs/RealmMask",
+                "salamander": "#/$defs/SalamanderMask",
+                "sudoku": "#/$defs/SudokuMask",
+                "udphop": "#/$defs/UDPHopMask",
+                "xdns": "#/$defs/XDNSMask",
+                "xicmp": "#/$defs/XICMPMask"
+              },
+              "propertyName": "type"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/FilterMask"
+              },
+              {
+                "$ref": "#/$defs/UDPHeaderMask"
+              },
+              {
+                "$ref": "#/$defs/MkcpLegacyMask"
+              },
+              {
+                "$ref": "#/$defs/NoiseMask"
+              },
+              {
+                "$ref": "#/$defs/SalamanderMask"
+              },
+              {
+                "$ref": "#/$defs/SudokuMask"
+              },
+              {
+                "$ref": "#/$defs/XDNSMask"
+              },
+              {
+                "$ref": "#/$defs/XICMPMask"
+              },
+              {
+                "$ref": "#/$defs/RealmMask"
+              },
+              {
+                "$ref": "#/$defs/UDPHopMask"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "UDP masks, innermost first: filter, header-custom, mkcp-legacy, noise, salamander, sudoku, xdns, xicmp, realm, udphop. Peer settings must match where required.",
+      "title": "Udp"
+    },
+    "quicParams": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/QuicParams"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "QUIC tuning for compatible Xray transports; no effect on ordinary TCP."
+    }
+  },
+  "title": "FinalMask",
+  "type": "object"
+}

@@ -4,12 +4,7 @@ import {
   useFormContext,
 } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldLabel,
-} from "@/components/ui/field";
+import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -20,34 +15,23 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import type { HostFormValues } from "../lib/form";
-import type { HostParameterDefinition } from "../lib/parameters";
+import {
+  getParameterSelectOptions,
+  type HostParameterDefinition,
+} from "../lib/parameters";
 import { AlpnInput } from "./AlpnInput";
 
 type ParameterFieldProps = {
   definition: HostParameterDefinition;
   pending: boolean;
-  incompatible: boolean;
 };
 type ParameterValueField = ControllerRenderProps<
   HostFormValues,
   `parameters.${string}`
 >;
-const BOOLEAN_OPTIONS = [
-  ["true", "hostsDialog.enabled"],
-  ["false", "hostsDialog.disabled"],
-] as const;
-const SECURITY_OPTIONS = [
-  ["tls", "TLS"],
-  ["none", "hostEditor.noSecurity"],
-] as const;
 
-export function ParameterField({
-  definition,
-  pending,
-  incompatible,
-}: ParameterFieldProps) {
+export function ParameterField({ definition, pending }: ParameterFieldProps) {
   const { t } = useTranslation();
   const { control } = useFormContext<HostFormValues>();
   return (
@@ -55,7 +39,7 @@ export function ParameterField({
       control={control}
       name={`parameters.${definition.id}`}
       render={({ field, fieldState }) => (
-        <Field data-invalid={fieldState.invalid || incompatible}>
+        <Field data-invalid={fieldState.invalid}>
           <FieldLabel
             htmlFor={`host-parameter-${definition.id}`}
             className="sr-only"
@@ -65,15 +49,9 @@ export function ParameterField({
           <ParameterInput
             definition={definition}
             pending={pending}
-            invalid={fieldState.invalid || incompatible}
+            invalid={fieldState.invalid}
             field={field}
           />
-          {definition.id === "xhttp_extra" && (
-            <FieldDescription>{t("hostEditor.extraHint")}</FieldDescription>
-          )}
-          {incompatible && (
-            <FieldError>{t("hostEditor.incompatibleInbound")}</FieldError>
-          )}
           <FieldError errors={[fieldState.error]} />
         </Field>
       )}
@@ -109,13 +87,15 @@ function ParameterInput({
     );
   }
 
-  if (definition.kind === "boolean" || definition.kind === "security") {
-    const options =
-      definition.kind === "boolean" ? BOOLEAN_OPTIONS : SECURITY_OPTIONS;
+  if (definition.kind === "select") {
+    const options = getParameterSelectOptions(definition, field.value ?? "");
     return (
       <Select
         disabled={pending}
         value={field.value || "inherit"}
+        onOpenChange={(open) => {
+          if (!open) field.onBlur();
+        }}
         onValueChange={(value) =>
           field.onChange(value === "inherit" ? "" : value)
         }
@@ -125,7 +105,9 @@ function ParameterInput({
         </SelectTrigger>
         <SelectContent>
           <SelectGroup>
-            <SelectItem value="inherit">{t("hostEditor.inherit")}</SelectItem>
+            <SelectItem value="inherit">
+              {t(definition.emptyLabelKey ?? "hostEditor.defaultValue")}
+            </SelectItem>
             {options.map(([value, label]) => (
               <SelectItem key={value} value={value}>
                 {t(label)}
@@ -137,31 +119,14 @@ function ParameterInput({
     );
   }
 
-  if (definition.kind === "json") {
-    return (
-      <Textarea
-        {...field}
-        id={id}
-        value={field.value ?? ""}
-        disabled={pending}
-        aria-invalid={invalid}
-        rows={6}
-        className="font-mono text-xs"
-        dir="ltr"
-        placeholder={
-          definition.id === "xhttp_extra"
-            ? '{"scMaxBufferedPosts":0,"xPaddingObfsMode":false,"uplinkHTTPMethod":"PUT"}'
-            : undefined
-        }
-      />
-    );
-  }
-
   return (
     <Input
       {...field}
       id={id}
       value={field.value ?? ""}
+      placeholder={
+        definition.kind === "text" ? definition.placeholder : undefined
+      }
       disabled={pending}
       aria-invalid={invalid}
     />

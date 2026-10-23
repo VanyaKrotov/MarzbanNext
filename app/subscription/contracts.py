@@ -25,6 +25,7 @@ class TemplateSnapshot:
     id: int
     format: str
     content: str
+    migration_settings: dict | None = None
 
 
 @dataclass(frozen=True)
@@ -91,6 +92,7 @@ class RenderInput:
     external_config: str = ""
     reverse: bool = False
     as_base64: bool = False
+    include_server_description: bool = False
 
 
 @dataclass(frozen=True)
@@ -113,4 +115,6 @@ class SubscriptionError(ValueError):
 
 class TemplateConflict(SubscriptionError):
     def __init__(self):
-        super().__init__("Hosts use different subscription templates. Select template_id or a group with one template.", 409)
+        super().__init__(
+            "Hosts use different subscription templates. Select template_id or a group with one template.", 409,
+        )

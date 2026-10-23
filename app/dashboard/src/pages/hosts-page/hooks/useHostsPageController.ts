@@ -1,5 +1,3 @@
-import { useHostsFilters } from "./useHostsFilters";
-import { useHostReordering } from "./useHostReordering";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
@@ -19,6 +17,8 @@ import {
   useUpdateHostMutation,
 } from "../lib/query";
 import type { HostPayload, HostsSchema } from "../types";
+import { useHostReordering } from "./useHostReordering";
+import { useHostsFilters } from "./useHostsFilters";
 
 export function useHostsPageController() {
   const { t } = useTranslation();
@@ -52,7 +52,6 @@ export function useHostsPageController() {
     updateHostMutation.isPending ||
     deleteHost.isPending ||
     reorderHosts.isPending;
-  const rows = hosts;
   const reorderDisabled = Boolean(
     selectedGroupIds.length || filterSearch.trim(),
   );
@@ -144,7 +143,7 @@ export function useHostsPageController() {
   };
 
   const reordering = useHostReordering(
-    rows,
+    hosts,
     reorderDisabled || pending,
     persistReorder,
   );
@@ -160,7 +159,7 @@ export function useHostsPageController() {
     isLoading,
     pending,
     reorderDisabled,
-    rows,
+    rows: hosts,
     search,
     selectedGroupIds,
     duplicate,

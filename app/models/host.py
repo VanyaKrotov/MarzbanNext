@@ -1,66 +1,40 @@
 """Administrative host contracts and sparse, explicitly validated client overrides."""
 
+from copy import deepcopy
 from datetime import datetime
 from typing import Any, Literal
 
 from pydantic import AliasPath, BaseModel, ConfigDict, Field, StrictBool, StrictInt, field_validator, model_validator
 
-from app.models.proxy import FRAGMENT_PATTERN, HTTP_TOKEN_PATTERN, NOISE_PATTERN, HostGroupRef, FormatVariables
+from app.models.proxy import FRAGMENT_PATTERN, NOISE_PATTERN, HostGroupRef, FormatVariables
 from app.models.subscription_template import normalize_template_bindings
+from app.models.host_mapper import HostMapperOptions, normalize_stored_mapper_options
+from app.models.finalmask import FinalMask
+from app.models.socket_options import SocketOptions
+from app.models.xhttp import XhttpExtra
+
+
+def normalize_stored_host_overrides(overrides: dict | None) -> dict:
+    """Read legacy overrides using the current contract without changing their behavior."""
+    result = deepcopy(overrides or {})
+    security = result.get("security", {})
+    if isinstance(security, dict) and "keep_sni_blank" in security:
+        if security.pop("keep_sni_blank"):
+            security["sni"] = ""
+        if not security:
+            result.pop("security", None)
+    if isinstance(result.get("mapper"), dict):
+        result["mapper"] = normalize_stored_mapper_options(result["mapper"])
+    return result
 
 
 class HostOptions(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
 
-class XhttpMux(HostOptions):
-    maxConcurrency: str | StrictInt | None = None
-    maxConnections: int | None = None
-    cMaxReuseTimes: str | StrictInt | None = None
-    hMaxRequestTimes: str | StrictInt | None = None
-    hMaxReusableSecs: str | StrictInt | None = None
-    hKeepAlivePeriod: int | None = None
-
-
-class XhttpExtra(HostOptions):
-    scMaxBufferedPosts: StrictInt | None = Field(None, ge=0)
-    xPaddingObfsMode: StrictBool | None = None
-    uplinkHTTPMethod: str | None = Field(None, max_length=32)
-    xPaddingBytes: str | StrictInt | None = None
-    xPaddingKey: str | None = None
-    xPaddingHeader: str | None = None
-    xPaddingMethod: str | None = None
-    xPaddingPlacement: str | None = None
-    noGRPCHeader: StrictBool | None = None
-    noSSEHeader: StrictBool | None = None
-    scMaxEachPostBytes: str | StrictInt | None = None
-    scMaxConcurrentPosts: str | StrictInt | None = None
-    scMinPostsIntervalMs: str | StrictInt | None = None
-    scStreamUpServerSecs: str | StrictInt | None = None
-    headers: dict[str, str] | None = None
-    xmux: XhttpMux | None = None
-
-    @field_validator("uplinkHTTPMethod")
-    @classmethod
-    def validate_method(cls, value):
-        if value is None:
-            raise ValueError("Omit the HTTP method to use the client default")
-        value = value.strip()
-        if not value or not HTTP_TOKEN_PATTERN.fullmatch(value):
-            raise ValueError("Uplink HTTP method must be a nonempty HTTP token")
-        return value.upper()
-
-    @model_validator(mode="after")
-    def reject_explicit_null(self):
-        if any(getattr(self, name) is None for name in self.model_fields_set):
-            raise ValueError("Omit XHTTP extra keys instead of assigning null")
-        return self
-
-
 class SecurityOverrides(HostOptions):
     mode: Literal["tls", "none"] | None = None
     sni: str | None = Field(None, max_length=1000)
-    keep_sni_blank: StrictBool | None = None
     sni_from_address: StrictBool | None = None
     alpn: list[str] | None = None
     fingerprint: str | None = None
@@ -68,8 +42,7 @@ class SecurityOverrides(HostOptions):
 
     @model_validator(mode="after")
     def validate_sni(self):
-        modes = [bool(self.keep_sni_blank), bool(self.sni_from_address), self.sni is not None]
-        if sum(modes) > 1:
+        if self.sni_from_address and self.sni is not None:
             raise ValueError("Choose only one SNI override")
         return self
 
@@ -108,42 +81,23 @@ class MuxOverrides(HostOptions):
 
 
 class StreamOverrides(HostOptions):
-    sockopt: dict[str, Any] | None = None
-    final_mask: dict[str, Any] | None = None
+    sockopt: SocketOptions | None = Field(
+        None, description="Xray streamSettings.sockopt. TCP, DNS, interface and platform socket options.")
+    final_mask: FinalMask | None = Field(
+        None, description="Xray streamSettings.finalmask. TCP/UDP mask chains and optional QUIC parameters.")
 
 
 class ClashOptions(HostOptions):
-    ip_version: Literal["dual", "ipv4", "ipv6", "ipv4-prefer", "ipv6-prefer"] | None = None
-    x25519: StrictBool | None = None
+    ip_version: Literal["dual", "ipv4", "ipv6", "ipv4-prefer", "ipv6-prefer"] | None = Field(
+        None, description="IP address preference for Clash.", examples=["ipv6-prefer"])
+    x25519: StrictBool | None = Field(
+        None, description="Enable X25519MLKEM768 for Clash REALITY.", examples=[False])
 
 
 class ClientOverrides(HostOptions):
-    clash: ClashOptions | None = None
-    server_description: str | None = None
-
-
-class MapperOperation(HostOptions):
-    op: Literal["set", "copy", "unset"]
-    to: str = Field(min_length=1)
-    source: str | None = Field(None, alias="from")
-    value: Any = None
-
-    @model_validator(mode="after")
-    def validate_operation(self):
-        if self.op == "copy" and not self.source:
-            raise ValueError("Copy operations require a source")
-        if self.op == "set" and "value" not in self.model_fields_set:
-            raise ValueError("Set operations require a value")
-        if any(part in self.to for part in ("__proto__", "__class__", "constructor")):
-            raise ValueError("Invalid mapper path")
-        return self
-
-
-class HostMapperOptions(HostOptions):
-    xrayJson: list[MapperOperation] | None = None
-    clash: list[MapperOperation] | None = None
-    singbox: list[MapperOperation] | None = None
-    base64: list[MapperOperation] | None = None
+    clash: ClashOptions | None = Field(None, description="Clash IP and REALITY options.")
+    server_description: str | None = Field(
+        None, description="Server description for compatible extended clients. Enter plain text.", examples=["Europe"])
 
 
 class HostOverrides(HostOptions):
@@ -241,6 +195,11 @@ class HostResponse(BaseModel):
     subscription_template_ids: dict[str, int]
     created_at: datetime
     updated_at: datetime
+
+    @field_validator("overrides", mode="before")
+    @classmethod
+    def normalize_overrides(cls, value):
+        return normalize_stored_host_overrides(value)
 
 
 class HostList(BaseModel):

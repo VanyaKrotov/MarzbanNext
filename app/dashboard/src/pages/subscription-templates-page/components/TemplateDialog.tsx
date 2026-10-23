@@ -53,7 +53,12 @@ import {
   type SubscriptionFormat,
 } from "../lib/query";
 
-import { compositionSchema, templateLanguage } from "../lib/composition";
+import {
+  subscriptionTemplateSchema,
+  supportsComposition,
+  templateLanguage,
+} from "../lib/template-editor";
+import { templateVariables } from "../lib/template-variables";
 
 const schema = z.object({
   name: z.string().trim().min(1).max(128),
@@ -228,10 +233,10 @@ function TemplateForm({
     onStatus(form.formState.isDirty, mutation.isPending);
   }, [form.formState.isDirty, mutation.isPending, onStatus]);
   const format = form.watch("format");
-  const supportsComposition = ["v2ray-json", "clash", "sing-box"].includes(format);
-  const capabilities = useTemplateCapabilitiesQuery(supportsComposition);
+  const hasComposition = supportsComposition(format);
+  const capabilities = useTemplateCapabilitiesQuery(hasComposition);
   const editorSchema = useMemo(
-    () => compositionSchema(format, capabilities.data?.[format]),
+    () => subscriptionTemplateSchema(format, capabilities.data?.[format]),
     [format, capabilities.data],
   );
   const submit = form.handleSubmit((values) =>
@@ -329,13 +334,14 @@ function TemplateForm({
                 value={field.value}
                 onChange={field.onChange}
                 language={templateLanguage(format, field.value)}
+                templateVariables={templateVariables[format]}
                 disabled={mutation.isPending}
                 className="h-[50svh] min-h-64"
               />
             )}
           />
           <FieldError errors={[form.formState.errors.content]} />
-          {supportsComposition && capabilities.isError && (
+          {hasComposition && capabilities.isError && (
             <p role="alert" className="text-sm text-destructive">
               {t("subscriptionTemplates.schemaLoadError")}{" "}
               <Button

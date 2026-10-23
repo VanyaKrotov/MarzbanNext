@@ -1,0 +1,422 @@
+{
+  "$defs": {
+    "MapperCopy": {
+      "additionalProperties": false,
+      "defaultSnippets": [
+        {
+          "body": {
+            "from": "streamSettings.tlsSettings.serverName",
+            "op": "copy",
+            "to": "sni"
+          },
+          "label": "copy"
+        }
+      ],
+      "description": "Deep-copy a value from the original inbound or resolved host. Both from and to are required; value is not allowed. A missing source skips the operation; an explicit source null is copied.",
+      "properties": {
+        "to": {
+          "description": "Destination inside one generated connection, not the full subscription. Xray/Clash/sing-box use dot-separated keys and array indices, e.g. options[0].enabled or options.0.enabled. Array indices must be below 1024. Missing containers are created by set/copy; unset never creates them. URI/VMess use the entire string as a literal query/payload key. Paths containing __proto__, __class__ or constructor are forbidden. Xray managed tags cannot change; removing required identity fields fails output validation.",
+          "examples": [
+            "streamSettings.sockopt.tcpFastOpen",
+            "ws-opts.headers.Host",
+            "tls.server_name",
+            "sni"
+          ],
+          "minLength": 1,
+          "pattern": "^(?![\\s\\S]*(?:__proto__|__class__|constructor))[\\s\\S]+$",
+          "title": "To",
+          "type": "string"
+        },
+        "op": {
+          "const": "copy",
+          "description": "Copy a source value to the destination without modifying the source.",
+          "title": "Op",
+          "type": "string"
+        },
+        "from": {
+          "description": "Source path in the raw inbound (port, settings.*, streamSettings.*), or in resolved host metadata using $host.address, $host.port, $host.finalRemark, $host.protocol, $host.transport, $host.security, $host.protocolOptions or $host.metadata.remark. protocolOptions contains this user's protocol credentials (id/password/auth/method/flow depending on protocol). Nested object and array paths are supported. Sources are read from the original inbound/host, not from previous mapper results. A nonexistent source is skipped.",
+          "examples": [
+            "$host.address",
+            "$host.port",
+            "$host.finalRemark",
+            "$host.protocol",
+            "$host.transport",
+            "$host.security",
+            "$host.protocolOptions",
+            "$host.protocolOptions.id",
+            "$host.protocolOptions.password",
+            "$host.protocolOptions.auth",
+            "$host.protocolOptions.method",
+            "$host.protocolOptions.flow",
+            "$host.metadata",
+            "$host.metadata.remark",
+            "port",
+            "settings.clients[0].id",
+            "streamSettings.tlsSettings.serverName",
+            "streamSettings.wsSettings.headers.Host"
+          ],
+          "minLength": 1,
+          "title": "From",
+          "type": "string"
+        }
+      },
+      "required": ["to", "op", "from"],
+      "title": "MapperCopy",
+      "type": "object"
+    },
+    "MapperSet": {
+      "additionalProperties": false,
+      "defaultSnippets": [
+        {
+          "body": {
+            "op": "set",
+            "to": "udp",
+            "value": true
+          },
+          "label": "set"
+        }
+      ],
+      "description": "Set or replace the destination value. Both to and value are required; from is not allowed.",
+      "properties": {
+        "to": {
+          "description": "Destination inside one generated connection, not the full subscription. Xray/Clash/sing-box use dot-separated keys and array indices, e.g. options[0].enabled or options.0.enabled. Array indices must be below 1024. Missing containers are created by set/copy; unset never creates them. URI/VMess use the entire string as a literal query/payload key. Paths containing __proto__, __class__ or constructor are forbidden. Xray managed tags cannot change; removing required identity fields fails output validation.",
+          "examples": [
+            "streamSettings.sockopt.tcpFastOpen",
+            "ws-opts.headers.Host",
+            "tls.server_name",
+            "sni"
+          ],
+          "minLength": 1,
+          "pattern": "^(?![\\s\\S]*(?:__proto__|__class__|constructor))[\\s\\S]+$",
+          "title": "To",
+          "type": "string"
+        },
+        "op": {
+          "const": "set",
+          "description": "Assign value to the destination, replacing any existing value.",
+          "title": "Op",
+          "type": "string"
+        },
+        "value": {
+          "anyOf": [
+            {
+              "description": "A string, including an explicit empty string.",
+              "type": "string"
+            },
+            {
+              "description": "An integer or floating-point JSON number, including zero.",
+              "type": "number"
+            },
+            {
+              "description": "An explicit true or false value.",
+              "type": "boolean"
+            },
+            {
+              "description": "Assign null without removing the destination key.",
+              "type": "null"
+            },
+            {
+              "description": "Replace with an array of arbitrary JSON values, including [].",
+              "items": {},
+              "type": "array"
+            },
+            {
+              "additionalProperties": true,
+              "description": "Replace with a JSON object of arbitrary depth, including {}. Keys are not merged.",
+              "type": "object"
+            }
+          ],
+          "description": "Required JSON value: string, number, boolean, null, array or object. False, zero, an empty string, empty containers and null are explicit values. Objects/arrays replace the destination; they are not merged.",
+          "examples": [
+            "example.com",
+            0,
+            false,
+            null,
+            [],
+            {},
+            {
+              "enabled": true
+            }
+          ]
+        }
+      },
+      "required": ["to", "op", "value"],
+      "title": "MapperSet",
+      "type": "object"
+    },
+    "MapperUnset": {
+      "additionalProperties": false,
+      "defaultSnippets": [
+        {
+          "body": {
+            "op": "unset",
+            "to": "udp"
+          },
+          "label": "unset"
+        }
+      ],
+      "description": "Remove the destination key or array element. Only op and to are allowed. A missing destination is ignored. Removing an array element shifts subsequent indices.",
+      "properties": {
+        "to": {
+          "description": "Destination inside one generated connection, not the full subscription. Xray/Clash/sing-box use dot-separated keys and array indices, e.g. options[0].enabled or options.0.enabled. Array indices must be below 1024. Missing containers are created by set/copy; unset never creates them. URI/VMess use the entire string as a literal query/payload key. Paths containing __proto__, __class__ or constructor are forbidden. Xray managed tags cannot change; removing required identity fields fails output validation.",
+          "examples": [
+            "streamSettings.sockopt.tcpFastOpen",
+            "ws-opts.headers.Host",
+            "tls.server_name",
+            "sni"
+          ],
+          "minLength": 1,
+          "pattern": "^(?![\\s\\S]*(?:__proto__|__class__|constructor))[\\s\\S]+$",
+          "title": "To",
+          "type": "string"
+        },
+        "op": {
+          "const": "unset",
+          "description": "Remove the destination without creating intermediate containers.",
+          "title": "Op",
+          "type": "string"
+        }
+      },
+      "required": ["to", "op"],
+      "title": "MapperUnset",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "defaultSnippets": [
+    {
+      "body": {
+        "xrayJson": [
+          {
+            "op": "set",
+            "to": "streamSettings.sockopt.tcpFastOpen",
+            "value": true
+          }
+        ]
+      },
+      "label": "Xray JSON"
+    },
+    {
+      "body": {
+        "clash": [
+          {
+            "op": "set",
+            "to": "udp",
+            "value": true
+          },
+          {
+            "from": "streamSettings.tlsSettings.serverName",
+            "op": "copy",
+            "to": "sni"
+          },
+          {
+            "op": "unset",
+            "to": "skip-cert-verify"
+          }
+        ]
+      },
+      "label": "Clash: set, copy and unset"
+    },
+    {
+      "body": {
+        "singbox": [
+          {
+            "op": "set",
+            "to": "tls.server_name",
+            "value": "example.com"
+          }
+        ]
+      },
+      "label": "sing-box"
+    },
+    {
+      "body": {
+        "base64": [
+          {
+            "op": "set",
+            "to": "sni",
+            "value": "example.com"
+          }
+        ]
+      },
+      "label": "URI / VMess"
+    }
+  ],
+  "description": "Ordered transformations applied separately to each generated connection after its host overrides. The four keys select the output family: xrayJson, clash, singbox and base64 (URI/VMess). Outline does not use the mapper. Omitted/null families have no operations; [] also does nothing. Operations run in array order. Destination paths are arbitrary client fields, not a fixed allowlist.",
+  "properties": {
+    "xrayJson": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "copy": "#/$defs/MapperCopy",
+                "set": "#/$defs/MapperSet",
+                "unset": "#/$defs/MapperUnset"
+              },
+              "propertyName": "op"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MapperSet"
+              },
+              {
+                "$ref": "#/$defs/MapperCopy"
+              },
+              {
+                "$ref": "#/$defs/MapperUnset"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Xray JSON (v2ray-json): one outbound object. Paths use dot notation and array indices. The managed tag is immutable; this cannot modify routing, DNS or the full document.",
+      "examples": [
+        [
+          {
+            "op": "set",
+            "to": "streamSettings.sockopt.tcpFastOpen",
+            "value": true
+          }
+        ]
+      ],
+      "title": "Xrayjson"
+    },
+    "clash": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "copy": "#/$defs/MapperCopy",
+                "set": "#/$defs/MapperSet",
+                "unset": "#/$defs/MapperUnset"
+              },
+              "propertyName": "op"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MapperSet"
+              },
+              {
+                "$ref": "#/$defs/MapperCopy"
+              },
+              {
+                "$ref": "#/$defs/MapperUnset"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Clash: one proxy object. Paths use native Clash keys, including hyphens, and array indices. This cannot modify proxy-groups or rules. The final name must remain nonempty and unique.",
+      "examples": [
+        [
+          {
+            "op": "set",
+            "to": "ws-opts.headers.Host",
+            "value": "cdn.example.com"
+          }
+        ]
+      ],
+      "title": "Clash"
+    },
+    "singbox": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "copy": "#/$defs/MapperCopy",
+                "set": "#/$defs/MapperSet",
+                "unset": "#/$defs/MapperUnset"
+              },
+              "propertyName": "op"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MapperSet"
+              },
+              {
+                "$ref": "#/$defs/MapperCopy"
+              },
+              {
+                "$ref": "#/$defs/MapperUnset"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "sing-box: one outbound object. Paths use native sing-box keys and array indices. This cannot modify route or the full document. The final tag must remain nonempty and unique.",
+      "examples": [
+        [
+          {
+            "op": "set",
+            "to": "tls.server_name",
+            "value": "example.com"
+          }
+        ]
+      ],
+      "title": "Singbox"
+    },
+    "base64": {
+      "anyOf": [
+        {
+          "items": {
+            "discriminator": {
+              "mapping": {
+                "copy": "#/$defs/MapperCopy",
+                "set": "#/$defs/MapperSet",
+                "unset": "#/$defs/MapperUnset"
+              },
+              "propertyName": "op"
+            },
+            "oneOf": [
+              {
+                "$ref": "#/$defs/MapperSet"
+              },
+              {
+                "$ref": "#/$defs/MapperCopy"
+              },
+              {
+                "$ref": "#/$defs/MapperUnset"
+              }
+            ]
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "v2ray URI/Base64: query parameters; VMess: top-level JSON payload keys before Base64 encoding. The complete to string is a literal key: dots/brackets do not create nested objects. The URL scheme, credentials, address, port and fragment cannot be changed by query operations. VMess payload keys such as add, port and ps can be changed. copy.from still reads nested source paths.",
+      "examples": [
+        [
+          {
+            "from": "$host.address",
+            "op": "copy",
+            "to": "sni"
+          }
+        ]
+      ],
+      "title": "Base64"
+    }
+  },
+  "title": "HostMapperOptions",
+  "type": "object"
+}

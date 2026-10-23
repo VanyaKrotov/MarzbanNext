@@ -6,6 +6,7 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 import random
 import secrets
+from typing import Callable
 
 from app.subscription.contracts import ConnectionInput, ResolvedConnection, SubscriptionError
 
@@ -14,7 +15,7 @@ from app.subscription.contracts import ConnectionInput, ResolvedConnection, Subs
 class ResolveContext:
     variables: dict
     random: random.Random = field(default_factory=random.SystemRandom)
-    salt: object = secrets.token_hex
+    salt: Callable[[int], str] = secrets.token_hex
 
     def choose(self, value):
         if isinstance(value, str):
@@ -41,9 +42,7 @@ class SecurityResolver:
         security = overrides.get("security", {})
         inbound["tls"] = security.get("mode", inbound.get("tls", "none"))
         inbound["sni"] = context.choose(security.get("sni", inbound.get("sni", [])))
-        if security.get("keep_sni_blank"):
-            inbound["sni"] = ""
-        elif security.get("sni_from_address"):
+        if security.get("sni_from_address"):
             inbound["sni"] = address
         for source, target in (("fingerprint", "fp"), ("allow_insecure", "ais")):
             if source in security:
@@ -71,13 +70,14 @@ class TransportResolver:
             resolved["headers"] = deepcopy(source["headers"])
         if "path" in transport or "path" in source or "serviceName" in source:
             resolved["path"] = inbound["path"]
-        if "host" in transport or "host" in source or "Host" in source.get("headers", {}) or transport.get("use_sni_as_host"):
+        if ("host" in transport or "host" in source or "Host" in source.get("headers", {})
+                or transport.get("use_sni_as_host")):
             resolved["host"] = inbound["host"]
         if "heartbeatPeriod" in source:
             resolved["heartbeatPeriod"] = source["heartbeatPeriod"]
         if inbound["network"] not in {"xhttp", "splithttp"}:
             return resolved
-        source = stream.get("xhttpSettings") or stream.get("splithttpSettings") or {}
+        source = stream.get("xhttpSettings", stream.get("splithttpSettings", {}))
         xhttp = transport.get("xhttp", {})
         if "extra" in xhttp:
             extra = deepcopy(xhttp["extra"])
@@ -88,10 +88,11 @@ class TransportResolver:
                         "scMaxEachPostBytes", "scMinPostsIntervalMs", "xPaddingBytes", "xmux", "noGRPCHeader"):
                 inbound.pop(key, None)
         else:
-            extra = deepcopy(source.get("extra") or {})
-            for key in ("scMaxBufferedPosts", "xPaddingObfsMode", "uplinkHTTPMethod"):
-                if key in inbound:
-                    extra[key] = inbound[key]
+            from app.models.xhttp import XhttpExtra
+
+            # Native extra replaces sibling advanced keys, including when explicitly empty.
+            extra = (deepcopy(source.get("extra") or {}) if "extra" in source else
+                     {key: deepcopy(value) for key, value in source.items() if key in XhttpExtra.model_fields})
         inbound["_xhttp_extra"] = extra
         return resolved
 

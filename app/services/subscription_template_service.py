@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 from fastapi import Depends, HTTPException, Query
 from sqlalchemy.exc import IntegrityError
 
@@ -16,7 +18,6 @@ from app.utils.subscription_templates import validate_subscription_template
 
 
 def get_capabilities(admin: Admin = Depends(Admin.check_sudo_admin)):
-    from copy import deepcopy
     from app.subscription.template_directives import IncludeProxies, XrayDirectives
 
     include = IncludeProxies.model_json_schema()
@@ -41,9 +42,9 @@ def _commit(db: Session) -> None:
         raise HTTPException(status_code=409, detail="Template name or default assignment already exists") from exc
 
 
-def _validate(format: SubscriptionFormat, content: str) -> None:
+def _validate(format: SubscriptionFormat, content: str, migration_settings=None) -> None:
     try:
-        validate_subscription_template(format, content)
+        validate_subscription_template(format, content, migration_settings=migration_settings)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=str(exc)) from exc
 
@@ -71,10 +72,14 @@ def create_template(
     db: Session = Depends(get_db),
     admin: Admin = Depends(Admin.check_sudo_admin),
 ):
-    _validate(payload.format, payload.content)
+    return _create_template(payload, db, admin)
+
+
+def _create_template(payload, db, admin, migration_settings=None):
+    _validate(payload.format, payload.content, migration_settings)
     if crud.name_exists(db, payload.format, payload.name):
         raise HTTPException(status_code=409, detail="Template name already exists for this format")
-    template = SubscriptionTemplate(**payload.model_dump())
+    template = SubscriptionTemplate(**payload.model_dump(), migration_settings=deepcopy(migration_settings))
     db.add(template)
     _commit(db)
     db.refresh(template)
@@ -96,7 +101,9 @@ def update_template(
     name = updates.get("name", template.name)
     if crud.name_exists(db, format, name, template_id):
         raise HTTPException(status_code=409, detail="Template name already exists for this format")
-    _validate(SubscriptionFormat(format), updates.get("content", template.content))
+    migration_settings = template.migration_settings if format == template.format else None
+    _validate(SubscriptionFormat(format), updates.get("content", template.content), migration_settings)
+    template.migration_settings = migration_settings
     for key, value in updates.items():
         setattr(template, key, value)
     _commit(db)
@@ -128,8 +135,9 @@ def clone_template(
     db: Session = Depends(get_db), admin: Admin = Depends(Admin.check_sudo_admin),
 ):
     template = _get_template(db, template_id)
-    return create_template(
-        SubscriptionTemplateCreate(name=payload.name, format=template.format, content=template.content), db, admin
+    return _create_template(
+        SubscriptionTemplateCreate(name=payload.name, format=template.format, content=template.content), db, admin,
+        template.migration_settings,
     )
 
 

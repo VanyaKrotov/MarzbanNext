@@ -96,17 +96,17 @@ def user_subscription(
 
     if re.match(r"^(clash|flclash|mihomo|stash)", user_agent, re.IGNORECASE):
         conf = generate_subscription(user=user, config_format="clash",
-                                     as_base64=False, reverse=False, template_id=template_id)
+                                     as_base64=False, reverse=False, template_id=template_id, user_agent=user_agent)
         return _subscription_response(content=conf, media_type="text/yaml", headers=response_headers)
 
     elif re.match(r'^(SFA|SFI|SFM|SFT|[Kk]aring|[Hh]iddify[Nn]ext)', user_agent):
         conf = generate_subscription(user=user, config_format="sing-box", as_base64=False,
-                                     reverse=False, template_id=template_id)
+                                     reverse=False, template_id=template_id, user_agent=user_agent)
         return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
 
     elif re.match(r'^(SS|SSR|SSD|SSS|Outline|Shadowsocks|SSconf)', user_agent):
         conf = generate_subscription(user=user, config_format="outline", as_base64=False,
-                                     reverse=False, template_id=template_id)
+                                     reverse=False, template_id=template_id, user_agent=user_agent)
         return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
 
     elif (
@@ -115,11 +115,11 @@ def user_subscription(
         version_str = re.match(r'^v2rayN/(\d+\.\d+)', user_agent).group(1)
         if LooseVersion(version_str) >= LooseVersion("6.40"):
             conf = generate_subscription(user=user, config_format="v2ray-json",
-                                         as_base64=False, reverse=False, template_id=template_id)
+                                         as_base64=False, reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
         else:
             conf = generate_subscription(user=user, config_format="v2ray", as_base64=True,
-                                         reverse=False, template_id=template_id)
+                                         reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="text/plain", headers=response_headers)
 
     elif (
@@ -128,25 +128,25 @@ def user_subscription(
         version_str = re.match(r'^v2rayNG/(\d+\.\d+\.\d+)', user_agent).group(1)
         if LooseVersion(version_str) >= LooseVersion("1.8.29"):
             conf = generate_subscription(user=user, config_format="v2ray-json",
-                                         as_base64=False, reverse=False, template_id=template_id)
+                                         as_base64=False, reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
         elif LooseVersion(version_str) >= LooseVersion("1.8.18"):
             conf = generate_subscription(user=user, config_format="v2ray-json",
-                                         as_base64=False, reverse=True, template_id=template_id)
+                                         as_base64=False, reverse=True, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
         else:
             conf = generate_subscription(user=user, config_format="v2ray", as_base64=True,
-                                         reverse=False, template_id=template_id)
+                                         reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="text/plain", headers=response_headers)
 
     elif re.match(r'^[Ss]treisand', user_agent):
         if settings.use_custom_json_default or settings.use_custom_json_for_streisand:
             conf = generate_subscription(user=user, config_format="v2ray-json",
-                                         as_base64=False, reverse=False, template_id=template_id)
+                                         as_base64=False, reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
         else:
             conf = generate_subscription(user=user, config_format="v2ray", as_base64=True,
-                                         reverse=False, template_id=template_id)
+                                         reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="text/plain", headers=response_headers)
 
     elif (
@@ -155,16 +155,16 @@ def user_subscription(
         version_str = re.match(r'^[Hh]app/(\d+\.\d+\.\d+)(?:/|$)', user_agent).group(1)
         if LooseVersion(version_str) >= LooseVersion("1.63.1"):
             conf = generate_subscription(user=user, config_format="v2ray-json",
-                                         as_base64=False, reverse=False, template_id=template_id)
+                                         as_base64=False, reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="application/json", headers=response_headers)
         else:
             conf = generate_subscription(user=user, config_format="v2ray", as_base64=True,
-                                         reverse=False, template_id=template_id)
+                                         reverse=False, template_id=template_id, user_agent=user_agent)
             return _subscription_response(content=conf, media_type="text/plain", headers=response_headers)
 
     else:
         conf = generate_subscription(user=user, config_format="v2ray", as_base64=True,
-                                     reverse=False, template_id=template_id)
+                                     reverse=False, template_id=template_id, user_agent=user_agent)
         return _subscription_response(content=conf, media_type="text/plain", headers=response_headers)
 
 
@@ -216,6 +216,7 @@ def user_subscription_with_client_type(
         as_base64=config["as_base64"],
         reverse=config["reverse"],
         template_id=template_id,
+        user_agent=user_agent,
     )
 
     return _subscription_response(content=conf, media_type=config["media_type"], headers=response_headers)
