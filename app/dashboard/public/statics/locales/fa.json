@@ -569,6 +569,7 @@
   "hostsPage.saveGroup": "ذخیره گروه",
   "hostsPage.groupName": "نام",
   "hostsPage.groupId": "شناسه",
+  "hostsPage.id": "شناسه",
   "hostsPage.groupIdPlaceholder": "basic",
   "hostsPage.groupNamePlaceholder": "گروه اصلی",
   "hostsPage.groupTags": "تگ‌ها",

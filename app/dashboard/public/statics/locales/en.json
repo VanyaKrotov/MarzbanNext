@@ -569,6 +569,7 @@
   "hostsPage.saveGroup": "Save group",
   "hostsPage.groupName": "Name",
   "hostsPage.groupId": "ID",
+  "hostsPage.id": "ID",
   "hostsPage.groupIdPlaceholder": "basic",
   "hostsPage.groupNamePlaceholder": "Basic group",
   "hostsPage.groupTags": "Tags",

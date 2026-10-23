@@ -3,39 +3,16 @@
 from copy import deepcopy
 from typing import Literal
 
-from pydantic import BaseModel, ConfigDict, Field, StrictBool, StrictInt, ValidationError, model_validator
+from pydantic import BaseModel, ConfigDict, Field, StrictBool, ValidationError
 
 from app.subscription.contracts import HostSnapshot, ProfilePlan, ResolvedConnection, SubscriptionError
-
-
-class Selector(BaseModel):
-    model_config = ConfigDict(extra="forbid", json_schema_extra={"allOf": [
-        {"if": {"properties": {"type": {"const": "ids"}}, "required": ["type"]},
-         "then": {"properties": {"values": {"items": {"type": "integer", "minimum": 1}}}}},
-        {"if": {"properties": {"type": {"const": "groups"}}, "required": ["type"]},
-         "then": {"properties": {"values": {"items": {"type": "string", "minLength": 1}}}}},
-        {"if": {"properties": {"type": {"const": "sameGroupsAsRecipient"}}, "required": ["type"]},
-         "then": {"properties": {"values": {"maxItems": 0}}}},
-    ]})
-    type: Literal["ids", "groups", "sameGroupsAsRecipient"] = Field(
-        description="Select hosts by positive integer IDs, group IDs, or the Xray recipient's groups.")
-    values: list[StrictInt | str] = Field(
-        default_factory=list, description="Host IDs or group IDs. Omit for sameGroupsAsRecipient.")
-
-    @model_validator(mode="after")
-    def validate_values(self):
-        if self.type == "ids" and any(type(value) is not int or value <= 0 for value in self.values):
-            raise ValueError("Host IDs must be positive integers")
-        if self.type == "groups" and any(not isinstance(value, str) or not value for value in self.values):
-            raise ValueError("Group IDs must be nonempty strings")
-        if self.type == "sameGroupsAsRecipient" and self.values:
-            raise ValueError("sameGroupsAsRecipient does not accept values")
-        return self
+from app.subscription.host_selectors import NAME_SELECTORS, Selector, select_by_name
 
 
 class Selection(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    selector: Selector | None = Field(None, description="Restrict the authorized source pool to these hosts or groups.")
+    selector: Selector | None = Field(
+        None, description="Restrict authorized sources by host ID, group or rendered name.")
     selectFrom: Literal["ALL", "HIDDEN", "VISIBLE"] = Field(
         "VISIBLE", description=("Filter sources by host visibility. "
                                 "Disabled hosts and excluded formats remain unavailable."))
@@ -77,6 +54,8 @@ def _selected_ids(profile: ProfilePlan, options: Selection, recipient: HostSnaps
         return [connection.host_id for connection in profile.sources]
     if selector.type == "ids":
         return list(dict.fromkeys(selector.values))
+    if selector.type in NAME_SELECTORS:
+        return select_by_name(profile.sources, selector)
     groups = set(selector.values)
     if selector.type == "sameGroupsAsRecipient":
         if recipient is None:

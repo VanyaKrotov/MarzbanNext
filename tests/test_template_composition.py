@@ -320,7 +320,8 @@ class TemplateCompositionTests(TestCase):
             self.assertEqual(schemas["v2ray-json"], XrayDirectives.model_json_schema())
             self.assertEqual(schemas["v2ray-json"]["$defs"]["InjectHosts"]
                              ["properties"]["selectFrom"]["default"], "HIDDEN")
-            self.assertEqual(schemas["sing-box"]["$defs"]["Selector"]["properties"]["type"]["enum"], ["ids", "groups"])
+            self.assertEqual(schemas["sing-box"]["$defs"]["Selector"]["properties"]["type"]["enum"],
+                             ["ids", "groups", "remarks", "remarkPrefix", "remarkRegex"])
             self.assertIn("include-proxies", schemas["clash"]["properties"])
             self.assertNotIn("includeProxies", schemas["clash"]["properties"])
             self.assertEqual(schemas["sing-box"]["$defs"]["Selector"]["allOf"],

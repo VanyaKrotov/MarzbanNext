@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { FieldDescription } from "@/components/ui/field";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -36,8 +37,13 @@ function HostDialogContent(props: HostDialogProps) {
   const { t } = useTranslation();
   return (
     <>
-      <DialogTitle>
+      <DialogTitle className="flex flex-wrap items-center gap-2 pe-8">
         {t(props.host ? "hostEditor.editTitle" : "hostEditor.createTitle")}
+        {props.host && (
+          <Badge variant="secondary" className="font-mono tabular-nums">
+            {t("hostsPage.id")}: {props.host.id}
+          </Badge>
+        )}
       </DialogTitle>
       <HostFormLoader {...props} />
     </>

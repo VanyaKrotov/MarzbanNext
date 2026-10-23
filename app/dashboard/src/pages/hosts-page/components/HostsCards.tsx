@@ -39,17 +39,22 @@ export function HostsCards({
         >
           <div className="flex items-start justify-between gap-3">
             <div>
-              <Button
-                type="button"
-                variant="link"
-                className="h-auto whitespace-normal p-0 text-start font-medium text-foreground"
-                onClick={(event) => {
-                  event.stopPropagation();
-                  onEdit(row);
-                }}
-              >
-                {row.remark}
-              </Button>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  type="button"
+                  variant="link"
+                  className="h-auto whitespace-normal p-0 text-start font-medium text-foreground"
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    onEdit(row);
+                  }}
+                >
+                  {row.remark}
+                </Button>
+                <Badge variant="secondary" className="font-mono tabular-nums">
+                  {t("hostsPage.id")}: {row.id}
+                </Badge>
+              </div>
               <p className="font-mono text-xs text-muted-foreground">
                 {row.address}:{row.port ?? row.inbound_port}
               </p>

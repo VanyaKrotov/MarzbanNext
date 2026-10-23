@@ -61,6 +61,7 @@ export function HostsTable({
         <TableHeader className="bg-muted/40">
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-10" />
+            <TableHead className="w-16">{t("hostsPage.id")}</TableHead>
             <TableHead>{t("hostsPage.name")}</TableHead>
             <TableHead>{t("hostsPage.addressPort")}</TableHead>
             <TableHead>{t("hostsPage.enabled")}</TableHead>
@@ -93,6 +94,9 @@ export function HostsTable({
                     reorderDisabled ? "opacity-30" : "cursor-grab"
                   }`}
                 />
+              </TableCell>
+              <TableCell className="font-mono text-xs tabular-nums text-muted-foreground">
+                {row.id}
               </TableCell>
               <TableCell className="font-medium">
                 <Button

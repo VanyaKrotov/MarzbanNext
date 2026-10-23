@@ -569,6 +569,7 @@
   "hostsPage.saveGroup": "保存分组",
   "hostsPage.groupName": "名称",
   "hostsPage.groupId": "ID",
+  "hostsPage.id": "ID",
   "hostsPage.groupIdPlaceholder": "basic",
   "hostsPage.groupNamePlaceholder": "基础分组",
   "hostsPage.groupTags": "标签",

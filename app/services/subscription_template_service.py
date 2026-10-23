@@ -21,7 +21,8 @@ def get_capabilities(admin: Admin = Depends(Admin.check_sudo_admin)):
     from app.subscription.template_directives import IncludeProxies, XrayDirectives
 
     include = IncludeProxies.model_json_schema()
-    include["$defs"]["Selector"]["properties"]["type"]["enum"] = ["ids", "groups"]
+    kinds = include["$defs"]["Selector"]["properties"]["type"]["enum"]
+    kinds.remove("sameGroupsAsRecipient")
     clash = deepcopy(include)
     clash["properties"]["include-proxies"] = clash["properties"].pop("includeProxies")
     return {"v2ray-json": XrayDirectives.model_json_schema(), "clash": clash, "sing-box": include}

@@ -571,6 +571,7 @@
   "hostsPage.saveGroup": "Сохранить группу",
   "hostsPage.groupName": "Название",
   "hostsPage.groupId": "ID",
+  "hostsPage.id": "ID",
   "hostsPage.groupIdPlaceholder": "basic",
   "hostsPage.groupNamePlaceholder": "Основная группа",
   "hostsPage.groupTags": "Теги",
