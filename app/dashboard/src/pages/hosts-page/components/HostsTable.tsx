@@ -16,6 +16,7 @@ import {
 
 import { DeleteHostButton } from "./DeleteHostButton";
 import { HostGroupBadges } from "./HostGroupBadges";
+import { HostVisibilityIndicator } from "./HostVisibilityIndicator";
 
 import type { HostRow } from "../lib/model";
 
@@ -108,7 +109,8 @@ export function HostsTable({
                     onEdit(row);
                   }}
                 >
-                  {row.remark}
+                  <span>{row.remark}</span>
+                  <HostVisibilityIndicator isHidden={row.is_hidden} />
                 </Button>
               </TableCell>
               <TableCell className="font-mono text-xs">

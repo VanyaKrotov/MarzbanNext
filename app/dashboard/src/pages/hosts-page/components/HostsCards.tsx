@@ -7,6 +7,7 @@ import { Switch } from "@/components/ui/switch";
 
 import { DeleteHostButton } from "./DeleteHostButton";
 import { HostGroupBadges } from "./HostGroupBadges";
+import { HostVisibilityIndicator } from "./HostVisibilityIndicator";
 
 import type { HostRow } from "../lib/model";
 
@@ -49,7 +50,8 @@ export function HostsCards({
                     onEdit(row);
                   }}
                 >
-                  {row.remark}
+                  <span>{row.remark}</span>
+                  <HostVisibilityIndicator isHidden={row.is_hidden} />
                 </Button>
                 <Badge variant="secondary" className="font-mono tabular-nums">
                   {t("hostsPage.id")}: {row.id}

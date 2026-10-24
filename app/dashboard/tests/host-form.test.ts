@@ -29,6 +29,8 @@ import {
   getAlpnSelection,
 } from "../src/pages/hosts-page/components/host-dialog/lib/alpn";
 import {
+  getHostTemplateOptions,
+  getSelectedHostTemplates,
   templateBindingsFromSelection,
   templateChipLabel,
 } from "../src/pages/hosts-page/components/host-dialog/lib/template-selection";
@@ -487,31 +489,92 @@ test("selecting a template replaces only the existing binding of its format", ()
   assert.deepEqual(previous, { clash: 1, "sing-box": 3 });
 });
 
-test("host template choices are limited to URI and Xray JSON and preserve common format switches", () => {
-  assert.deepEqual(hostTemplateFormats, ["v2ray", "v2ray-json"]);
-  assert.deepEqual(commonTemplateFormats, ["clash", "sing-box", "outline"]);
-  const previous = { v2ray: 1, "v2ray-json": 2, clash: 3, "sing-box": 4 };
-  assert.deepEqual(
-    templateBindingsFromSelection(
-      [{ id: 5, format: "v2ray" }],
-      previous,
-      hostTemplateFormats,
-    ),
-    { v2ray: 5, clash: 3, "sing-box": 4 },
+function templateChoices() {
+  return subscriptionFormats.flatMap((format, index) => [
+    { id: index + 1, format, name: "Main", is_default: true },
+    { id: index + 11, format, name: "Custom", is_default: false },
+  ]);
+}
+
+test("all formats are available in the picker but common formats only offer their current default", () => {
+  const templates = templateChoices();
+  const before = structuredClone(templates);
+  const options = getHostTemplateOptions(templates);
+  for (const format of commonTemplateFormats) {
+    const choices = options.filter((template) => template.format === format);
+    assert.equal(choices.length, 1);
+    assert.equal(choices[0].is_default, true);
+  }
+  for (const format of hostTemplateFormats) {
+    assert.equal(
+      options.filter((template) => template.format === format).length,
+      2,
+    );
+  }
+  assert.deepEqual(templates, before);
+});
+
+test("common chips display the current default for legacy bindings while personal chips keep their choice", () => {
+  const templates = templateChoices();
+  const bindings = { v2ray: 11, "v2ray-json": 12, clash: 13, "sing-box": 14 };
+  const selected = getSelectedHostTemplates(
+    getHostTemplateOptions(templates),
+    bindings,
   );
   assert.deepEqual(
-    templateBindingsFromSelection([], previous, hostTemplateFormats),
-    {
-      clash: 3,
-      "sing-box": 4,
-    },
+    selected.map((template) => template.id),
+    [11, 12, 3, 4],
   );
-  assert.deepEqual(previous, {
-    v2ray: 1,
-    "v2ray-json": 2,
-    clash: 3,
-    "sing-box": 4,
+  const changedDefaults = templates.map((template) =>
+    template.format === "clash"
+      ? { ...template, is_default: template.id === 13 }
+      : template,
+  );
+  assert.deepEqual(
+    getSelectedHostTemplates(
+      getHostTemplateOptions(changedDefaults),
+      bindings,
+    ).map((template) => template.id),
+    [11, 12, 13, 4],
+  );
+  assert.deepEqual(bindings, {
+    v2ray: 11,
+    "v2ray-json": 12,
+    clash: 13,
+    "sing-box": 14,
   });
+});
+
+test("removing and reselecting common chips disables and enables only the selected format", () => {
+  const options = getHostTemplateOptions(templateChoices());
+  const bindings = {
+    v2ray: 11,
+    "v2ray-json": 12,
+    clash: 13,
+    "sing-box": 14,
+    outline: 15,
+  };
+  const selected = getSelectedHostTemplates(options, bindings);
+  for (const format of commonTemplateFormats) {
+    const remaining = templateBindingsFromSelection(
+      selected.filter((template) => template.format !== format),
+      bindings,
+    );
+    assert.equal(remaining[format], undefined);
+    assert.equal(remaining.v2ray, 11);
+    assert.equal(remaining["v2ray-json"], 12);
+    const defaultTemplate = options.find(
+      (template) => template.format === format,
+    )!;
+    const restored = templateBindingsFromSelection(
+      [...getSelectedHostTemplates(options, remaining), defaultTemplate],
+      remaining,
+    );
+    assert.equal(restored[format], defaultTemplate.id);
+    assert.equal(restored.v2ray, 11);
+    assert.equal(restored["v2ray-json"], 12);
+  }
+  assert.deepEqual(templateBindingsFromSelection([], bindings), {});
 });
 
 test("removing a template chip excludes its format and clearing all chips disables all formats", () => {
