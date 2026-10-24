@@ -421,21 +421,42 @@ class SubscriptionTemplateTests(TestCase):
         self.assertEqual(base64.b64decode(encoded).decode(), result)
         self.assertEqual(len(self.generate('v2ray', hosts=[first]).splitlines()), 1)
 
-    def test_aggregate_conflict_and_explicit_override(self):
+    def test_common_defaults_and_explicit_override_ignore_host_template_ids(self):
         first = self.create_host()
-        for format in ('clash', 'sing-box', 'outline'):
+        for format in ('sing-box', 'clash', 'outline'):
             with self.subTest(format=format):
                 custom = self.create_template(format)
                 second = self.create_host(format, subscription_template_ids={format: custom.id})
-                with self.assertRaises(HTTPException) as error:
-                    self.generate(format, hosts=[first, second])
-                self.assertEqual(error.exception.status_code, 409)
+                self.assertTrue(self.generate(format, hosts=[first, second]))
                 self.assertTrue(self.generate(format, hosts=[first, second], template_id=custom.id))
                 with self.assertRaises(HTTPException) as error:
                     self.generate(format, hosts=[first, second], template_id=self.defaults['v2ray'])
                 self.assertEqual(error.exception.status_code, 422)
                 self.update_host(second, subscription_template_ids={})
                 self.assertTrue(self.generate(format, hosts=[first, second]))
+
+    def test_http_singbox_default_composition_for_visible_and_hidden_sources(self):
+        first = self.create_host()
+        hidden = self.create_host('Hidden', is_hidden=True)
+        template = self.create_template('sing-box', content=json.dumps({
+            'outbounds': [{
+                'type': 'urltest', 'tag': 'best', 'outbounds': [],
+                'marzban': {'includeProxies': True, 'selectFrom': 'ALL',
+                            'selector': {'type': 'ids', 'values': [first.id, hidden.id]}},
+            }], 'route': {'final': 'best'},
+        }))
+        service.set_default_template(template.id, self.db, self.admin)
+        self.client.app.dependency_overrides[get_validated_sub] = self.subscription_user
+        with patch('app.db.GetDB', return_value=nullcontext(self.db)), patch('app.db.crud.users.update_user_sub'):
+            for is_hidden in (False, True):
+                self.update_host(first, is_hidden=is_hidden)
+                for path, agent in (('', 'SFA/1.0'), ('', 'HiddifyNext/1.0'), ('/sing-box', 'test-client')):
+                    with self.subTest(is_hidden=is_hidden, path=path, agent=agent):
+                        response = self.client.get(f'{public_router.prefix}/test{path}', headers={'User-Agent': agent})
+                        self.assertEqual(response.status_code, 200, response.text)
+                        document = response.json()
+                        self.assertEqual(document['route']['final'], 'best')
+                        self.assertEqual(document['outbounds'][0]['outbounds'], ['First', 'Hidden'])
 
     def test_balancers_respect_disabled_host_formats(self):
         first = self.create_host()

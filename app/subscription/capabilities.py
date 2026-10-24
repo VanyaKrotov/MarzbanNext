@@ -4,6 +4,8 @@ TARGET_FAMILIES = {
     "v2ray": "v2ray", "v2ray-json": "v2ray-json", "clash": "clash", "sing-box": "sing-box", "outline": "outline",
 }
 
+COMMON_TEMPLATE_FORMATS = frozenset({"clash", "sing-box", "outline"})
+
 
 def supports_connection(target: str, inbound: dict) -> bool:
     protocol, network = inbound["protocol"], inbound["network"]

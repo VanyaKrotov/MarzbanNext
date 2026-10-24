@@ -305,7 +305,10 @@ class ClientConfigurationTests(TestCase):
                     self.assertEqual(result["outbounds"][0]["outbounds"], [host.remark for host in sources])
                 owner.is_hidden = True
                 self.db.commit()
-                self.assertEqual(self.render(target), "")
+                if target == "v2ray-json":
+                    self.assertEqual(self.render(target), "")
+                else:
+                    self.assertTrue(self.render(target))
                 explicit = self.render(target, template_id=template_id)
                 self.assertEqual(bool(explicit), target != "v2ray-json")
                 owner.is_hidden = False

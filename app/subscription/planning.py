@@ -1,21 +1,24 @@
 """Permission-aware endpoint catalog and template recipients for each output format."""
 
-from app.subscription.capabilities import TARGET_FAMILIES, supports_connection
-from app.subscription.contracts import ConnectionInput, ProfilePlan, SubscriptionError, TemplateConflict
+from app.subscription.capabilities import COMMON_TEMPLATE_FORMATS, TARGET_FAMILIES, supports_connection
+from app.subscription.contracts import ConnectionInput, ProfilePlan, SubscriptionError
 from app.subscription.resolver import ConnectionResolver, ResolveContext
 
 
 class TemplateSelector:
     def select(self, snapshot, host, family, template_id=None):
-        selected = template_id if template_id is not None else host.subscription_template_ids[family]
+        if template_id is not None:
+            selected = template_id
+        elif family in COMMON_TEMPLATE_FORMATS:
+            selected = snapshot.default_template_ids.get(family)
+            if selected is None:
+                raise SubscriptionError(f"Default subscription template is missing for {family}")
+        else:
+            selected = host.subscription_template_ids[family]
         template = snapshot.templates.get(selected)
         if template is None or template.format != family:
             raise SubscriptionError("Subscription template does not match the requested format")
         return template
-
-    def validate_aggregate(self, profiles, family):
-        if family not in {"v2ray", "v2ray-json"} and len({plan.template.id for plan in profiles}) > 1:
-            raise TemplateConflict()
 
 
 class ConnectionCatalog:
@@ -62,13 +65,12 @@ class ProfilePlanner:
             snapshot, source_hosts, target, proxies, allowed_inbounds, context)
         visible = [host for host in roots if host.id in resolved and not host.is_hidden]
         recipients = visible
-        # Explicit aggregate templates can consume a pool containing only hidden hosts.
-        if not recipients and template_id is not None and target in {"clash", "sing-box"}:
+        # Common templates can inject hidden sources without a visible recipient.
+        if not recipients and target in {"clash", "sing-box"}:
             recipients = [host for host in roots if host.id in resolved][:1]
         sources, visible_ids = tuple(resolved.values()), tuple(host.id for host in visible)
         profiles = tuple(ProfilePlan(
             owner, (resolved[owner.id],), TemplateSelector().select(snapshot, owner, family, template_id),
             resolved[owner.id].remark, sources, snapshot.hosts, visible_ids,
         ) for owner in recipients)
-        TemplateSelector().validate_aggregate(profiles, family)
         return profiles, diagnostics

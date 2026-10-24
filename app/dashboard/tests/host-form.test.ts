@@ -6,7 +6,11 @@ import {
   hostFormSchema,
 } from "../src/pages/hosts-page/components/host-dialog/lib/form";
 import { toHostPayload } from "../src/pages/hosts-page/components/host-dialog/lib/payload";
-import { subscriptionFormats } from "../src/pages/subscription-templates-page/lib/formats";
+import {
+  commonTemplateFormats,
+  hostTemplateFormats,
+  subscriptionFormats,
+} from "../src/pages/subscription-templates-page/lib/formats";
 import {
   getAvailableParameterGroups,
   getPath,
@@ -481,6 +485,33 @@ test("selecting a template replaces only the existing binding of its format", ()
     });
   }
   assert.deepEqual(previous, { clash: 1, "sing-box": 3 });
+});
+
+test("host template choices are limited to URI and Xray JSON and preserve common format switches", () => {
+  assert.deepEqual(hostTemplateFormats, ["v2ray", "v2ray-json"]);
+  assert.deepEqual(commonTemplateFormats, ["clash", "sing-box", "outline"]);
+  const previous = { v2ray: 1, "v2ray-json": 2, clash: 3, "sing-box": 4 };
+  assert.deepEqual(
+    templateBindingsFromSelection(
+      [{ id: 5, format: "v2ray" }],
+      previous,
+      hostTemplateFormats,
+    ),
+    { v2ray: 5, clash: 3, "sing-box": 4 },
+  );
+  assert.deepEqual(
+    templateBindingsFromSelection([], previous, hostTemplateFormats),
+    {
+      clash: 3,
+      "sing-box": 4,
+    },
+  );
+  assert.deepEqual(previous, {
+    v2ray: 1,
+    "v2ray-json": 2,
+    clash: 3,
+    "sing-box": 4,
+  });
 });
 
 test("removing a template chip excludes its format and clearing all chips disables all formats", () => {

@@ -895,6 +895,7 @@
   "hostEditor.isHidden": "从列表中隐藏",
   "hostEditor.parameterGroups.visibility": "可见性",
   "hostEditor.templates": "模板",
+  "hostEditor.commonTemplateHint": "sing-box、Clash 和 Outline 使用各自格式的默认模板。",
   "hostEditor.remarkPlaceholder": "欧洲",
   "hostEditor.parameterHelp": "帮助：{{name}}",
   "hostEditor.example": "示例",

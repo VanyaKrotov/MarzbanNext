@@ -22,7 +22,7 @@ class SingBoxSubscriptionGenerator:
         allocator.used.update(validate_identities(template["outbounds"], "tag"))
         names = {}
         connections = {connection.host_id: connection
-                       for connection in required_sources(template, data.profiles[0], "sing-box")}
+                       for connection in required_sources(template, profile, "sing-box")}
         for connection in connections.values():
             name = allocator.allocate(connection.remark, f"h{connection.host_id}")
             result = builder.add(**builder_arguments(connection, name), include_in_default=False)

@@ -30,13 +30,15 @@ class SubscriptionSnapshotLoader:
         registry = get_enabled_inbound_registry(db)
         rows = db.query(ProxyInbound).filter(ProxyInbound.enabled.is_(True)).all()
         settings = runtime_settings or get_runtime_settings()
+        templates = db.query(SubscriptionTemplate).all()
         return SubscriptionSnapshot(
             hosts=tuple(snapshot_host(host) for host in list_hosts(db).all()),
             inbounds={row.id: deepcopy(registry.inbounds_by_tag[row.tag])
                       for row in rows if row.tag in registry.inbounds_by_tag},
             raw_inbounds={row.id: deepcopy(row.content) for row in rows},
             templates={row.id: TemplateSnapshot(row.id, row.format, row.content, deepcopy(row.migration_settings))
-                       for row in db.query(SubscriptionTemplate).all()},
+                       for row in templates},
             defaults={key: getattr(settings, key) for key in GENERATOR_TEMPLATE_SOURCES},
             external_config=settings.external_config,
+            default_template_ids={row.format: row.id for row in templates if row.is_default},
         )

@@ -9,7 +9,7 @@ from app.db.models.proxies import HostGroup
 from app.db.models.subscription_templates import SubscriptionTemplate
 from app.models.host import HostCreate, HostPatch
 from app.models.subscription_template import SubscriptionFormat
-from app.subscription.contracts import RenderInput, TemplateConflict
+from app.subscription.contracts import RenderInput
 from app.subscription.generators import GeneratorRegistry
 from app.subscription.planning import ProfilePlanner
 from app.subscription.resolver import ResolveContext
@@ -169,7 +169,7 @@ class TemplateCompositionTests(TestCase):
         template = self.template(hidden, "sing-box", {"outbounds": [
             {"tag": "best", "type": "urltest", "outbounds": [],
              "marzban": {"includeProxies": True, "selectFrom": "ALL"}}]})
-        self.assertEqual(self.generate("sing-box"), "")
+        self.assertTrue(self.generate("sing-box"))
         self.assertTrue(self.generate("sing-box", template_id=template.id))
 
     def test_missing_explicit_sources_skip_unusable_document(self):
@@ -227,8 +227,7 @@ class TemplateCompositionTests(TestCase):
         proxy_hosts.update_host(self.db, hidden, HostPatch(subscription_template_ids={"clash": other.id}))
         self.assertTrue(self.generate("clash"))
         proxy_hosts.update_host(self.db, hidden, HostPatch(is_hidden=False))
-        with self.assertRaises(TemplateConflict):
-            self.generate("clash")
+        self.assertTrue(self.generate("clash"))
 
     def test_unused_hidden_mappers_do_not_break_other_profiles(self):
         self.host("A")

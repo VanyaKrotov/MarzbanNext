@@ -895,6 +895,7 @@
   "hostEditor.isHidden": "پنهان کردن از فهرست",
   "hostEditor.parameterGroups.visibility": "نمایش",
   "hostEditor.templates": "قالب‌ها",
+  "hostEditor.commonTemplateHint": "sing-box، Clash و Outline از قالب پیش‌فرض فرمت خود استفاده می‌کنند.",
   "hostEditor.remarkPlaceholder": "اروپا",
   "hostEditor.parameterHelp": "راهنما: {{name}}",
   "hostEditor.example": "نمونه",

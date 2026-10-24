@@ -895,6 +895,7 @@
   "hostEditor.isHidden": "Hide from list",
   "hostEditor.parameterGroups.visibility": "Visibility",
   "hostEditor.templates": "Templates",
+  "hostEditor.commonTemplateHint": "sing-box, Clash and Outline use the default template for their format.",
   "hostEditor.remarkPlaceholder": "Europe",
   "hostEditor.parameterHelp": "Help: {{name}}",
   "hostEditor.example": "Example",

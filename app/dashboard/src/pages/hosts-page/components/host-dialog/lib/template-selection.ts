@@ -1,4 +1,8 @@
-import type { TemplateBindings } from "@/pages/subscription-templates-page/lib/formats";
+import {
+  subscriptionFormats,
+  type SubscriptionFormat,
+  type TemplateBindings,
+} from "@/pages/subscription-templates-page/lib/formats";
 import type { SubscriptionTemplate } from "@/pages/subscription-templates-page/lib/query";
 
 type TemplateSelection = Pick<SubscriptionTemplate, "id" | "format">;
@@ -6,8 +10,10 @@ type TemplateSelection = Pick<SubscriptionTemplate, "id" | "format">;
 export function templateBindingsFromSelection(
   selected: readonly TemplateSelection[],
   previous: TemplateBindings,
+  formats: readonly SubscriptionFormat[] = subscriptionFormats,
 ): TemplateBindings {
-  const bindings: TemplateBindings = {};
+  const bindings: TemplateBindings = { ...previous };
+  for (const format of formats) delete bindings[format];
   for (const template of selected) {
     // A newly selected template replaces its format's previous choice, regardless of list order.
     if (

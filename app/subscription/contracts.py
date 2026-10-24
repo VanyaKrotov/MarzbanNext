@@ -36,6 +36,7 @@ class SubscriptionSnapshot:
     templates: dict[int, TemplateSnapshot]
     defaults: dict[str, str]
     external_config: str = ""
+    default_template_ids: dict[str, int] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -111,10 +112,3 @@ class SubscriptionError(ValueError):
     def __init__(self, detail: str, status_code: int = 422):
         super().__init__(detail)
         self.status_code = status_code
-
-
-class TemplateConflict(SubscriptionError):
-    def __init__(self):
-        super().__init__(
-            "Hosts use different subscription templates. Select template_id or a group with one template.", 409,
-        )

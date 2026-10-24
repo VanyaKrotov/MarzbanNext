@@ -897,6 +897,7 @@
   "hostEditor.isHidden": "Скрыть из списка",
   "hostEditor.parameterGroups.visibility": "Видимость",
   "hostEditor.templates": "Шаблоны",
+  "hostEditor.commonTemplateHint": "sing-box, Clash и Outline используют шаблон по умолчанию своего формата.",
   "hostEditor.remarkPlaceholder": "Европа",
   "hostEditor.parameterHelp": "Справка: {{name}}",
   "hostEditor.example": "Пример",
