@@ -5,7 +5,6 @@ import Page from "@/components/page";
 import { Button } from "@/components/ui/button";
 
 import { HostDialog } from "./components/host-dialog";
-import { HostsCards } from "./components/HostsCards";
 import { HostsSkeleton } from "./components/HostsSkeleton";
 import { HostsState } from "./components/HostsState";
 import { HostsTable } from "./components/HostsTable";
@@ -68,30 +67,20 @@ export function HostsPage() {
           }
         />
       ) : controller.rows.length ? (
-        <>
-          <HostsTable
-            rows={controller.rows}
-            pending={controller.pending}
-            reorderDisabled={controller.reorderDisabled}
-            dropTarget={controller.dropTarget}
-            onDragStart={controller.dragStart}
-            onDragEnd={controller.dragEnd}
-            onDragOver={controller.dragOver}
-            onDrop={controller.drop}
-            onEdit={controller.openEdit}
-            onDuplicate={controller.duplicate}
-            onToggle={controller.toggleHost}
-            onDelete={controller.removeHostRow}
-          />
-          <HostsCards
-            rows={controller.rows}
-            pending={controller.pending}
-            onEdit={controller.openEdit}
-            onDuplicate={controller.duplicate}
-            onToggle={controller.toggleHost}
-            onDelete={controller.removeHostRow}
-          />
-        </>
+        <HostsTable
+          rows={controller.rows}
+          pending={controller.pending}
+          reorderDisabled={controller.reorderDisabled}
+          dropTarget={controller.dropTarget}
+          onDragStart={controller.dragStart}
+          onDragEnd={controller.dragEnd}
+          onDragOver={controller.dragOver}
+          onDrop={controller.drop}
+          onEdit={controller.openEdit}
+          onDuplicate={controller.duplicate}
+          onToggle={controller.toggleHost}
+          onDelete={controller.removeHostRow}
+        />
       ) : (
         <HostsState
           title={t("hostsPage.emptyTitle")}

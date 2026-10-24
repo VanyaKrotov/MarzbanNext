@@ -91,6 +91,10 @@ class ClientConfigurationTests(TestCase):
                         if target == "v2ray-json":
                             node = node[0]["outbounds"][0]
                             self.assertIn(host.address, json.dumps(node))
+                            if protocol in {"vmess", "vless", "trojan", "shadowsocks"}:
+                                settings = node["settings"]
+                                accounts = settings["vnext"][0]["users"] if "vnext" in settings else settings["servers"]
+                                self.assertEqual([account["email"] for account in accounts], ["mzuser"])
                         elif target == "clash":
                             node = node["proxies"][0]
                             self.assertEqual(node["server"], host.address)

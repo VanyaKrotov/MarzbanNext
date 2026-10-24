@@ -57,8 +57,8 @@ export function HostsTable({
   const { t } = useTranslation();
 
   return (
-    <div className="hidden overflow-hidden rounded-xl border md:block">
-      <Table>
+    <div className="min-w-0 overflow-hidden rounded-xl border">
+      <Table className="min-w-[800px]">
         <TableHeader className="bg-muted/40">
           <TableRow className="hover:bg-transparent">
             <TableHead className="w-10" />

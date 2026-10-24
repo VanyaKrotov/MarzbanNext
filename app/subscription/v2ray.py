@@ -14,6 +14,8 @@ from app.templates import render_template_content
 from app.utils.helpers import UUIDEncoder
 
 
+DEFAULT_CLIENT_EMAIL = "mzuser"
+
 XHTTP_EXTRA_FIELDS = (
     "xPaddingKey",
     "xPaddingHeader",
@@ -873,7 +875,7 @@ class V2rayJsonConfig:
                         {
                             "id": id,
                             "alterId": 0,
-                            "email": "https://gozargah.github.io/marzban/",
+                            "email": DEFAULT_CLIENT_EMAIL,
                             "security": "auto"
                         }
                     ],
@@ -893,7 +895,7 @@ class V2rayJsonConfig:
                             "id": id,
                             "security": "auto",
                             "encryption": "none",
-                            "email": "https://gozargah.github.io/marzban/",
+                            "email": DEFAULT_CLIENT_EMAIL,
                             "alterId": 0,
                             "flow": flow
                         }
@@ -910,7 +912,7 @@ class V2rayJsonConfig:
                     "address": address,
                     "port": port,
                     "password": password,
-                    "email": "https://gozargah.github.io/marzban/",
+                    "email": DEFAULT_CLIENT_EMAIL,
                 }
             ]
         }
@@ -923,7 +925,7 @@ class V2rayJsonConfig:
                     "address": address,
                     "port": port,
                     "password": password,
-                    "email": "https://gozargah.github.io/marzban/",
+                    "email": DEFAULT_CLIENT_EMAIL,
                     "method": method,
                     "uot": False,
                 }
