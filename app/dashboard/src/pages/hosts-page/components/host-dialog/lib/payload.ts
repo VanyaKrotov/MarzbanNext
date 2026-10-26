@@ -82,8 +82,6 @@ export function toHostPayload(values: HostFormValues): HostPayload {
     is_hidden: values.is_hidden,
     overrides: overridePatch(values.original_overrides, overrides),
     group_ids: values.group_ids,
-    ...(values.selected.includes("templates")
-      ? { subscription_template_ids: values.subscription_template_ids }
-      : {}),
+    subscription_template_ids: values.subscription_template_ids,
   };
 }

@@ -48,7 +48,6 @@ export function getHostFormValues(
         ? JSON.stringify(value, null, 2)
         : String(value);
   }
-  if (host) selected.push("templates");
   if (host?.is_hidden) selected.push("is_hidden");
   return {
     inbound_id: host?.inbound_id ?? inboundId,

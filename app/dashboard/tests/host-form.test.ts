@@ -314,13 +314,13 @@ test("ALPN input tolerates absent and malformed stored text without changing the
   });
 });
 
-test("a new host starts without optional parameters or explicit template bindings", () => {
+test("a new host without catalog defaults saves empty template bindings and no optional parameters", () => {
   const values = formValues();
   const payload = toHostPayload(hostFormSchema.parse(values));
   assert.deepEqual(values.selected, []);
   assert.equal(payload.port, null);
   assert.equal(payload.enabled, true);
-  assert.equal("subscription_template_ids" in payload, false);
+  assert.deepEqual(payload.subscription_template_ids, {});
 });
 
 test("clash is the only YAML format in the catalog", () => {
@@ -446,7 +446,7 @@ test("boolean switches preserve saved values, toggle explicitly and delete only 
 });
 
 test("the grouped option menu excludes selected parameters and incompatible XHTTP", () => {
-  const groups = getAvailableParameterGroups(["sni", "templates"], false);
+  const groups = getAvailableParameterGroups(["sni"], false);
   const options = groups.flatMap((group) =>
     group.options.map((option) => option.id),
   );
@@ -577,6 +577,26 @@ test("removing and reselecting common chips disables and enables only the select
   assert.deepEqual(templateBindingsFromSelection([], bindings), {});
 });
 
+test("static template bindings save defaults for new hosts and preserve existing choices", () => {
+  const defaults = { v2ray: 1, "v2ray-json": 2, clash: 3 };
+  const existing = { v2ray: 11, "v2ray-json": 12 };
+  const host = { ...storedHost({}), subscription_template_ids: existing };
+  for (const [stored, expected] of [
+    [undefined, defaults],
+    [host, existing],
+    [{ ...host, subscription_template_ids: {} }, {}],
+  ] as const) {
+    const values = getHostFormValues(1, stored, defaults);
+    values.remark = "Example";
+    values.address = "example.com";
+    assert.equal(values.selected.includes("templates"), false);
+    assert.deepEqual(
+      toHostPayload(hostFormSchema.parse(values)).subscription_template_ids,
+      expected,
+    );
+  }
+});
+
 test("removing a template chip excludes its format and clearing all chips disables all formats", () => {
   const previous = { clash: 1, "sing-box": 3 };
   const remaining = templateBindingsFromSelection(
@@ -585,7 +605,6 @@ test("removing a template chip excludes its format and clearing all chips disabl
   );
   assert.deepEqual(remaining, { "sing-box": 3 });
   const values = formValues();
-  values.selected = ["templates"];
   values.subscription_template_ids = templateBindingsFromSelection(
     [],
     previous,

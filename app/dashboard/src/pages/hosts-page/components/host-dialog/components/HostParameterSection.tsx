@@ -5,17 +5,13 @@ import { hostParameters, specialHostParameters } from "../lib/parameters";
 import type { HostFormProps } from "../lib/types";
 import { ParameterField, VisibilityField } from "./ParameterFields";
 import { BooleanParameterField } from "./BooleanParameterField";
-import { SubscriptionTemplateFields } from "./SubscriptionTemplateFields";
 import { HostParameterHeader } from "./HostParameterHeader";
 import { JsonParameterField } from "./JsonParameterField";
 
 const parametersById = new Map(
   hostParameters.map((definition) => [definition.id, definition]),
 );
-type SectionProps = Pick<
-  HostFormProps,
-  "inbounds" | "templates" | "pending"
-> & {
+type SectionProps = Pick<HostFormProps, "inbounds" | "pending"> & {
   id: string;
   onRemove: (id: string) => void;
 };
@@ -58,13 +54,6 @@ export const HostParameterSection = memo(function HostParameterSection(
       {definition && !isBoolean && (
         <ParameterField definition={definition} pending={pending} />
       )}
-      {!definition && <SpecialParameter {...props} />}
     </FieldGroup>
   );
 });
-
-function SpecialParameter({ id, templates, pending }: SectionProps) {
-  return id === "templates" ? (
-    <SubscriptionTemplateFields templates={templates} pending={pending} />
-  ) : null;
-}

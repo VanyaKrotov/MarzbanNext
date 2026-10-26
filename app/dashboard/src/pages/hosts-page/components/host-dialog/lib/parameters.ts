@@ -2,7 +2,6 @@ import type { JsonObject } from "../../../types";
 import { TLS_FINGERPRINTS } from "./constants";
 
 export const specialHostParameters = [
-  { id: "templates", labelKey: "hostEditor.templates" },
   { id: "is_hidden", labelKey: "hostEditor.isHidden" },
 ] as const;
 export type HostParameterDefinition = {
@@ -210,7 +209,7 @@ const parameterGroups = [
   },
   {
     id: "subscription",
-    ids: ["templates", "clients", "mapper"],
+    ids: ["clients", "mapper"],
   },
   { id: "visibility", ids: ["is_hidden"] },
 ] as const;

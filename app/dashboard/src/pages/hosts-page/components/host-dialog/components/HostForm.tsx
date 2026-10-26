@@ -48,6 +48,7 @@ export function HostForm(props: HostFormProps) {
         <CoreFields
           inbounds={inbounds}
           groups={props.hostGroups}
+          templates={templates}
           pending={pending}
         />
         <HostParameterSections {...props} />

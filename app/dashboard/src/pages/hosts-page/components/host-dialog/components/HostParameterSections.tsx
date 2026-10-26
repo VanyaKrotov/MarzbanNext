@@ -6,11 +6,7 @@ import type { HostFormProps } from "../lib/types";
 import { AddHostParameter } from "./AddHostParameter";
 import { HostParameterSection } from "./HostParameterSection";
 
-export function HostParameterSections({
-  pending,
-  inbounds,
-  templates,
-}: HostFormProps) {
+export function HostParameterSections({ pending, inbounds }: HostFormProps) {
   const { control, getValues, setValue, clearErrors } =
     useFormContext<HostFormValues>();
   const selected = useWatch({ control, name: "selected", exact: true });
@@ -41,7 +37,6 @@ export function HostParameterSections({
           id={id}
           pending={pending}
           inbounds={inbounds}
-          templates={templates}
           onRemove={removeParameter}
         />
       ))}
