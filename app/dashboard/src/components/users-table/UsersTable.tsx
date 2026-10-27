@@ -115,18 +115,14 @@ const UsersTable = () => {
               })
             }
           >
-            <SelectTrigger size="sm" className="min-w-32 capitalize">
+            <SelectTrigger size="sm" className="min-w-32">
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
               <SelectGroup>
                 <SelectItem value="all">{t("usersTable.all")}</SelectItem>
                 {statuses.map((status) => (
-                  <SelectItem
-                    value={status}
-                    key={status}
-                    className="capitalize"
-                  >
+                  <SelectItem value={status} key={status}>
                     {t(`status.${status}`)}
                   </SelectItem>
                 ))}

@@ -2,7 +2,6 @@ import { CircleAlert, CircleCheck, Clock3, PauseCircle } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { Status } from "types/User";
 import { relativeExpiryDate } from "utils/dateFormatter";
 
@@ -43,7 +42,7 @@ export function UserStatus({
 
   return (
     <div className="flex min-w-0 items-center gap-2">
-      <Badge variant="outline" className={cn("capitalize", statusStyles[status])}>
+      <Badge variant="outline" className={statusStyles[status]}>
         <Icon />
         {!compact && t(`status.${status}`)}
       </Badge>

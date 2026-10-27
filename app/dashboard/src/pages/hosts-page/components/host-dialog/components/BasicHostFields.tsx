@@ -1,3 +1,4 @@
+import { useMemo } from "react";
 import {
   Controller,
   useFormContext,
@@ -17,12 +18,14 @@ import {
   SelectContent,
   SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import type { InboundType } from "@/types/Inbound";
 import type { HostFormValues } from "../lib/form";
+import { groupInboundsByNodes } from "../lib/inbound-groups";
 import { VariablesPopover } from "./VariablesPopover";
 import { HostParameterHelp } from "./HostParameterHelp";
 
@@ -71,6 +74,7 @@ export function InboundField({
 }: PendingProps & { inbounds: InboundType[] }) {
   const { t } = useTranslation();
   const { control } = useFormContext<HostFormValues>();
+  const groups = useMemo(() => groupInboundsByNodes(inbounds), [inbounds]);
   return (
     <Controller
       control={control}
@@ -89,15 +93,19 @@ export function InboundField({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectGroup>
-                {inbounds.map((item) => (
-                  <SelectItem key={item.id} value={String(item.id)}>
-                    {item.tag} ({item.protocol}/{item.network}) —{" "}
-                    {item.nodes.map((node) => node.name).join(", ") ||
+              {groups.map((group) => (
+                <SelectGroup key={group.key}>
+                  <SelectLabel>
+                    {group.nodes.map((node) => node.name).join(", ") ||
                       t("hostsPage.unassignedNodes")}
-                  </SelectItem>
-                ))}
-              </SelectGroup>
+                  </SelectLabel>
+                  {group.inbounds.map((item) => (
+                    <SelectItem key={item.id} value={String(item.id)}>
+                      {item.tag} ({item.protocol}/{item.network})
+                    </SelectItem>
+                  ))}
+                </SelectGroup>
+              ))}
             </SelectContent>
           </Select>
         </Field>
