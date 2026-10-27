@@ -913,5 +913,8 @@
   "hostsDialog.fingerprint.info.randomized": "randomized — 带 ALPN 的随机配置。",
   "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — 不带 ALPN 的随机配置。",
   "hostsDialog.fingerprint.info.unsafe": "unsafe — 标准 Go TLS，不模拟浏览器。",
-  "hostsDialog.fingerprint.info.default": "客户端默认 — 空 fingerprint。"
+  "hostsDialog.fingerprint.info.default": "客户端默认 — 空 fingerprint。",
+  "pwa.offline.title": "无网络连接",
+  "pwa.offline.description": "请连接网络以使用面板。网络恢复后，页面将自动重新打开。",
+  "pwa.offline.retry": "重试"
 }

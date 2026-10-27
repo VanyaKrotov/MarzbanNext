@@ -913,5 +913,8 @@
   "hostsDialog.fingerprint.info.randomized": "randomized — a random profile with ALPN.",
   "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — a random profile without ALPN.",
   "hostsDialog.fingerprint.info.unsafe": "unsafe — standard Go TLS without browser impersonation.",
-  "hostsDialog.fingerprint.info.default": "Client default — an empty fingerprint."
+  "hostsDialog.fingerprint.info.default": "Client default — an empty fingerprint.",
+  "pwa.offline.title": "No connection",
+  "pwa.offline.description": "Connect to the internet to use the panel. This page will reopen when the connection returns.",
+  "pwa.offline.retry": "Retry"
 }

@@ -915,5 +915,8 @@
   "hostsDialog.fingerprint.info.randomized": "randomized — случайный профиль с ALPN.",
   "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — случайный профиль без ALPN.",
   "hostsDialog.fingerprint.info.unsafe": "unsafe — стандартный TLS Go без имитации браузера.",
-  "hostsDialog.fingerprint.info.default": "По умолчанию клиента — пустой fingerprint."
+  "hostsDialog.fingerprint.info.default": "По умолчанию клиента — пустой fingerprint.",
+  "pwa.offline.title": "Нет соединения",
+  "pwa.offline.description": "Для работы с панелью подключитесь к интернету. Страница откроется снова, когда соединение восстановится.",
+  "pwa.offline.retry": "Повторить"
 }

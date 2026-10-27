@@ -913,5 +913,8 @@
   "hostsDialog.fingerprint.info.randomized": "randomized — پروفایل تصادفی با ALPN.",
   "hostsDialog.fingerprint.info.randomizednoalpn": "randomizednoalpn — پروفایل تصادفی بدون ALPN.",
   "hostsDialog.fingerprint.info.unsafe": "unsafe — ‏TLS استاندارد Go بدون شبیه‌سازی مرورگر.",
-  "hostsDialog.fingerprint.info.default": "پیش‌فرض کلاینت — fingerprint خالی."
+  "hostsDialog.fingerprint.info.default": "پیش‌فرض کلاینت — fingerprint خالی.",
+  "pwa.offline.title": "اتصال برقرار نیست",
+  "pwa.offline.description": "برای استفاده از پنل به اینترنت متصل شوید. پس از برقراری اتصال، صفحه دوباره باز می‌شود.",
+  "pwa.offline.retry": "تلاش دوباره"
 }

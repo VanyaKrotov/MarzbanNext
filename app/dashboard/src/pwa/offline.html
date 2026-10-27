@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>MarzbanNext</title>
+    <style>
+      :root { font-family: system-ui, sans-serif; color: #171717; background: #fafafa; }
+      body { margin: 0; min-height: 100svh; display: grid; place-items: center; }
+      main { max-width: 28rem; padding: 2rem; text-align: center; }
+      h1 { font-size: 1.5rem; }
+      p { line-height: 1.6; color: #525252; }
+      button { min-height: 44px; margin-top: 1rem; border: 0; border-radius: .5rem;
+        padding: .75rem 1.25rem; background: #2563eb; color: white; font: inherit; cursor: pointer; }
+      button:focus-visible { outline: 3px solid #2563eb; outline-offset: 4px; }
+      @media (prefers-color-scheme: dark) {
+        :root { color: #fafafa; background: #0a0a0a; }
+        p { color: #a3a3a3; }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <p>MarzbanNext</p>
+      <h1 id="title">No connection</h1>
+      <p id="description">Connect to the internet to use the panel.</p>
+      <button id="retry" type="button">Retry</button>
+    </main>
+    <script>
+      const translations = __OFFLINE_TRANSLATIONS__;
+      let language = navigator.language;
+      try { language = localStorage.getItem("i18nextLng") || language; } catch {}
+      language = language.split("-")[0];
+      if (!translations[language]) language = "en";
+      document.documentElement.lang = language;
+      document.documentElement.dir = language === "fa" ? "rtl" : "ltr";
+      for (const [id, text] of Object.entries(translations[language])) {
+        document.getElementById(id).textContent = text;
+      }
+      document.title = `${translations[language].title} — MarzbanNext`;
+      document.getElementById("retry").addEventListener("click", () => location.reload());
+      const retryWhenOnline = () => {
+        if (navigator.onLine && document.visibilityState === "visible") location.reload();
+      };
+      // A network interface can become available before the server is reachable.
+      // Retry while this fallback is visible, including after a failed online event.
+      window.addEventListener("online", () => setTimeout(retryWhenOnline, 1000));
+      document.addEventListener("visibilitychange", retryWhenOnline);
+      setInterval(retryWhenOnline, 10000);
+    </script>
+  </body>
+</html>

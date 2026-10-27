@@ -64,6 +64,37 @@ npm run ui:info
 The development server listens on port `3000`. The production build performs
 TypeScript checking before Vite compilation.
 
+## Installable PWA
+
+`vite-plugin-pwa` manages the manifest, service worker build and deferred browser
+registration through `VitePWA` in `vite.config.mts`. It uses `injectManifest` with
+precaching disabled; `src/pwa/sw.js` handles only the localized offline fallback.
+`scripts/pwa-config.mjs` defines the manifest and prepares localized fallback
+content for Vite's shared build definitions. No custom PWA build plugin is used.
+
+Production builds include `manifest.webmanifest`, `sw.js`, and `registerSW.js`.
+The manifest uses the existing icons in `public/statics/favicon/`.
+Relative asset, manifest and worker
+URLs support both `/` and the backend's configurable `DASHBOARD_PATH` (including
+the default `/dashboard/`) with the same build.
+
+Serve the panel over HTTPS, or localhost for local testing. Installation uses the
+browser's own menu, address-bar control, or installation prompt. The dashboard
+does not intercept installation events; the browser controls its installation UI.
+
+The service worker runs only in production. It caches a localized offline page,
+and leaves API requests, authentication, mutations and dashboard assets on the
+network. When navigation fails, it shows the offline page and retries when the
+connection returns. This does not provide offline access to panel data or queue
+changes. Updates do not force a reload or discard forms; reopening or reloading
+the panel loads the latest dashboard.
+
+To check installation, build and run `npm run preview`, or serve the generated
+files with the backend. Verify the manifest and worker in browser developer tools,
+test a navigation with networking disabled, and check both the root and a nested
+deployment path. `npm test` covers offline behavior, cache
+isolation, and manifest/icon paths.
+
 ## Add a UI component
 
 Use the repository wrapper instead of calling a remote registry preset directly:
